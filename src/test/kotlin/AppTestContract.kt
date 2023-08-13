@@ -1,18 +1,14 @@
 import com.natpryce.hamkrest.*
 import com.natpryce.hamkrest.assertion.assertThat
 import testsupport.*
-import testsupport.adapters.DomainDriver
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class MainKtTest {
-    private val app = App()
-
+abstract class AppTestContract(appDriver: ApplicationDriver) {
     private val freddy = Actor("Freddy the first player")
-        .isAbleTo(AccessTheApplication(DomainDriver(app)))
+        .isAbleTo(AccessTheApplication(appDriver))
 
     private val sally = Actor("Sally the second player")
-        .isAbleTo(AccessTheApplication(DomainDriver(app)))
+        .isAbleTo(AccessTheApplication(appDriver))
 
    @Test
    fun `scenario - joining a game when no one else is around`() {
