@@ -23,4 +23,8 @@ class DomainDriver(private val app: App) : ApplicationDriver {
     override fun getPlayersInRoom(): List<PlayerId> {
         return app.players
     }
+
+    override fun hasGameStarted(): Boolean {
+        return app.hasGameStarted
+    }
 }

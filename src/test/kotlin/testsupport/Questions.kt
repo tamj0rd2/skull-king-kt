@@ -1,9 +1,14 @@
 package testsupport
 
-fun waitingForMorePlayers() = Question { abilities ->
-    abilities.mustFind<AccessTheApplication>().isWaitingForMorePlayers()
+val waitingForMorePlayers = Question { actor ->
+    val something = actor.abilities.mustFind<AccessTheApplication>()
+    actor.abilities.mustFind<AccessTheApplication>().isWaitingForMorePlayers()
 }
 
-fun playersInRoom() = Question { abilities ->
-    abilities.mustFind<AccessTheApplication>().getPlayersInRoom()
+val playersAtTheTable = Question { actor ->
+    actor.abilities.mustFind<AccessTheApplication>().getPlayersInRoom()
+}
+
+val hasGameStarted = Question { actor ->
+    actor.abilities.mustFind<AccessTheApplication>().hasGameStarted()
 }

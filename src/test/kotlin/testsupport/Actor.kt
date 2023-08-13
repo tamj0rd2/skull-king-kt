@@ -1,14 +1,15 @@
 package testsupport
 
 class Actor(val name: String) {
-    private val abilities = mutableSetOf<Ability>()
+    private val _abilities = mutableSetOf<Ability>()
+    val abilities get(): Set<Ability> = _abilities
 
-    fun can(ability: Ability): Actor {
-        abilities += ability
+    fun isAbleTo(ability: Ability): Actor {
+        _abilities += ability
         return this
     }
 
     fun attemptsTo(vararg activities: Activity) {
-        activities.forEach { it.invoke(abilities) }
+        activities.forEach { it.invoke(this) }
     }
 }
