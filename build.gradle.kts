@@ -13,6 +13,16 @@ repositories {
 }
 
 dependencies {
+//    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:kotlin-stdlib-jdk8${kotlinVersion}")
+    implementation(platform("org.http4k:http4k-bom:5.6.3.0"))
+    implementation("org.http4k:http4k-server-jetty:5.6.3.0")
+    implementation("org.http4k:http4k-core:5.6.3.0")
+    implementation("org.http4k:http4k-template-handlebars:5.6.3.0")
+
+//    implementation("org.http4k:http4k-format-jackson")
+
+    testImplementation("org.http4k:http4k-client-jetty:5.6.3.0")
+    testImplementation("org.http4k:http4k-testing-webdriver:5.6.3.0")
     testImplementation(kotlin("test"))
     testImplementation("com.natpryce:hamkrest:1.8.0.1")
 }

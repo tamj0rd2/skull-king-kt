@@ -1,3 +1,3 @@
 import testsupport.adapters.DomainDriver
 
-class InMemoryAppTest : AppTestContract(DomainDriver(App()))
+class InMemoryAppTest : AppTestContract(::DomainDriver)

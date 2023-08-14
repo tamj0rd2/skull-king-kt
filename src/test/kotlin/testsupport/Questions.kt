@@ -1,7 +1,6 @@
 package testsupport
 
 val waitingForMorePlayers = Question { actor ->
-    val something = actor.abilities.mustFind<AccessTheApplication>()
     actor.abilities.mustFind<AccessTheApplication>().isWaitingForMorePlayers()
 }
 

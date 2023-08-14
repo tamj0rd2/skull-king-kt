@@ -4,7 +4,7 @@ class Actor(val name: String) {
     private val _abilities = mutableSetOf<Ability>()
     val abilities get(): Set<Ability> = _abilities
 
-    fun isAbleTo(ability: Ability): Actor {
+    fun whoCan(ability: Ability): Actor {
         _abilities += ability
         return this
     }

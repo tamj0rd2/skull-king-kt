@@ -1,16 +1,18 @@
 typealias PlayerId = String
 
 class App {
-    val players = mutableListOf<PlayerId>()
+    val players get(): List<PlayerId> = _players
+    private val _players = mutableListOf<PlayerId>()
 
-    val minRoomSizeToStartGame = 2
+    private val minRoomSizeToStartGame = 2
+    val waitingForMorePlayers get() = players.size < minRoomSizeToStartGame
 
     val hasGameStarted get() = _hasGameStarted
     private var _hasGameStarted = false
 
     fun addPlayerToRoom(playerId: PlayerId) {
-        players += playerId
+        _players += playerId
 
-        if (players.size == minRoomSizeToStartGame) _hasGameStarted = true
+        if (_players.size == minRoomSizeToStartGame) _hasGameStarted = true
     }
 }

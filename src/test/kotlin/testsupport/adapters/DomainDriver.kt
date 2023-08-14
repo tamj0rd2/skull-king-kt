@@ -17,7 +17,7 @@ class DomainDriver(private val app: App) : ApplicationDriver {
     }
 
     override fun isWaitingForMorePlayers(): Boolean {
-        return app.players.size < app.minRoomSizeToStartGame
+        return app.waitingForMorePlayers
     }
 
     override fun getPlayersInRoom(): List<PlayerId> {

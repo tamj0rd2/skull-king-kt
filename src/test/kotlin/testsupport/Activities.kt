@@ -20,6 +20,7 @@ val joinRoom1 = Interaction {actor ->
     actor.abilities.mustFind<AccessTheApplication>().joinDefaultRoom()
 }
 
+// TODO: we shouldn't have to directly call invoke here
 val sitAtTheTable = Task { actor ->
     enterName(actor.name).invoke(actor)
     joinRoom1.invoke(actor)

@@ -1,0 +1,22 @@
+<html>
+<head>
+    <link href="/style.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+<div class="content">
+    <h1>Game Page</h1>
+
+    {{#if waitingForMorePlayers}}
+        <h2>Waiting for more players...</h2>
+    {{else}}
+        <h2>The game has started :D</h2>
+    {{/if}}
+
+    <ul>
+        {{#each players}}
+            <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+</body>
+</html>
