@@ -20,6 +20,7 @@ dependencies {
 
     testImplementation(kotlin("test"))
     testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:4.11.0")
+    testImplementation("org.seleniumhq.selenium:selenium-java:4.11.0")
     testImplementation("com.natpryce:hamkrest:1.8.0.1")
 }
 

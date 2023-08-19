@@ -1,10 +1,6 @@
-import jakarta.servlet.Registration.Dynamic
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import testsupport.*
-import java.lang.reflect.InvocationHandler
-import java.lang.reflect.Method
-import java.lang.reflect.Proxy
 import kotlin.test.Test
 
 abstract class AppTestContract {
@@ -35,20 +31,30 @@ abstract class AppTestContract {
             `When {Actor} sits at the table`(personJoining)
 
             return listOf(
-                DynamicTest.dynamicTest("from the person waiting's perspective") {
+                DynamicTest.dynamicTest("from ${personWaiting.name}'s perspective") {
                     `Then {Actor} sees themself at the table`(personWaiting)
                     `Then {Actor} sees {Actors} at the table`(personWaiting, listOf(personJoining))
                     `Then {Actor} does not see that they are waiting for others to join`(personWaiting)
                     `Then {Actor} sees that the game has started`(personWaiting)
                 },
 
-                DynamicTest.dynamicTest("from the joiner's perspective") {
+                DynamicTest.dynamicTest("from ${personJoining.name}'s perspective") {
                     `Then {Actor} sees themself at the table`(personJoining)
                     `Then {Actor} sees {Actors} at the table`(personJoining, listOf(personWaiting))
                     `Then {Actor} does not see that they are waiting for others to join`(personJoining)
                     `Then {Actor} sees that the game has started`(personJoining)
                 },
             )
+        }
+    }
+
+    @Test
+    fun `scenario - betting in round 1`() {
+        with(steps) {
+            `Given {Actor} is waiting to play`(freddy)
+            `When {Actor} sits at the table`(sally)
+            `Then {Actor} has {Count} cards`(freddy, 1)
+            `Then {Actor} has {Count} cards`(sally, 1)
         }
     }
 }

@@ -11,3 +11,7 @@ val playersAtTheTable = Question { actor ->
 val hasGameStarted = Question { actor ->
     actor.abilities.mustFind<ParticipateInGames>().hasGameStarted()
 }
+
+val theirCardCount = Question { actor ->
+    actor.abilities.mustFind<ParticipateInGames>().getCardCount(actor.name)
+}

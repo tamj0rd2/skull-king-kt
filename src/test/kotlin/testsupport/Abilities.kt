@@ -10,6 +10,7 @@ interface ApplicationDriver {
     fun isWaitingForMorePlayers(): Boolean
     fun getPlayersInRoom(): List<PlayerId>
     fun hasGameStarted(): Boolean
+    fun getCardCount(name: String): Int
 }
 
 class ParticipateInGames(private val driver: ApplicationDriver): Ability, ApplicationDriver by driver

@@ -19,6 +19,8 @@
             <li>{{this}}</li>
         {{/each}}
     </ul>
+
+    <ul id="hand"></ul>
 </div>
 <script>
     const socket = new WebSocket("{{wsHost}}/{{playerId}}");
@@ -26,31 +28,39 @@
     // Connection opened
     socket.addEventListener("open", (event) => {
         console.log("connected to ws")
-        socket.send("Hello Server!");
     });
 
     // Listen for messages
     socket.addEventListener("message", (event) => {
         console.log("Message from server ", event.data);
-        try {
-            const { gameEvent, gameState } = JSON.parse(event.data)
-            switch (gameEvent.type) {
-                case "PlayerJoined": {
-                    const players = document.getElementById("players")
-                    const li = document.createElement("li")
-                    li.innerText = gameEvent.playerId
-                    players.appendChild(li)
 
-                    if (!gameState.waitingForMorePlayers) {
-                        const gameStateEl = document.getElementById("gameState")
-                        gameStateEl.innerText = "The game has started :D"
-                    }
-
-                    break;
-                }
+        const gameEvent = JSON.parse(event.data)
+        switch (gameEvent.type) {
+            case "PlayerJoined": {
+                const players = document.getElementById("players")
+                const li = document.createElement("li")
+                li.innerText = gameEvent.playerId
+                players.appendChild(li)
+                break;
             }
-        } catch (e) {
-            console.error("Error parsing JSON", e)
+            case "GameStarted": {
+                const gameStateEl = document.getElementById("gameState")
+                gameStateEl.innerText = "The game has started :D"
+                break;
+            }
+            case "RoundStarted": {
+                const handEl = document.getElementById("hand")
+                gameEvent.cardsDealt.forEach(card => {
+                    const li = document.createElement("li")
+                    li.innerText = card
+                    handEl.appendChild(li)
+                })
+                break;
+            }
+            default: {
+                socket.send(`Unknown game event ${gameEvent.type}`)
+                throw Error(`Unknown game event ${gameEvent.type}`)
+            }
         }
     });
 </script>

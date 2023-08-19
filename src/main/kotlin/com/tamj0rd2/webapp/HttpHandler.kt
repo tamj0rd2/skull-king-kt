@@ -34,7 +34,6 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
             val body = resourceLoader.load("index.html")?.readText() ?: error("index.html not found!")
             Response(Status.OK).body(body)
         },
-
         "/" bind Method.POST to {
             val playerId = it.form("playerId") ?: error("playerId not posted!")
             app.addPlayerToRoom(playerId)

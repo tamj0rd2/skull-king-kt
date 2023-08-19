@@ -14,21 +14,20 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Application
     }
 
     override fun enterName(name: String) =
-        driver.findElement(By.name("playerId")).must().sendKeys(name)
+        driver.findElement(By.name("playerId")).sendKeys(name)
 
-    override fun joinDefaultRoom() = driver.findElement(By.tagName("form")).must().submit()
+    override fun joinDefaultRoom() = driver.findElement(By.tagName("form")).submit()
 
     override fun isWaitingForMorePlayers(): Boolean =
-        driver.findElement(By.tagName("h2")).must().text.lowercase().contains("waiting for more players")
+        driver.findElement(By.tagName("h2")).text.lowercase().contains("waiting for more players")
 
     override fun getPlayersInRoom(): List<PlayerId> =
-        driver.findElements(By.tagName("li")).must().mapNotNull { it.text }
+        driver.findElements(By.tagName("li")).mapNotNull { it.text }
 
     override fun hasGameStarted(): Boolean =
-        driver.findElement(By.tagName("h2")).must().text.lowercase().contains("game has started")
+        driver.findElement(By.tagName("h2")).text.lowercase().contains("game has started")
 
-    private fun WebElement?.must(): WebElement = this ?: error("element not found")
-    private fun List<WebElement>?.must(): List<WebElement> {
-        return this ?: error("elements not found")
+    override fun getCardCount(name: String): Int {
+        return driver.findElement(By.id("hand")).findElements(By.tagName("li")).size
     }
 }

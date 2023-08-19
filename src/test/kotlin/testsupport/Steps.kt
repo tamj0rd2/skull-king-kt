@@ -6,7 +6,6 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.time.Clock
-import java.time.Duration
 
 interface Steps {
     fun `Given {Actor} is waiting to play`(actor: Actor) = actor.attemptsTo(sitAtTheTable)
@@ -30,6 +29,10 @@ interface Steps {
 
     fun `Then {Actor} sees that the game has started`(actor: Actor) =
         actor.attemptsTo(ensureThat(hasGameStarted, equalTo(true)))
+
+    fun `Then {Actor} has {Count} cards`(actor: Actor, cardCount: Int) {
+        actor.attemptsTo(ensureThat(theirCardCount, equalTo(cardCount)))
+    }
 }
 
 fun Steps(): Steps = Proxy.newProxyInstance(
@@ -37,8 +40,7 @@ fun Steps(): Steps = Proxy.newProxyInstance(
         DynamicInvocationHandler(object : Steps {})
     ) as Steps
 
-
-fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>, message: String? = null) = Activity { abilities ->
+fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activity { abilities ->
     val clock = Clock.systemDefaultZone()
     val startTime = clock.instant()
     val mustEndBy = startTime.plusSeconds(2)
@@ -46,7 +48,7 @@ fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>, message: String? 
     do {
         try {
             val answer = question.ask(abilities)
-            assertThat(answer, matcher) { message.orEmpty() }
+            assertThat(answer, matcher)
             break
         } catch (e: AssertionError) {
             if (clock.instant() > mustEndBy) throw e
@@ -89,6 +91,7 @@ private class DynamicInvocationHandler(private val real: Steps) : InvocationHand
                 acc.replace("{$placeholder}", when(placeholder) {
                     "Actor" -> (args[index] as Actor).name
                     "Actors" -> (args[index] as Collection<*>).map { (it as Actor).name }.joinReadable()
+                    "Count" -> (args[index] as Number).toString()
                     else -> error("Unknown placeholder: $placeholder")
                 })
             }
