@@ -26,4 +26,8 @@ val joinRoom = Interaction { actor ->
 
 val sitAtTheTable = Task(enterName, joinRoom)
 
+val startTheGame = Interaction { actor ->
+    actor.abilities.mustFind<StartGames>().startGame()
+}
+
 inline fun <reified T : Ability> Set<Ability>.mustFind(): T = this.find { it is T }?.let { (it as T) } ?: error("interactor does not possess ability ${T::class.simpleName}")

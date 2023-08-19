@@ -8,7 +8,7 @@ import java.lang.reflect.Proxy
 import java.time.Clock
 
 interface Steps {
-    fun `Given {Actor} is waiting to play`(actor: Actor) = actor.attemptsTo(sitAtTheTable)
+    fun `Given {Actor} is at the table`(actor: Actor) = actor.attemptsTo(sitAtTheTable)
 
     fun `When {Actor} sits at the table`(actor: Actor) = actor.attemptsTo(sitAtTheTable)
 
@@ -21,7 +21,7 @@ interface Steps {
     fun `Then {Actor} sees {Actors} at the table`(actor: Actor, actors: Collection<Actor>) =
         actor.attemptsTo(ensureThat(playersAtTheTable, includes(*actors.toTypedArray())))
 
-    fun `Then {Actor} sees that they are waiting for others to join before playing`(actor: Actor) =
+    fun `Then {Actor} sees that they are waiting for others to join`(actor: Actor) =
         actor.attemptsTo(ensureThat(waitingForMorePlayers, equalTo(true)))
 
     fun `Then {Actor} does not see that they are waiting for others to join`(actor: Actor) =
@@ -30,9 +30,15 @@ interface Steps {
     fun `Then {Actor} sees that the game has started`(actor: Actor) =
         actor.attemptsTo(ensureThat(hasGameStarted, equalTo(true)))
 
+    fun `Then {Actor} does not see that the game has started`(actor: Actor) =
+        actor.attemptsTo(ensureThat(hasGameStarted, equalTo(false)))
+
+
     fun `Then {Actor} has {Count} cards`(actor: Actor, cardCount: Int) {
         actor.attemptsTo(ensureThat(theirCardCount, equalTo(cardCount)))
     }
+
+    fun `When {Actor} says the game can start`(actor: Actor) = actor.attemptsTo(startTheGame)
 }
 
 fun Steps(): Steps = Proxy.newProxyInstance(

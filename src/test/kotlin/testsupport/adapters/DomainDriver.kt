@@ -1,11 +1,13 @@
 package testsupport.adapters
 
 import App
+import Driver
 import PlayerId
 import testsupport.ApplicationDriver
+import testsupport.GameMasterDriver
 import java.lang.NullPointerException
 
-class DomainDriver(private val app: App) : ApplicationDriver {
+class DomainDriver(private val app: App) : Driver {
 
     private lateinit var playerId: String
 
@@ -32,4 +34,6 @@ class DomainDriver(private val app: App) : ApplicationDriver {
     override fun getCardCount(name: String): Int {
         return app.game?.getCardsInHand(name)?.size ?: throw NullPointerException("game is null")
     }
+
+    override fun startGame() = app.startGame()
 }

@@ -5,11 +5,15 @@
 <body>
 <div class="content">
     <h1>Skull King</h1>
-    <form action="/" method="post">
+    <form id="joinGame" action="/play" method="post">
         <label>
             PlayerID:
             <input name="playerId"/>
         </label>
+        <input type="submit" value="Join Game"/>
+    </form>
+    <form id="startGame" action="/startGame" method="post">
+        <input type="submit" value="ADMIN ONLY: Start Game"/>
     </form>
 </div>
 </body>

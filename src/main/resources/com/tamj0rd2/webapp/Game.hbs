@@ -9,8 +9,6 @@
     <h2 id="gameState">
         {{#if waitingForMorePlayers}}
             Waiting for more players...
-        {{else}}
-            The game has started :D
         {{/if}}
     </h2>
 
@@ -33,6 +31,13 @@
     // Listen for messages
     socket.addEventListener("message", (event) => {
         console.log("Message from server ", event.data);
+        try {
+            JSON.parse(event.data)
+        } catch (e) {
+            console.warn(e)
+            // it's the weird blob type that I don't know how to deal with
+            return
+        }
 
         const gameEvent = JSON.parse(event.data)
         switch (gameEvent.type) {
@@ -41,6 +46,11 @@
                 const li = document.createElement("li")
                 li.innerText = gameEvent.playerId
                 players.appendChild(li)
+
+                if (!gameEvent.waitingForMorePlayers) {
+                    const gameStateEl = document.getElementById("gameState")
+                    gameStateEl.innerText = ""
+                }
                 break;
             }
             case "GameStarted": {

@@ -14,12 +14,9 @@ import org.http4k.websocket.Websocket
 import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsResponse
 
-data class ClientError(val message: String)
-
 fun wsHandler(app: App): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
     val gameEventLens = WsMessage.auto<GameEvent>().toLens()
-    val clientErrorLens = WsMessage.auto<ClientError>().toLens()
 
     return websockets(
         "/{playerId}" bind { req: Request ->
@@ -31,7 +28,7 @@ fun wsHandler(app: App): RoutingWsHandler {
                 }
 
                 ws.onMessage {
-                    println("MESSAGE FROM CLIENT: ${it.bodyString()}")
+                    println(">CLIENT $playerId: ${it.bodyString()}")
                 }
             }
         }

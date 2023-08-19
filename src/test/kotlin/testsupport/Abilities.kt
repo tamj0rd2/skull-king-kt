@@ -13,4 +13,9 @@ interface ApplicationDriver {
     fun getCardCount(name: String): Int
 }
 
+interface GameMasterDriver {
+    fun startGame()
+}
+
 class ParticipateInGames(private val driver: ApplicationDriver): Ability, ApplicationDriver by driver
+class StartGames(private val driver: GameMasterDriver): Ability, GameMasterDriver by driver

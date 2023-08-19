@@ -20,17 +20,21 @@ class App {
 
     fun addPlayerToRoom(playerId: PlayerId) {
         _players += playerId
-        gameEventSubscribers.broadcast(GameEvent.PlayerJoined(playerId))
+        gameEventSubscribers.broadcast(GameEvent.PlayerJoined(playerId, waitingForMorePlayers))
+    }
 
-        if (_players.size == minRoomSizeToStartGame) {
-            _game = Game(players)
-            gameEventSubscribers.broadcast(GameEvent.GameStarted())
+    fun startGame() {
+        if (players.size != minRoomSizeToStartGame) error("not enough players to start game - ${players.size}")
 
-            gameEventSubscribers.forEach {
-                it.value.handleEvent(GameEvent.RoundStarted(
+        _game = Game(players)
+        gameEventSubscribers.broadcast(GameEvent.GameStarted())
+
+        gameEventSubscribers.forEach {
+            it.value.handleEvent(
+                GameEvent.RoundStarted(
                     _game?.getCardsInHand(it.key) ?: throw NullPointerException("game is null")
-                ))
-            }
+                )
+            )
         }
     }
 
@@ -61,7 +65,7 @@ sealed class GameEvent {
         RoundStarted,
     }
 
-    data class PlayerJoined(val playerId: PlayerId) : GameEvent() {
+    data class PlayerJoined(val playerId: PlayerId, val waitingForMorePlayers: Boolean) : GameEvent() {
         override val type: Type = Type.PlayerJoined
     }
 
