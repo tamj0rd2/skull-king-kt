@@ -4,7 +4,7 @@ import PlayerId
 
 interface Ability
 
-interface ApplicationDriver : Ability {
+interface ApplicationDriver {
     fun enterName(name: String)
     fun joinDefaultRoom()
     fun isWaitingForMorePlayers(): Boolean

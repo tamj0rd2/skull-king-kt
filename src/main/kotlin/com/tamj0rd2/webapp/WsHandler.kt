@@ -14,7 +14,7 @@ import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsResponse
 
 // TODO: I almost definitely shouldn't reuse this Game viewmodel... it's just for loading the initial page
-data class GameEventMessage(val gameEvent: GameEvent, val gameState: Game)
+data class GameEventMessage(val gameEvent: GameEvent, val gameState: GameState)
 
 fun wsHandler(app: App): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
@@ -28,7 +28,7 @@ fun wsHandler(app: App): RoutingWsHandler {
                 println("there was a ws connection for $name")
                 app.subscribeToGameEvents {
                     println(it)
-                    ws.send(gameEventMessageLens(GameEventMessage(it, app.toGame(8080, name))))
+                    ws.send(gameEventMessageLens(GameEventMessage(it, app.toGameState(8080, name))))
                 }
 
                 ws.send(WsMessage("hello $name"))
@@ -41,9 +41,10 @@ fun wsHandler(app: App): RoutingWsHandler {
     )
 }
 
-private fun App.toGame(port: Int, playerId: PlayerId): Game = Game(
-    wsHost = "ws://localhost:$port",
-    players = players,
+data class GameState(
+    val waitingForMorePlayers: Boolean
+)
+
+private fun App.toGameState(port: Int, playerId: PlayerId) = GameState(
     waitingForMorePlayers = waitingForMorePlayers,
-    playerId = playerId
 )

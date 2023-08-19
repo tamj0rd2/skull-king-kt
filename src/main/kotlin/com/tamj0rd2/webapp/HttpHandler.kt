@@ -17,32 +17,22 @@ import org.http4k.routing.static
 import org.http4k.template.HandlebarsTemplates
 import org.http4k.template.ViewModel
 import org.http4k.template.viewModel
-import java.time.Clock
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
-private data class Home(val time: String, val browser: String) : ViewModel
-data class Game(
+private data class Game(
     val wsHost: String,
     val players: List<PlayerId>,
     val waitingForMorePlayers: Boolean,
     val playerId: PlayerId,
 ) : ViewModel
 
-fun httpHandler(port: Int, clock: Clock, hotReload: Boolean, app: App): HttpHandler {
+fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
     val (renderer, resourceLoader) = buildResourceLoaders(hotReload)
 
     return routes(
         static(resourceLoader),
         "/" bind Method.GET to {
-            val view = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
-
-            val model = Home(
-                LocalDateTime.now(clock).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                it.header("User-Agent") ?: "unknown"
-            )
-
-            Response(Status.OK).with(view of model)
+            val body = resourceLoader.load("index.html")?.readText() ?: error("index.html not found!")
+            Response(Status.OK).body(body)
         },
 
         "/" bind Method.POST to {

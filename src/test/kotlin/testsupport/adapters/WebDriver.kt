@@ -6,11 +6,11 @@ import org.openqa.selenium.WebElement
 import testsupport.ApplicationDriver
 import org.openqa.selenium.chrome.ChromeDriver
 
-class WebDriver(port: Int, private val driver: ChromeDriver) : ApplicationDriver {
+class WebDriver(baseUrl: String, private val driver: ChromeDriver) : ApplicationDriver {
     //private val driver = Http4kWebDriver(httpHandler(wsPort, Clock.systemDefaultZone(), false, app))
 
     init {
-        driver.navigate().to("http://localhost:$port")
+        driver.navigate().to(baseUrl)
     }
 
     override fun enterName(name: String) =

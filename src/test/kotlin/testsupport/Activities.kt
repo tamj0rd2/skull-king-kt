@@ -6,24 +6,24 @@ fun interface Activity {
 
 fun interface Interaction: Activity
 
-fun interface Task: Activity
+class Task(private vararg val activities: Activity): Activity {
+    override fun invoke(actor: Actor) {
+        activities.forEach { it.invoke(actor) }
+    }
+}
 
 fun interface Question<T> {
     fun ask(actor: Actor): T
 }
 
-fun enterName(name: String) = Interaction { actor ->
-    actor.abilities.mustFind<ParticipateInGames>().enterName(name)
+val enterName = Interaction { actor ->
+    actor.abilities.mustFind<ParticipateInGames>().enterName(actor.name)
 }
 
-val joinRoom1 = Interaction {actor ->
+val joinRoom = Interaction { actor ->
     actor.abilities.mustFind<ParticipateInGames>().joinDefaultRoom()
 }
 
-// TODO: we shouldn't have to directly call invoke here
-val sitAtTheTable = Task { actor ->
-    enterName(actor.name).invoke(actor)
-    joinRoom1.invoke(actor)
-}
+val sitAtTheTable = Task(enterName, joinRoom)
 
 inline fun <reified T : Ability> Set<Ability>.mustFind(): T = this.find { it is T }?.let { (it as T) } ?: error("interactor does not possess ability ${T::class.simpleName}")
