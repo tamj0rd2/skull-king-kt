@@ -2,18 +2,18 @@ package testsupport.adapters
 
 import App
 import PlayerId
-import com.tamj0rd2.webapp.webContent
-import testsupport.ApplicationDriver
-import java.time.Clock
+import com.tamj0rd2.webapp.httpHandler
 import org.http4k.webdriver.Http4kWebDriver
 import org.openqa.selenium.By
 import org.openqa.selenium.WebElement
+import testsupport.ApplicationDriver
+import java.time.Clock
 
-class WebDriver(app: App) : ApplicationDriver {
-    private val driver = Http4kWebDriver(webContent(Clock.systemDefaultZone(), false, app))
+class WebDriver(app: App, wsPort: Int) : ApplicationDriver {
+    private val driver = Http4kWebDriver(httpHandler(wsPort, Clock.systemDefaultZone(), false, app))
 
     init {
-        driver.navigate().to("http://localhost:8080/")
+        driver.navigate().to("/")
     }
 
     override fun enterName(name: String) =
@@ -25,7 +25,7 @@ class WebDriver(app: App) : ApplicationDriver {
         driver.findElement(By.tagName("h2")).must().text.lowercase().contains("waiting for more players")
 
     override fun getPlayersInRoom(): List<PlayerId> =
-        driver.findElements(By.tagName("li")).must().mapNotNull { it.text }
+        driver.findElements(By.tagName("li")).must().mapNotNull { it.text }.apply { println(driver.findElement(By.id("players")).must().text) }
 
     override fun hasGameStarted(): Boolean =
         driver.findElement(By.tagName("h2")).must().text.lowercase().contains("game has started")

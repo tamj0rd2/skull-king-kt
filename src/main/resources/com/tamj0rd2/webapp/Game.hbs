@@ -12,11 +12,39 @@
         <h2>The game has started :D</h2>
     {{/if}}
 
-    <ul>
+    <ul id="players">
         {{#each players}}
             <li>{{this}}</li>
         {{/each}}
     </ul>
 </div>
+<script>
+    const socket = new WebSocket("{{wsHost}}/{{playerId}}");
+
+    // Connection opened
+    socket.addEventListener("open", (event) => {
+        console.log("connected to ws")
+        socket.send("Hello Server!");
+    });
+
+    // Listen for messages
+    socket.addEventListener("message", (event) => {
+        console.log("Message from server ", event.data);
+        try {
+            const data = JSON.parse(event.data)
+            switch (data.type) {
+                case "PlayerJoined":
+                    const players = document.getElementById("players")
+                    const li = document.createElement("li")
+                    li.innerText = data.playerId
+                    players.appendChild(li)
+                    break;
+            }
+
+        } catch (e) {
+            console.error("Error parsing JSON", e)
+        }
+    });
+</script>
 </body>
 </html>

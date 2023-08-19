@@ -5,6 +5,8 @@ import com.natpryce.hamkrest.assertion.assertThat
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import java.time.Clock
+import java.time.Duration
 
 interface Steps {
     fun `Given {Actor} is waiting to play`(actor: Actor) = actor.attemptsTo(sitAtTheTable)
@@ -37,8 +39,20 @@ fun Steps(): Steps = Proxy.newProxyInstance(
 
 
 fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>, message: String? = null) = Activity { abilities ->
-    val answer = question.ask(abilities)
-    assertThat(answer, matcher) { message.orEmpty() }
+    val clock = Clock.systemDefaultZone()
+    val startTime = clock.instant()
+    val mustEndBy = startTime.plusSeconds(5)
+
+    do {
+        try {
+            val answer = question.ask(abilities)
+            assertThat(answer, matcher) { message.orEmpty() }
+            break
+        } catch (e: AssertionError) {
+            if (clock.instant() > mustEndBy) throw e
+            Thread.sleep(100)
+        }
+    } while (true)
 }
 
 fun includes(vararg actors: Actor) = actors.toList()

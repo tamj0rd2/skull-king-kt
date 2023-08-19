@@ -18,10 +18,10 @@ dependencies {
     implementation("org.http4k:http4k-server-jetty:5.6.3.0")
     implementation("org.http4k:http4k-core:5.6.3.0")
     implementation("org.http4k:http4k-template-handlebars:5.6.3.0")
-
-//    implementation("org.http4k:http4k-format-jackson")
+    implementation("org.http4k:http4k-format-jackson:5.6.3.0")
 
     testImplementation("org.http4k:http4k-client-jetty:5.6.3.0")
+    testImplementation("org.http4k:http4k-client-websocket:5.6.3.0")
     testImplementation("org.http4k:http4k-testing-webdriver:5.6.3.0")
     testImplementation(kotlin("test"))
     testImplementation("com.natpryce:hamkrest:1.8.0.1")
