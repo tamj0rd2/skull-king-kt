@@ -5,10 +5,10 @@ import kotlin.test.Test
 
 abstract class AppTestContract(makeDriver: (app: App) -> ApplicationDriver, app: App = App()) {
     private val freddy = Actor("Freddy the first player")
-        .whoCan(AccessTheApplication(makeDriver(app)))
+        .whoCan(ParticipateInGames(makeDriver(app)))
 
     private val sally = Actor("Sally the second player")
-        .whoCan(AccessTheApplication(makeDriver(app)))
+        .whoCan(ParticipateInGames(makeDriver(app)))
 
     @Test
     fun `scenario - joining a game when no one else is around`() {

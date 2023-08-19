@@ -12,4 +12,4 @@ interface ApplicationDriver : Ability {
     fun hasGameStarted(): Boolean
 }
 
-class AccessTheApplication(private val driver: ApplicationDriver): Ability, ApplicationDriver by driver
+class ParticipateInGames(private val driver: ApplicationDriver): Ability, ApplicationDriver by driver

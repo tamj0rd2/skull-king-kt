@@ -13,11 +13,11 @@ fun interface Question<T> {
 }
 
 fun enterName(name: String) = Interaction { actor ->
-    actor.abilities.mustFind<AccessTheApplication>().enterName(name)
+    actor.abilities.mustFind<ParticipateInGames>().enterName(name)
 }
 
 val joinRoom1 = Interaction {actor ->
-    actor.abilities.mustFind<AccessTheApplication>().joinDefaultRoom()
+    actor.abilities.mustFind<ParticipateInGames>().joinDefaultRoom()
 }
 
 // TODO: we shouldn't have to directly call invoke here
