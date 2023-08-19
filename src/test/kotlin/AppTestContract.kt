@@ -1,3 +1,6 @@
+import jakarta.servlet.Registration.Dynamic
+import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.TestFactory
 import testsupport.*
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -14,7 +17,7 @@ abstract class AppTestContract(makeDriver: (app: App) -> ApplicationDriver, app:
     private val steps = Steps()
 
     @Test
-    fun `scenario - joining a game when no one else is around`() {
+    fun `scenario - joining a game when no one else is waiting`() {
         with(steps) {
             `When {Actor} sits at the table`(freddy)
             `Then {Actor} sees themself at the table`(freddy)
@@ -23,25 +26,31 @@ abstract class AppTestContract(makeDriver: (app: App) -> ApplicationDriver, app:
         }
     }
 
-
-    // TODO: what about when the player has already joined the game? They shouldn't be able to join again
-
-    @Test
-    fun `scenario - joining a game when someone else is already waiting to play`() {
+    @TestFactory
+    fun `scenario - joining a game when someone else is already waiting to play`(): List<DynamicTest> {
         with(steps) {
-            // TODO: this is really 2 tests in one. I should probably write one from each perspective.
-            `Given {Actor} is waiting to play`(freddy)
-            `When {Actor} sits at the table`(sally)
+            val personWaiting = freddy
+            val personJoining = sally
 
-            `Then {Actor} sees themself at the table`(sally)
-            `Then {Actor} sees {Actors} at the table`(sally, listOf(freddy))
-            `Then {Actor} does not see that they are waiting for others to join`(freddy)
-            `Then {Actor} sees that the game has started`(sally)
+            // NOTE: this is essentially the Background in gherkin
+            `Given {Actor} is waiting to play`(personWaiting)
+            `When {Actor} sits at the table`(personJoining)
 
-            `Then {Actor} sees themself at the table`(freddy)
-            `Then {Actor} sees {Actors} at the table`(freddy, listOf(sally))
-            `Then {Actor} does not see that they are waiting for others to join`(freddy)
-            `Then {Actor} sees that the game has started`(freddy)
+            return listOf(
+                DynamicTest.dynamicTest("from the person waiting's perspective") {
+                    `Then {Actor} sees themself at the table`(personWaiting)
+                    `Then {Actor} sees {Actors} at the table`(personWaiting, listOf(personJoining))
+                    `Then {Actor} does not see that they are waiting for others to join`(personWaiting)
+                    `Then {Actor} sees that the game has started`(personWaiting)
+                },
+
+                DynamicTest.dynamicTest("from the joiner's perspective") {
+                    `Then {Actor} sees themself at the table`(personJoining)
+                    `Then {Actor} sees {Actors} at the table`(personJoining, listOf(personWaiting))
+                    `Then {Actor} does not see that they are waiting for others to join`(personJoining)
+                    `Then {Actor} sees that the game has started`(personJoining)
+                },
+            )
         }
     }
 }

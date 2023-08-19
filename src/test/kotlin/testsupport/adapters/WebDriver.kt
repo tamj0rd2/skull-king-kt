@@ -32,7 +32,6 @@ class WebDriver(app: App) : ApplicationDriver {
 
     private fun WebElement?.must(): WebElement = this ?: error("element not found")
     private fun List<WebElement>?.must(): List<WebElement> {
-        println(">>body: " + driver.findElement(By.tagName("body")))
         return this ?: error("elements not found")
     }
 }
