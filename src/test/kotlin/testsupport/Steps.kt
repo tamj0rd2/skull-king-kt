@@ -41,7 +41,7 @@ fun Steps(): Steps = Proxy.newProxyInstance(
 fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>, message: String? = null) = Activity { abilities ->
     val clock = Clock.systemDefaultZone()
     val startTime = clock.instant()
-    val mustEndBy = startTime.plusSeconds(5)
+    val mustEndBy = startTime.plusSeconds(2)
 
     do {
         try {

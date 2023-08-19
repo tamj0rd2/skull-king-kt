@@ -2,6 +2,7 @@ package com.tamj0rd2.webapp
 
 import App
 import GameEvent
+import PlayerId
 import org.http4k.core.Request
 import org.http4k.format.Jackson.auto
 import org.http4k.lens.Path
@@ -12,9 +13,12 @@ import org.http4k.websocket.Websocket
 import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsResponse
 
+// TODO: I almost definitely shouldn't reuse this Game viewmodel... it's just for loading the initial page
+data class GameEventMessage(val gameEvent: GameEvent, val gameState: Game)
+
 fun wsHandler(app: App): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
-    val gameEventLens = WsMessage.auto<GameEvent>().toLens()
+    val gameEventMessageLens = WsMessage.auto<GameEventMessage>().toLens()
 
     return websockets(
         "/{playerId}" bind { req: Request ->
@@ -24,7 +28,7 @@ fun wsHandler(app: App): RoutingWsHandler {
                 println("there was a ws connection for $name")
                 app.subscribeToGameEvents {
                     println(it)
-                    ws.send(gameEventLens(it))
+                    ws.send(gameEventMessageLens(GameEventMessage(it, app.toGame(8080, name))))
                 }
 
                 ws.send(WsMessage("hello $name"))
@@ -36,3 +40,10 @@ fun wsHandler(app: App): RoutingWsHandler {
         }
     )
 }
+
+private fun App.toGame(port: Int, playerId: PlayerId): Game = Game(
+    wsHost = "ws://localhost:$port",
+    players = players,
+    waitingForMorePlayers = waitingForMorePlayers,
+    playerId = playerId
+)

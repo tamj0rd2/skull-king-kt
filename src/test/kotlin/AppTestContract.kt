@@ -7,13 +7,11 @@ import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import kotlin.test.Test
 
-abstract class AppTestContract(makeDriver: (app: App) -> ApplicationDriver, app: App = App()) {
-    private val freddy = Actor("Freddy First")
-        .whoCan(ParticipateInGames(makeDriver(app)))
+abstract class AppTestContract {
+    abstract val makeDriver: () -> ApplicationDriver
 
-    private val sally = Actor("Sally Second")
-        .whoCan(ParticipateInGames(makeDriver(app)))
-
+    private val freddy by lazy { Actor("Freddy First").whoCan(ParticipateInGames(makeDriver())) }
+    private val sally by lazy { Actor("Sally Second").whoCan(ParticipateInGames(makeDriver())) }
     private val steps = Steps()
 
     @Test

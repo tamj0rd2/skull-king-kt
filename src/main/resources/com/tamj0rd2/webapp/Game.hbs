@@ -6,11 +6,13 @@
 <div class="content">
     <h1>Game Page</h1>
 
-    {{#if waitingForMorePlayers}}
-        <h2>Waiting for more players...</h2>
-    {{else}}
-        <h2>The game has started :D</h2>
-    {{/if}}
+    <h2 id="gameState">
+        {{#if waitingForMorePlayers}}
+            Waiting for more players...
+        {{else}}
+            The game has started :D
+        {{/if}}
+    </h2>
 
     <ul id="players">
         {{#each players}}
@@ -31,16 +33,22 @@
     socket.addEventListener("message", (event) => {
         console.log("Message from server ", event.data);
         try {
-            const data = JSON.parse(event.data)
-            switch (data.type) {
-                case "PlayerJoined":
+            const { gameEvent, gameState } = JSON.parse(event.data)
+            switch (gameEvent.type) {
+                case "PlayerJoined": {
                     const players = document.getElementById("players")
                     const li = document.createElement("li")
-                    li.innerText = data.playerId
+                    li.innerText = gameEvent.playerId
                     players.appendChild(li)
-                    break;
-            }
 
+                    if (!gameState.waitingForMorePlayers) {
+                        const gameStateEl = document.getElementById("gameState")
+                        gameStateEl.innerText = "The game has started :D"
+                    }
+
+                    break;
+                }
+            }
         } catch (e) {
             console.error("Error parsing JSON", e)
         }

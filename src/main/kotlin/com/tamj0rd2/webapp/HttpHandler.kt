@@ -22,7 +22,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 private data class Home(val time: String, val browser: String) : ViewModel
-private data class Game(
+data class Game(
     val wsHost: String,
     val players: List<PlayerId>,
     val waitingForMorePlayers: Boolean,
