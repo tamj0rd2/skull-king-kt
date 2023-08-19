@@ -1,4 +1,5 @@
 import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
 import testsupport.adapters.WebDriver
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -7,8 +8,9 @@ class WebAppTest : AppTestContract() {
     private val port = 9001
     private val server = WebServer.make(port, hotReload = false)
     private val baseUrl = "http://localhost:$port"
+    private val chromeOptions get() = ChromeOptions().addArguments("--headless=chrome")
 
-    override val makeDriver = { WebDriver(baseUrl, ChromeDriver().apply { chromeDrivers += this }) }
+    override val makeDriver = { WebDriver(baseUrl, ChromeDriver(chromeOptions).apply { chromeDrivers += this }) }
     private val chromeDrivers = mutableListOf<ChromeDriver>()
 
     @BeforeTest
