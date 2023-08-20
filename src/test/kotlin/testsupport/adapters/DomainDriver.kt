@@ -14,32 +14,32 @@ class DomainDriver(private val app: App) : Driver {
     }
 
     override fun joinDefaultRoom() {
-        app.addPlayerToRoom(playerId)
+        app.game.addPlayer(playerId)
     }
 
     override fun isWaitingForMorePlayers(): Boolean {
-        return app.waitingForMorePlayers
+        return app.game.waitingForMorePlayers
     }
 
     override fun getPlayersInRoom(): List<PlayerId> {
-        return app.players
+        return app.game.players
     }
 
     override fun hasGameStarted(): Boolean {
-        return app.game != null
+        return app.game.hasStarted
     }
 
     override fun getCardCount(name: String): Int {
-        return app.game?.getCardsInHand(name)?.size ?: throw NullPointerException("game is null")
+        return app.game.getCardsInHand(name).size
     }
 
     override fun placeBet(bet: Int) {
-        return app.game?.placeBet(playerId, bet) ?: throw NullPointerException("game is null")
+        return app.game.placeBet(playerId, bet)
     }
 
     override fun getBets(): Map<PlayerId, Int> {
-        return app.game?.bets ?: throw NullPointerException("game is null")
+        return app.game.bets
     }
 
-    override fun startGame() = app.startGame()
+    override fun startGame() = app.game.start()
 }

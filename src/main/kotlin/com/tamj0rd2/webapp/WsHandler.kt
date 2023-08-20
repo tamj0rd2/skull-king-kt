@@ -27,7 +27,7 @@ fun wsHandler(app: App): RoutingWsHandler {
             WsResponse { ws: Websocket ->
                 val playerId = playerIdPath(req)
 
-                app.subscribeToGameEvents(playerId) {
+                app.game.subscribeToGameEvents(playerId) {
                     ws.send(gameEventLens(it))
                 }
 
@@ -35,7 +35,7 @@ fun wsHandler(app: App): RoutingWsHandler {
                     try {
                         when(val message = it.bodyString().asJsonObject().asA(ClientMessage::class)) {
                             is ClientMessage.BetPlaced -> {
-                                app.game?.placeBet(message.playerId, message.bet) ?: error("game is null")
+                                app.game.placeBet(message.playerId, message.bet)
                             }
                         }
                     } catch (e: Exception) {

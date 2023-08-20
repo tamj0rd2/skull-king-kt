@@ -36,19 +36,19 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
         },
         "/play" bind Method.POST to {
             val playerId = it.form("playerId") ?: error("playerId not posted!")
-            app.addPlayerToRoom(playerId)
+            app.game.addPlayer(playerId)
 
             val view = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
             val model = Game(
                 wsHost = "ws://localhost:$port",
-                players = app.players,
-                waitingForMorePlayers = app.waitingForMorePlayers,
+                players = app.game.players,
+                waitingForMorePlayers = app.game.waitingForMorePlayers,
                 playerId = playerId,
             )
             Response(Status.OK).with(view of model)
         },
         "/startGame" bind Method.POST to {
-            app.startGame()
+            app.game.start()
             Response(Status.OK)
         },
     )
