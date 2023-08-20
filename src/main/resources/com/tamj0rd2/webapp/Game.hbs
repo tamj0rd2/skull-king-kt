@@ -23,7 +23,7 @@
     <form>
         <label>
             Bet
-            <input type="number" name="bet" min="0" max="10" value="0">
+            <input type="number" name="bet" min="0" max="10">
         </label>
         <button id="placeBet" type="button" onclick="onBetSubmit()">Place Bet</button>
     </form>
@@ -90,8 +90,19 @@
                 })
                 break;
             }
+            case "BetPlaced": {
+                const betsEl = document.getElementById("bets")
+                const li = document.createElement("li")
+                li.innerText = `${gameEvent.playerId}:${gameEvent.bet}`
+                betsEl.appendChild(li)
+                break;
+            }
             default: {
-                socket.send(`Unknown game event ${gameEvent.type}`)
+                // TODO: make a ClientMessage type for these, for better formatting
+                socket.send(JSON.stringify({
+                    type: "ClientMessage$UnhandledGameEvent",
+                    offender: gameEvent.type,
+                }))
                 throw Error(`Unknown game event ${gameEvent.type}`)
             }
         }

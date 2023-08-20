@@ -39,6 +39,7 @@ class Game {
 
     fun placeBet(playerId: PlayerId, bet: Int) {
         _bets[playerId] = bet
+        this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId, bet))
     }
 
     fun subscribeToGameEvents(playerId: PlayerId, subscriber: GameEventSubscriber) {
@@ -67,6 +68,7 @@ sealed class GameEvent {
         PlayerJoined,
         GameStarted,
         RoundStarted,
+        BetPlaced,
     }
 
     data class PlayerJoined(val playerId: PlayerId, val waitingForMorePlayers: Boolean) : GameEvent() {
@@ -79,5 +81,9 @@ sealed class GameEvent {
 
     data class RoundStarted(val cardsDealt: List<Card>) : GameEvent() {
         override val type: Type = Type.RoundStarted
+    }
+
+    data class BetPlaced(val playerId: PlayerId, val bet: Int) : GameEvent() {
+        override val type: Type = Type.BetPlaced
     }
 }

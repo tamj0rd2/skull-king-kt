@@ -34,12 +34,11 @@ fun wsHandler(app: App): RoutingWsHandler {
                 ws.onMessage {
                     try {
                         when(val message = it.bodyString().asJsonObject().asA(ClientMessage::class)) {
-                            is ClientMessage.BetPlaced -> {
-                                app.game.placeBet(message.playerId, message.bet)
-                            }
+                            is ClientMessage.BetPlaced -> app.game.placeBet(message.playerId, message.bet)
+                            is ClientMessage.UnhandledGameEvent -> println("CLIENT ERROR: unhandled game event: ${message.offender}")
                         }
                     } catch (e: Exception) {
-                        println("ERROR!! failed to handle client message: ${it.bodyString()}\n${e.stackTraceToString()}")
+                        println("Error handling ws message: ${it.bodyString()}\n${e.stackTraceToString()}")
                     }
                 }
             }
@@ -57,9 +56,14 @@ sealed class ClientMessage {
 
     enum class Type {
         BetPlaced,
+        UnhandledGameEvent,
     }
 
     data class BetPlaced(val playerId: PlayerId, val bet: Int) : ClientMessage() {
         override val type = Type.BetPlaced
+    }
+
+    data class UnhandledGameEvent(val offender: Type) : ClientMessage() {
+        override val type = Type.UnhandledGameEvent
     }
 }
