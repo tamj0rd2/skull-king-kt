@@ -2,13 +2,21 @@ package testsupport
 
 import com.natpryce.hamkrest.*
 import com.natpryce.hamkrest.assertion.assertThat
+import java.lang.AssertionError
+import java.lang.Exception
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.time.Clock
+import java.util.NoSuchElementException
 
 interface Steps {
     fun `Given {Actor} is at the table`(actor: Actor) = actor.attemptsTo(sitAtTheTable)
+
+    fun `Given {Actors} are in a game started by {Actor}`(players: List<Actor>, garyGameMaster: Actor) {
+        players.forEach { it.attemptsTo(sitAtTheTable) }
+        garyGameMaster.attemptsTo(startTheGame)
+    }
 
     fun `When {Actor} sits at the table`(actor: Actor) = actor.attemptsTo(sitAtTheTable)
 
@@ -16,7 +24,7 @@ interface Steps {
         actor.attemptsTo(ensureThat(playersAtTheTable, hasElement(actor.name)))
 
     fun `Then {Actor} does not see anyone else at the table`(actor: Actor) =
-        actor.attemptsTo(ensureThat(playersAtTheTable, hasSize(equalTo(1))))
+        actor.attemptsTo(ensureThat(playersAtTheTable, equalTo(listOf(actor.name))))
 
     fun `Then {Actor} sees {Actors} at the table`(actor: Actor, actors: Collection<Actor>) =
         actor.attemptsTo(ensureThat(playersAtTheTable, includes(*actors.toTypedArray())))
@@ -39,6 +47,12 @@ interface Steps {
     }
 
     fun `When {Actor} says the game can start`(actor: Actor) = actor.attemptsTo(startTheGame)
+
+    fun `When {Actor} places a bet of {Bet}`(actor: Actor, bet: Int) = actor.attemptsTo(placeABet(bet))
+
+    fun `Then {Actor} sees the placed {Bets}`(actor: Actor, bets: Map<String, Int>) {
+        actor.attemptsTo(ensureThat(theySeeBets, equalTo(bets)))
+    }
 }
 
 fun Steps(): Steps = Proxy.newProxyInstance(
@@ -98,6 +112,8 @@ private class DynamicInvocationHandler(private val real: Steps) : InvocationHand
                     "Actor" -> (args[index] as Actor).name
                     "Actors" -> (args[index] as Collection<*>).map { (it as Actor).name }.joinReadable()
                     "Count" -> (args[index] as Number).toString()
+                    "Bet" -> (args[index] as Int).toString()
+                    "Bets" -> "bets " + (args[index] as Map<*, *>).map { (k, v) -> "$k:$v" }.toString()
                     else -> error("Unknown placeholder: $placeholder")
                 })
             }

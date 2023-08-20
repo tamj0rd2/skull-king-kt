@@ -1,10 +1,14 @@
 import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestFactory
+import org.junit.jupiter.api.TestMethodOrder
 import testsupport.*
 import kotlin.test.Test
 
 interface Driver : ApplicationDriver, GameMasterDriver
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 abstract class AppTestContract {
     abstract val makeDriver: () -> Driver
 
@@ -14,6 +18,7 @@ abstract class AppTestContract {
     private val steps = Steps()
 
     @Test
+    @Order(1)
     fun `scenario - joining a game when no one else is waiting`() {
         with(steps) {
             `When {Actor} sits at the table`(freddyFirstPlayer)
@@ -24,6 +29,7 @@ abstract class AppTestContract {
     }
 
     @TestFactory
+    @Order(2)
     fun `scenario - joining a game when someone else is already waiting to play`(): List<DynamicTest> {
         with(steps) {
             val personWaiting = freddyFirstPlayer
@@ -52,6 +58,7 @@ abstract class AppTestContract {
     }
 
     @Test
+    @Order(3)
     fun `scenario - starting round 1`() {
         with(steps) {
             `Given {Actor} is at the table`(freddyFirstPlayer)
@@ -61,6 +68,20 @@ abstract class AppTestContract {
             `Then {Actor} sees that the game has started`(sallySecondPlayer)
             `Then {Actor} has {Count} cards`(freddyFirstPlayer, 1)
             `Then {Actor} has {Count} cards`(sallySecondPlayer, 1)
+        }
+    }
+
+    @Test
+    @Order(4)
+    fun `scenario - bidding in round 1`() {
+        with(steps) {
+            val bets = mapOf(freddyFirstPlayer.name to 1, sallySecondPlayer.name to 0)
+
+            `Given {Actors} are in a game started by {Actor}`(listOf(freddyFirstPlayer, sallySecondPlayer), garyGameMaster)
+            `When {Actor} places a bet of {Bet}`(freddyFirstPlayer, bets[freddyFirstPlayer.name]!!)
+            `When {Actor} places a bet of {Bet}`(sallySecondPlayer, bets[sallySecondPlayer.name]!!)
+            `Then {Actor} sees the placed {Bets}`(freddyFirstPlayer, bets)
+            `Then {Actor} sees the placed {Bets}`(sallySecondPlayer, bets)
         }
     }
 }

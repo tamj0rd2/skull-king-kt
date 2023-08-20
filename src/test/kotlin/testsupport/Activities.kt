@@ -24,6 +24,10 @@ val joinRoom = Interaction { actor ->
     actor.abilities.mustFind<ParticipateInGames>().joinDefaultRoom()
 }
 
+fun placeABet(bet: Int) = Interaction { actor ->
+    actor.abilities.mustFind<ParticipateInGames>().placeBet(bet)
+}
+
 val sitAtTheTable = Task(enterName, joinRoom)
 
 val startTheGame = Interaction { actor ->

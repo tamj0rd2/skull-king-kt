@@ -23,13 +23,24 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Driver {
         driver.findElement(By.tagName("h2")).text.lowercase().contains("waiting for more players")
 
     override fun getPlayersInRoom(): List<PlayerId> =
-        driver.findElements(By.tagName("li")).mapNotNull { it.text }
+        driver.findElement(By.id("players")).findElements(By.tagName("li")).mapNotNull { it.text }
 
     override fun hasGameStarted(): Boolean =
         driver.findElement(By.tagName("h2")).text.lowercase().contains("game has started")
 
     override fun getCardCount(name: String): Int {
         return driver.findElement(By.id("hand")).findElements(By.tagName("li")).size
+    }
+
+    override fun placeBet(bet: Int) {
+        driver.findElement(By.name("bet")).sendKeys(bet.toString())
+        driver.findElement(By.id("placeBet")).click()
+    }
+
+    override fun getBets(): Map<PlayerId, Int> {
+        return driver.findElement(By.id("bets"))
+            .findElements(By.tagName("li"))
+            .associate { it.text.split(":").let { (name, bet) -> name to bet.toInt() } }
     }
 
     override fun startGame() {

@@ -2,9 +2,15 @@ typealias PlayerId = String
 
 class Game(players: List<PlayerId>) {
     private val hands = players.associateWith { listOf(Card()) }
+    private val _bets = mutableMapOf<PlayerId, Int>()
+    val bets get() = _bets.toMap()
 
-    fun getCardsInHand(playerId: String): List<Card> {
+    fun getCardsInHand(playerId: PlayerId): List<Card> {
         return hands[playerId] ?: error("hand not found for player $playerId not found")
+    }
+
+    fun placeBet(playerId: PlayerId, bet: Int) {
+        _bets[playerId] = bet
     }
 }
 
@@ -24,7 +30,7 @@ class App {
     }
 
     fun startGame() {
-        if (players.size != minRoomSizeToStartGame) error("not enough players to start game - ${players.size}")
+        if (players.size < minRoomSizeToStartGame) error("not enough players to start game - ${players.size}")
 
         _game = Game(players)
         gameEventSubscribers.broadcast(GameEvent.GameStarted())
@@ -41,7 +47,6 @@ class App {
     private val gameEventSubscribers = mutableMapOf<PlayerId, GameEventSubscriber>()
 
     fun subscribeToGameEvents(playerId: PlayerId, subscriber: GameEventSubscriber) {
-        println("subscribing $playerId to game events")
         this.gameEventSubscribers[playerId] = subscriber
     }
 

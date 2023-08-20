@@ -15,3 +15,7 @@ val hasGameStarted = Question { actor ->
 val theirCardCount = Question { actor ->
     actor.abilities.mustFind<ParticipateInGames>().getCardCount(actor.name)
 }
+
+val theySeeBets = Question { actor ->
+    actor.abilities.mustFind<ParticipateInGames>().getBets()
+}

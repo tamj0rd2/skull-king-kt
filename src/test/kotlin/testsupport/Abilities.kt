@@ -11,6 +11,8 @@ interface ApplicationDriver {
     fun getPlayersInRoom(): List<PlayerId>
     fun hasGameStarted(): Boolean
     fun getCardCount(name: String): Int
+    fun placeBet(bet: Int)
+    fun getBets(): Map<PlayerId, Int>
 }
 
 interface GameMasterDriver {
