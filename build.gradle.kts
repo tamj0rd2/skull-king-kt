@@ -17,6 +17,7 @@ dependencies {
     implementation("org.http4k:http4k-template-handlebars:5.6.3.0")
     implementation("org.http4k:http4k-format-jackson:5.6.3.0")
     implementation("org.http4k:http4k-server-undertow:5.6.3.0")
+    implementation("ch.qos.logback:logback-classic:1.4.11")
 
     testImplementation(kotlin("test"))
     testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:4.11.0")

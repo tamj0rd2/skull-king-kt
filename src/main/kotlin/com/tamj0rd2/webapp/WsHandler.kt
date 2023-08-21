@@ -17,10 +17,12 @@ import org.http4k.routing.ws.bind
 import org.http4k.websocket.Websocket
 import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsResponse
+import org.slf4j.LoggerFactory
 
 fun wsHandler(app: App): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
     val gameEventLens = WsMessage.auto<GameEvent>().toLens()
+    val logger = LoggerFactory.getLogger("wsHandler")
 
     return websockets(
         "/{playerId}" bind { req: Request ->
@@ -32,14 +34,12 @@ fun wsHandler(app: App): RoutingWsHandler {
                 }
 
                 ws.onMessage {
-                    try {
-                        when(val message = it.bodyString().asJsonObject().asA(ClientMessage::class)) {
-                            is ClientMessage.BetPlaced -> app.game.placeBet(message.playerId, message.bet)
-                            is ClientMessage.UnhandledGameEvent -> println("CLIENT ERROR: unhandled game event: ${message.offender}")
-                            is ClientMessage.Error -> println("CLIENT ERROR: ${message.stackTrace}")
-                        }
-                    } catch (e: Exception) {
-                        println("Error handling ws message: ${it.bodyString()}\n${e.stackTraceToString()}")
+                    logger.info("received message: ${it.bodyString()}")
+
+                    when(val message = it.bodyString().asJsonObject().asA(ClientMessage::class)) {
+                        is ClientMessage.BetPlaced -> app.game.placeBet(message.playerId, message.bet)
+                        is ClientMessage.UnhandledGameEvent -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
+                        is ClientMessage.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
                     }
                 }
             }
