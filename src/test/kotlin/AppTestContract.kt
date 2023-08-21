@@ -11,11 +11,12 @@ interface Driver : ApplicationDriver, GameMasterDriver
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 abstract class AppTestContract {
-    abstract val makeDriver: () -> Driver
+    abstract val participateInGames: () -> ParticipateInGames
+    abstract val manageGames: () -> ManageGames
 
-    private val freddyFirstPlayer by lazy { Actor("Freddy First").whoCan(ParticipateInGames(makeDriver())) }
-    private val sallySecondPlayer by lazy { Actor("Sally Second").whoCan(ParticipateInGames(makeDriver())) }
-    private val garyGameMaster by lazy { Actor("Gary GameMaster").whoCan(RunGames(makeDriver())) }
+    private val freddyFirstPlayer by lazy { Actor("Freddy First").whoCan(participateInGames()) }
+    private val sallySecondPlayer by lazy { Actor("Sally Second").whoCan(participateInGames()) }
+    private val garyGameMaster by lazy { Actor("Gary GameMaster").whoCan(manageGames()) }
     private val steps = Steps()
 
     @Test

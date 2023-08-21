@@ -22,4 +22,4 @@ interface GameMasterDriver {
 }
 
 class ParticipateInGames(private val driver: ApplicationDriver): Ability, ApplicationDriver by driver
-class RunGames(private val driver: GameMasterDriver): Ability, GameMasterDriver by driver
+class ManageGames(private val driver: GameMasterDriver): Ability, GameMasterDriver by driver

@@ -30,7 +30,7 @@ fun placeABet(bet: Int) = Interaction { actor ->
 
 val sitAtTheTable = Task(enterName, joinRoom)
 
-val startTheGame = Interaction { actor -> actor.abilities.mustFind<RunGames>().startGame() }
-val startTheTrickTakingPhase = Interaction { actor -> actor.abilities.mustFind<RunGames>().startTrickTaking() }
+val startTheGame = Interaction { actor -> actor.abilities.mustFind<ManageGames>().startGame() }
+val startTheTrickTakingPhase = Interaction { actor -> actor.abilities.mustFind<ManageGames>().startTrickTaking() }
 
 inline fun <reified T : Ability> Set<Ability>.mustFind(): T = this.find { it is T }?.let { (it as T) } ?: error("interactor does not possess ability ${T::class.simpleName}")
