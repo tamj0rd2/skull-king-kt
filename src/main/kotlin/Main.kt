@@ -1,8 +1,8 @@
 import com.tamj0rd2.webapp.httpHandler
 import com.tamj0rd2.webapp.wsHandler
 import org.http4k.server.Http4kServer
-import org.http4k.server.Jetty
 import org.http4k.server.PolyHandler
+import org.http4k.server.Undertow
 import org.http4k.server.asServer
 
 object WebServer {
@@ -14,6 +14,6 @@ object WebServer {
         val app = App()
         val http = httpHandler(port, hotReload, app)
         val ws = wsHandler(app)
-        return PolyHandler(http, ws).asServer(Jetty(port))
+        return PolyHandler(http, ws).asServer(Undertow(port))
     }
 }

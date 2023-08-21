@@ -13,10 +13,10 @@ repositories {
 }
 
 dependencies {
-    implementation("org.http4k:http4k-server-jetty:5.6.3.0")
     implementation("org.http4k:http4k-core:5.6.3.0")
     implementation("org.http4k:http4k-template-handlebars:5.6.3.0")
     implementation("org.http4k:http4k-format-jackson:5.6.3.0")
+    implementation("org.http4k:http4k-server-undertow:5.6.3.0")
 
     testImplementation(kotlin("test"))
     testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:4.11.0")
