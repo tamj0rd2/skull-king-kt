@@ -21,5 +21,5 @@ interface GameMasterDriver {
     fun startTrickTaking()
 }
 
-class ParticipateInGames(private val driver: ApplicationDriver): Ability, ApplicationDriver by driver
-class ManageGames(private val driver: GameMasterDriver): Ability, GameMasterDriver by driver
+class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
+class ManageGames(driver: GameMasterDriver): Ability, GameMasterDriver by driver

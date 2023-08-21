@@ -1,9 +1,32 @@
+import com.natpryce.hamkrest.Matcher
+import com.natpryce.hamkrest.and
+import com.natpryce.hamkrest.assertion.assertThat
+import com.natpryce.hamkrest.equalTo
+import com.natpryce.hamkrest.has
+import com.natpryce.hamkrest.hasElement
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.TestMethodOrder
-import testsupport.*
+import testsupport.Activity
+import testsupport.Actor
+import testsupport.ApplicationDriver
+import testsupport.GameMasterDriver
+import testsupport.ManageGames
+import testsupport.ParticipateInGames
+import testsupport.Question
+import testsupport.gameHasStarted
+import testsupport.placeABet
+import testsupport.playersAtTheTable
+import testsupport.seeWhoHasPlacedABet
+import testsupport.sitAtTheTable
+import testsupport.startTheGame
+import testsupport.startTheTrickTakingPhase
+import testsupport.theirCardCount
+import testsupport.theySeeBets
+import testsupport.waitingForMorePlayers
+import java.time.Clock
 import kotlin.test.Ignore
 import kotlin.test.Test
 
@@ -14,109 +37,118 @@ abstract class AppTestContract {
     abstract val participateInGames: () -> ParticipateInGames
     abstract val manageGames: () -> ManageGames
 
-    private val freddyFirstPlayer by lazy { Actor("Freddy First").whoCan(participateInGames()) }
-    private val sallySecondPlayer by lazy { Actor("Sally Second").whoCan(participateInGames()) }
-    private val garyGameMaster by lazy { Actor("Gary GameMaster").whoCan(manageGames()) }
-    private val steps = Steps()
+    private val freddy by lazy { Actor("Freddy First").whoCan(participateInGames()) }
+    private val sally by lazy { Actor("Sally Second").whoCan(participateInGames()) }
+    private val gary by lazy { Actor("Gary GameMaster").whoCan(manageGames()) }
 
     @Test
     @Order(1)
     fun `scenario - joining a game when no one else is waiting`() {
-        with(steps) {
-            `When {Actor} sits at the table`(freddyFirstPlayer)
-            `Then {Actor} sees themself at the table`(freddyFirstPlayer)
-            `Then {Actor} does not see anyone else at the table`(freddyFirstPlayer)
-            `Then {Actor} sees that they are waiting for others to join`(freddyFirstPlayer)
-        }
+        freddy.attemptsTo(
+            sitAtTheTable,
+            ensureThat(playersAtTheTable, onlyIncludes(freddy.name)),
+            ensureThat(waitingForMorePlayers, isTrue)
+        )
     }
 
     @TestFactory
     @Order(2)
     fun `scenario - joining a game when someone else is already waiting to play`(): List<DynamicTest> {
-        with(steps) {
-            val personWaiting = freddyFirstPlayer
-            val personJoining = sallySecondPlayer
+        freddy.attemptsTo(sitAtTheTable)
+        sally.attemptsTo(sitAtTheTable)
 
-            // NOTE: this is essentially the Background in gherkin
-            `Given {Actor} is at the table`(personWaiting)
-            `When {Actor} sits at the table`(personJoining)
-
-            return listOf(
-                DynamicTest.dynamicTest("from ${personWaiting.name}'s perspective") {
-                    `Then {Actor} sees themself at the table`(personWaiting)
-                    `Then {Actor} sees {Actors} at the table`(personWaiting, listOf(personJoining))
-                    `Then {Actor} does not see that they are waiting for others to join`(personWaiting)
-                    `Then {Actor} does not see that the game has started`(personWaiting)
-                },
-
-                DynamicTest.dynamicTest("from ${personJoining.name}'s perspective") {
-                    `Then {Actor} sees themself at the table`(personJoining)
-                    `Then {Actor} sees {Actors} at the table`(personJoining, listOf(personWaiting))
-                    `Then {Actor} does not see that they are waiting for others to join`(personJoining)
-                    `Then {Actor} does not see that the game has started`(personJoining)
-                },
-            )
+        return listOf(freddy, sally).map { actor ->
+            DynamicTest.dynamicTest("from ${actor}'s perspective") {
+                actor.attemptsTo(
+                    ensureThat(playersAtTheTable, onlyIncludes(freddy.name, sally.name)),
+                    ensureThat(waitingForMorePlayers, isFalse),
+                    ensureThat(gameHasStarted, isFalse),
+                )
+            }
         }
     }
 
     @Test
     @Order(3)
     fun `scenario - starting round 1`() {
-        with(steps) {
-            `Given {Actor} is at the table`(freddyFirstPlayer)
-            `Given {Actor} is at the table`(sallySecondPlayer)
-            `When {Actor} says the game can start`(garyGameMaster)
-            `Then {Actor} sees that the game has started`(freddyFirstPlayer)
-            `Then {Actor} sees that the game has started`(sallySecondPlayer)
-            `Then {Actor} has {Count} cards`(freddyFirstPlayer, 1)
-            `Then {Actor} has {Count} cards`(sallySecondPlayer, 1)
+        freddy.attemptsTo(sitAtTheTable)
+        sally.attemptsTo(sitAtTheTable)
+        gary.attemptsTo(startTheGame)
+
+        listOf(freddy, sally).forEach { actor ->
+            actor.attemptsTo(ensureThat(gameHasStarted, isTrue), ensureThat(theirCardCount, equalTo(1)))
         }
     }
 
     @Test
     @Order(4)
     fun `scenario - bids are shown after completing bidding`() {
-        with(steps) {
-            val bets = mapOf(freddyFirstPlayer to 1, sallySecondPlayer to 0)
+        val players = listOf(freddy, sally)
+        val bets = mapOf(freddy.name to 1, sally.name to 0)
 
-            `Given {Actors} are in a game started by {Actor}`(listOf(freddyFirstPlayer, sallySecondPlayer), garyGameMaster)
-            `When {Actor} places a bet of {Bet}`(freddyFirstPlayer, bets[freddyFirstPlayer]!!)
-            `When {Actor} places a bet of {Bet}`(sallySecondPlayer, bets[sallySecondPlayer]!!)
-            `Then {Actor} sees the placed {Bets}`(freddyFirstPlayer, bets)
-            `Then {Actor} sees the placed {Bets}`(sallySecondPlayer, bets)
-        }
+        players.forEach { it.attemptsTo(sitAtTheTable) }
+        gary.attemptsTo(startTheGame)
+        players.forEach { actor -> actor.attemptsTo(placeABet(bets[actor.name]!!)) }
+        players.forEach { actor -> actor.attemptsTo(ensureThat(theySeeBets, equalTo(bets))) }
     }
 
     @Test
     @Order(5)
     fun `scenario - bids are not shown if not everyone has finished bidding`() {
-        with(steps) {
-            `Given {Actors} are in a game started by {Actor}`(
-                listOf(freddyFirstPlayer, sallySecondPlayer),
-                garyGameMaster
+        // TODO: I saw something online about "setting the scene". Maybe I can borrow that...
+        val players = listOf(freddy, sally)
+
+        players.forEach { it.attemptsTo(sitAtTheTable) }
+        gary.attemptsTo(startTheGame)
+
+        freddy.attemptsTo(placeABet(1))
+        players.forEach { actor ->
+            actor.attemptsTo(
+                ensureThat(seeWhoHasPlacedABet, hasElement(freddy.name)),
+                ensureThat(theySeeBets, equalTo(emptyMap()))
             )
-            `When {Actor} places a bet of {Bet}`(freddyFirstPlayer, 1)
-            `Then {Actor} can see they have made their bet`(freddyFirstPlayer)
-            `Then {Actor} can see that {Actor} has made a bet`(sallySecondPlayer, freddyFirstPlayer)
-            `Then {Actor} cannot see anyone's actual bet`(sallySecondPlayer)
         }
     }
 
     @Test
     @Order(6)
     @Ignore
+    // TODO: WIP. ignore this.
     fun `scenario - taking tricks once bidding is complete`() {
-        with(steps) {
-            val bets = mapOf(freddyFirstPlayer to 0, sallySecondPlayer to 1)
+        val bets = mapOf(freddy to 0, sally to 1)
 
-            // Given the game master has rigged the deck
-            `Given {Actors} are in a game started by {Actor}`(
-                listOf(freddyFirstPlayer, sallySecondPlayer),
-                garyGameMaster
-            )
-            `Given all {Bets} have been placed`(bets)
-            `When {Actor} starts the trick taking phase`(garyGameMaster)
-            //TODO("write the Then")
-        }
+        // Given the game master has rigged the deck
+        listOf(freddy, sally).forEach { it.attemptsTo(sitAtTheTable) }
+        gary.attemptsTo(startTheGame)
+        bets.forEach { (actor, bet) -> actor.attemptsTo(placeABet(bet)) }
+        gary.attemptsTo(startTheTrickTakingPhase)
+        //TODO("write the Then")
     }
 }
+
+
+private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activity { abilities ->
+    val clock = Clock.systemDefaultZone()
+    val startTime = clock.instant()
+    val mustEndBy = startTime.plusSeconds(2)
+
+    do {
+        try {
+            val answer = question.ask(abilities)
+            assertThat(answer, matcher)
+            break
+        } catch (e: AssertionError) {
+            if (clock.instant() > mustEndBy) throw e
+            Thread.sleep(100)
+        }
+    } while (true)
+}
+
+private fun <T> onlyIncludes(vararg elements: T): Matcher<Collection<T>> = elements.toList()
+    .map { it }
+    .drop(1)
+    .fold(hasElement(elements[0])) { acc, name -> acc.and(hasElement(name)) }
+    .and(has(Collection<T>::size, equalTo(elements.size)))
+
+private val isTrue = equalTo(true)
+private val isFalse = equalTo(false)

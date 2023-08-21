@@ -8,7 +8,7 @@ val playersAtTheTable = Question { actor ->
     actor.abilities.mustFind<ParticipateInGames>().getPlayersInRoom()
 }
 
-val hasGameStarted = Question { actor ->
+val gameHasStarted = Question { actor ->
     actor.abilities.mustFind<ParticipateInGames>().hasGameStarted()
 }
 
