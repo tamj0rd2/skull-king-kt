@@ -86,7 +86,7 @@ abstract class AppTestContract {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     fun `scenario - bids are not shown if not everyone has finished bidding`() {
         with(steps) {
             `Given {Actors} are in a game started by {Actor}`(
@@ -94,8 +94,26 @@ abstract class AppTestContract {
                 garyGameMaster
             )
             `When {Actor} places a bet of {Bet}`(freddyFirstPlayer, 1)
-            `Then {Actor} does not see any bets`(freddyFirstPlayer)
-            `Then {Actor} does not see any bets`(sallySecondPlayer)
+            `Then {Actor} can see they have made their bet`(freddyFirstPlayer)
+            `Then {Actor} can see that {Actor} has made a bet`(sallySecondPlayer, freddyFirstPlayer)
+            `Then {Actor} cannot see anyone's actual bet`(sallySecondPlayer)
         }
     }
+
+    //@Test
+    //@Order(6)
+    //fun `scenario - taking tricks once bidding is complete`() {
+    //    with(steps) {
+    //        // Given the game master has rigged the deck
+    //        `Given {Actors} are in a game started by {Actor}`(
+    //            listOf(freddyFirstPlayer, sallySecondPlayer),
+    //            garyGameMaster
+    //        )
+    //        `Given all {Bets} have been taken`(mapOf(freddyFirstPlayer.name to 0, sallySecondPlayer.name to 1))
+    //        `When {Actor} places a bet of {Bet}`(freddyFirstPlayer, 1)
+    //        //`Then {Actor} can see their own bet`(freddyFirstPlayer)
+    //        `Then {Actor} can see that {Actor} has made a bet`(sallySecondPlayer, freddyFirstPlayer)
+    //        //`Then {Actor} cannot see what {Actor}'s bet is`(sallySecondPlayer)
+    //    }
+    //}
 }

@@ -28,6 +28,7 @@
         <button id="placeBet" type="button" onclick="onBetSubmit()">Place Bet</button>
     </form>
 
+    <ul id="playersWhoHaveBet"></ul>
     <ul id="bets"></ul>
 </div>
 <script>
@@ -85,8 +86,10 @@
                     break;
                 }
                 case "BetPlaced": {
-                    // TODO: add a test. I need to indicate who has bet and who we're waiting for
-                    console.error("handle BetPlaced")
+                    const playersWhoHaveBet = document.getElementById("playersWhoHaveBet")
+                    const li = document.createElement("li")
+                    li.innerText = gameEvent.playerId
+                    playersWhoHaveBet.appendChild(li)
                     break
                 }
                 case "BettingCompleted": {

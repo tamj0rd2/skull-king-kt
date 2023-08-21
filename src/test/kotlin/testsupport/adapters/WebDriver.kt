@@ -41,6 +41,13 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Driver {
             .associate { it.text.split(":").let { (name, bet) -> name to bet.toInt() } }
     }
 
+    override fun getPlayersWhoHavePlacedBets(): List<PlayerId> {
+        return driver.findElement(By.id("playersWhoHaveBet"))
+            .findElements(By.tagName("li"))
+            .map { it.text }
+
+    }
+
     // TODO: this doesn't need to be here in this web driver. It can just be a post request. This is where the driver stuff breaks down
     // This is breaking cohesion
     override fun startGame() {

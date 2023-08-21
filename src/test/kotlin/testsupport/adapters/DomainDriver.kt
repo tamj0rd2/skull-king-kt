@@ -41,5 +41,9 @@ class DomainDriver(private val app: App) : Driver {
         return app.game.bets
     }
 
+    override fun getPlayersWhoHavePlacedBets(): List<PlayerId> {
+        return app.game.playersWhoHaveBet
+    }
+
     override fun startGame() = app.game.start()
 }

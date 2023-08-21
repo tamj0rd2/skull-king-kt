@@ -13,6 +13,7 @@ interface ApplicationDriver {
     fun getCardCount(name: String): Int
     fun placeBet(bet: Int)
     fun getBets(): Map<PlayerId, Int>
+    fun getPlayersWhoHavePlacedBets(): List<PlayerId>
 }
 
 interface GameMasterDriver {

@@ -3,12 +3,10 @@ package testsupport
 import com.natpryce.hamkrest.*
 import com.natpryce.hamkrest.assertion.assertThat
 import java.lang.AssertionError
-import java.lang.Exception
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.time.Clock
-import java.util.NoSuchElementException
 
 interface Steps {
     fun `Given {Actor} is at the table`(actor: Actor) = actor.attemptsTo(sitAtTheTable)
@@ -54,7 +52,15 @@ interface Steps {
         actor.attemptsTo(ensureThat(theySeeBets, equalTo(bets)))
     }
 
-    fun `Then {Actor} does not see any bets`(actor: Actor) {
+    fun `Then {Actor} can see that {Actor} has made a bet`(actor: Actor, otherActor: Actor) {
+        actor.attemptsTo(ensureThat(seeWhoHasPlacedABet, hasElement(otherActor.name)))
+    }
+
+    fun `Then {Actor} can see they have made their bet`(freddyFirstPlayer: Actor) {
+        freddyFirstPlayer.attemptsTo(ensureThat(seeWhoHasPlacedABet, hasElement(freddyFirstPlayer.name)))
+    }
+
+    fun `Then {Actor} cannot see anyone's actual bet`(actor: Actor) {
         actor.attemptsTo(ensureThat(theySeeBets, equalTo(emptyMap())))
     }
 }
