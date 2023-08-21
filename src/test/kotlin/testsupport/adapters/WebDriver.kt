@@ -53,4 +53,6 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Driver {
     override fun startGame() {
         return driver.findElement(By.id("startGame")).submit()
     }
+
+    override fun startTrickTaking() = driver.findElement(By.id("startTrickTaking")).submit()
 }

@@ -18,7 +18,8 @@ interface ApplicationDriver {
 
 interface GameMasterDriver {
     fun startGame()
+    fun startTrickTaking()
 }
 
 class ParticipateInGames(private val driver: ApplicationDriver): Ability, ApplicationDriver by driver
-class StartGames(private val driver: GameMasterDriver): Ability, GameMasterDriver by driver
+class RunGames(private val driver: GameMasterDriver): Ability, GameMasterDriver by driver

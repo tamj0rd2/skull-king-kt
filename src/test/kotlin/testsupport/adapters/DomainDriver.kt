@@ -46,4 +46,5 @@ class DomainDriver(private val app: App) : Driver {
     }
 
     override fun startGame() = app.game.start()
+    override fun startTrickTaking() = app.game.startTrickTaking()
 }

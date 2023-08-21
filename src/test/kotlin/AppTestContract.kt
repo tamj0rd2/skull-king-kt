@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.TestMethodOrder
 import testsupport.*
+import kotlin.test.Ignore
 import kotlin.test.Test
 
 interface Driver : ApplicationDriver, GameMasterDriver
@@ -14,7 +15,7 @@ abstract class AppTestContract {
 
     private val freddyFirstPlayer by lazy { Actor("Freddy First").whoCan(ParticipateInGames(makeDriver())) }
     private val sallySecondPlayer by lazy { Actor("Sally Second").whoCan(ParticipateInGames(makeDriver())) }
-    private val garyGameMaster by lazy { Actor("Gary Game Master").whoCan(StartGames(makeDriver())) }
+    private val garyGameMaster by lazy { Actor("Gary GameMaster").whoCan(RunGames(makeDriver())) }
     private val steps = Steps()
 
     @Test
@@ -75,11 +76,11 @@ abstract class AppTestContract {
     @Order(4)
     fun `scenario - bids are shown after completing bidding`() {
         with(steps) {
-            val bets = mapOf(freddyFirstPlayer.name to 1, sallySecondPlayer.name to 0)
+            val bets = mapOf(freddyFirstPlayer to 1, sallySecondPlayer to 0)
 
             `Given {Actors} are in a game started by {Actor}`(listOf(freddyFirstPlayer, sallySecondPlayer), garyGameMaster)
-            `When {Actor} places a bet of {Bet}`(freddyFirstPlayer, bets[freddyFirstPlayer.name]!!)
-            `When {Actor} places a bet of {Bet}`(sallySecondPlayer, bets[sallySecondPlayer.name]!!)
+            `When {Actor} places a bet of {Bet}`(freddyFirstPlayer, bets[freddyFirstPlayer]!!)
+            `When {Actor} places a bet of {Bet}`(sallySecondPlayer, bets[sallySecondPlayer]!!)
             `Then {Actor} sees the placed {Bets}`(freddyFirstPlayer, bets)
             `Then {Actor} sees the placed {Bets}`(sallySecondPlayer, bets)
         }
@@ -100,20 +101,21 @@ abstract class AppTestContract {
         }
     }
 
-    //@Test
-    //@Order(6)
-    //fun `scenario - taking tricks once bidding is complete`() {
-    //    with(steps) {
-    //        // Given the game master has rigged the deck
-    //        `Given {Actors} are in a game started by {Actor}`(
-    //            listOf(freddyFirstPlayer, sallySecondPlayer),
-    //            garyGameMaster
-    //        )
-    //        `Given all {Bets} have been taken`(mapOf(freddyFirstPlayer.name to 0, sallySecondPlayer.name to 1))
-    //        `When {Actor} places a bet of {Bet}`(freddyFirstPlayer, 1)
-    //        //`Then {Actor} can see their own bet`(freddyFirstPlayer)
-    //        `Then {Actor} can see that {Actor} has made a bet`(sallySecondPlayer, freddyFirstPlayer)
-    //        //`Then {Actor} cannot see what {Actor}'s bet is`(sallySecondPlayer)
-    //    }
-    //}
+    @Test
+    @Order(6)
+    @Ignore
+    fun `scenario - taking tricks once bidding is complete`() {
+        with(steps) {
+            val bets = mapOf(freddyFirstPlayer to 0, sallySecondPlayer to 1)
+
+            // Given the game master has rigged the deck
+            `Given {Actors} are in a game started by {Actor}`(
+                listOf(freddyFirstPlayer, sallySecondPlayer),
+                garyGameMaster
+            )
+            `Given all {Bets} have been placed`(bets)
+            `When {Actor} starts the trick taking phase`(garyGameMaster)
+            //TODO("write the Then")
+        }
+    }
 }

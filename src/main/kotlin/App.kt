@@ -54,6 +54,9 @@ class Game {
     private fun Map<PlayerId, GameEventSubscriber>.broadcast(event: GameEvent) {
         this.forEach { it.value.handleEvent(event) }
     }
+
+    fun startTrickTaking() {
+    }
 }
 
 class App {
