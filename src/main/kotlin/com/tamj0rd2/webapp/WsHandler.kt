@@ -36,6 +36,7 @@ fun wsHandler(app: App): RoutingWsHandler {
                         when(val message = it.bodyString().asJsonObject().asA(ClientMessage::class)) {
                             is ClientMessage.BetPlaced -> app.game.placeBet(message.playerId, message.bet)
                             is ClientMessage.UnhandledGameEvent -> println("CLIENT ERROR: unhandled game event: ${message.offender}")
+                            is ClientMessage.Error -> println("CLIENT ERROR: ${message.stackTrace}")
                         }
                     } catch (e: Exception) {
                         println("Error handling ws message: ${it.bodyString()}\n${e.stackTraceToString()}")
@@ -57,13 +58,19 @@ sealed class ClientMessage {
     enum class Type {
         BetPlaced,
         UnhandledGameEvent,
+        Error,
     }
 
+    // TODO maybe this is a GameEvent, rather than a ClientMessage? Or perhaps, a ClientMessage that happens to contain a GameEvent?
     data class BetPlaced(val playerId: PlayerId, val bet: Int) : ClientMessage() {
         override val type = Type.BetPlaced
     }
 
     data class UnhandledGameEvent(val offender: Type) : ClientMessage() {
         override val type = Type.UnhandledGameEvent
+    }
+
+    data class Error(val stackTrace: String) : ClientMessage() {
+        override val type = Type.Error
     }
 }

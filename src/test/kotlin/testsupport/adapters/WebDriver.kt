@@ -8,8 +8,6 @@ import testsupport.ApplicationDriver
 import org.openqa.selenium.chrome.ChromeDriver
 
 class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Driver {
-    //private val driver = Http4kWebDriver(httpHandler(wsPort, Clock.systemDefaultZone(), false, app))
-
     init {
         driver.navigate().to(baseUrl)
     }
@@ -43,6 +41,8 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Driver {
             .associate { it.text.split(":").let { (name, bet) -> name to bet.toInt() } }
     }
 
+    // TODO: this doesn't need to be here in this web driver. It can just be a post request. This is where the driver stuff breaks down
+    // This is breaking cohesion
     override fun startGame() {
         return driver.findElement(By.id("startGame")).submit()
     }

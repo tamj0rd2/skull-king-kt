@@ -54,57 +54,58 @@
     // Listen for messages
     socket.addEventListener("message", (event) => {
         console.log("Message from server ", event.data);
+
         try {
-            JSON.parse(event.data)
-        } catch (e) {
-            console.warn(e)
-            // it's the weird blob type that I don't know how to deal with
-            return
-        }
-
-        const gameEvent = JSON.parse(event.data)
-        switch (gameEvent.type) {
-            case "PlayerJoined": {
-                const players = document.getElementById("players")
-                const li = document.createElement("li")
-                li.innerText = gameEvent.playerId
-                players.appendChild(li)
-
-                if (!gameEvent.waitingForMorePlayers) {
-                    const gameStateEl = document.getElementById("gameState")
-                    gameStateEl.innerText = ""
-                }
-                break;
-            }
-            case "GameStarted": {
-                const gameStateEl = document.getElementById("gameState")
-                gameStateEl.innerText = "The game has started :D"
-                break;
-            }
-            case "RoundStarted": {
-                const handEl = document.getElementById("hand")
-                gameEvent.cardsDealt.forEach(card => {
+            const gameEvent = JSON.parse(event.data)
+            switch (gameEvent.type) {
+                case "PlayerJoined": {
+                    const players = document.getElementById("players")
                     const li = document.createElement("li")
-                    li.innerText = card
-                    handEl.appendChild(li)
-                })
-                break;
+                    li.innerText = gameEvent.playerId
+                    players.appendChild(li)
+
+                    if (!gameEvent.waitingForMorePlayers) {
+                        const gameStateEl = document.getElementById("gameState")
+                        gameStateEl.innerText = ""
+                    }
+                    break;
+                }
+                case "GameStarted": {
+                    const gameStateEl = document.getElementById("gameState")
+                    gameStateEl.innerText = "The game has started :D"
+                    break;
+                }
+                case "RoundStarted": {
+                    const handEl = document.getElementById("hand")
+                    gameEvent.cardsDealt.forEach(card => {
+                        const li = document.createElement("li")
+                        li.innerText = card
+                        handEl.appendChild(li)
+                    })
+                    break;
+                }
+                case "BetPlaced": {
+                    const betsEl = document.getElementById("bets")
+                    const li = document.createElement("li")
+                    li.innerText = `${gameEvent.playerId}:${gameEvent.bet}`
+                    betsEl.appendChild(li)
+                    break;
+                }
+                default: {
+                    // TODO: make a ClientMessage type for these, for better formatting
+                    socket.send(JSON.stringify({
+                        type: "ClientMessage$UnhandledGameEvent",
+                        offender: gameEvent.type,
+                    }))
+                    console.error(`Unknown game event ${gameEvent.type}`)
+                }
             }
-            case "BetPlaced": {
-                const betsEl = document.getElementById("bets")
-                const li = document.createElement("li")
-                li.innerText = `${gameEvent.playerId}:${gameEvent.bet}`
-                betsEl.appendChild(li)
-                break;
-            }
-            default: {
-                // TODO: make a ClientMessage type for these, for better formatting
-                socket.send(JSON.stringify({
-                    type: "ClientMessage$UnhandledGameEvent",
-                    offender: gameEvent.type,
-                }))
-                throw Error(`Unknown game event ${gameEvent.type}`)
-            }
+        } catch (e) {
+            socket.send(JSON.stringify({
+                stackTrace: e.stack,
+                type: "ClientMessage$Error",
+            }))
+            throw e
         }
     });
 </script>
