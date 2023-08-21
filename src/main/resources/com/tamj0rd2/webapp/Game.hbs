@@ -85,14 +85,22 @@
                     break;
                 }
                 case "BetPlaced": {
+                    // TODO: add a test. I need to indicate who has bet and who we're waiting for
+                    console.error("handle BetPlaced")
+                    break
+                }
+                case "BettingCompleted": {
+                    const bets = gameEvent.bets
                     const betsEl = document.getElementById("bets")
-                    const li = document.createElement("li")
-                    li.innerText = `${gameEvent.playerId}:${gameEvent.bet}`
-                    betsEl.appendChild(li)
-                    break;
+                    betsEl.innerHTML = ""
+                    Object.entries(bets).forEach(([playerId, bet]) => {
+                        const li = document.createElement("li")
+                        li.innerText = `${playerId}:${bet}`
+                        betsEl.appendChild(li)
+                    })
+                    break
                 }
                 default: {
-                    // TODO: make a ClientMessage type for these, for better formatting
                     socket.send(JSON.stringify({
                         type: "ClientMessage$UnhandledGameEvent",
                         offender: gameEvent.type,

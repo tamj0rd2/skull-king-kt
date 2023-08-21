@@ -73,7 +73,7 @@ abstract class AppTestContract {
 
     @Test
     @Order(4)
-    fun `scenario - bidding in round 1`() {
+    fun `scenario - bids are shown after completing bidding`() {
         with(steps) {
             val bets = mapOf(freddyFirstPlayer.name to 1, sallySecondPlayer.name to 0)
 
@@ -82,6 +82,20 @@ abstract class AppTestContract {
             `When {Actor} places a bet of {Bet}`(sallySecondPlayer, bets[sallySecondPlayer.name]!!)
             `Then {Actor} sees the placed {Bets}`(freddyFirstPlayer, bets)
             `Then {Actor} sees the placed {Bets}`(sallySecondPlayer, bets)
+        }
+    }
+
+    @Test
+    @Order(4)
+    fun `scenario - bids are not shown if not everyone has finished bidding`() {
+        with(steps) {
+            `Given {Actors} are in a game started by {Actor}`(
+                listOf(freddyFirstPlayer, sallySecondPlayer),
+                garyGameMaster
+            )
+            `When {Actor} places a bet of {Bet}`(freddyFirstPlayer, 1)
+            `Then {Actor} does not see any bets`(freddyFirstPlayer)
+            `Then {Actor} does not see any bets`(sallySecondPlayer)
         }
     }
 }

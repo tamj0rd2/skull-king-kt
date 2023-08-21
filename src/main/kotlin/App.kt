@@ -7,7 +7,8 @@ class Game {
     private val hands = mutableMapOf<PlayerId, List<Card>>()
 
     private val _bets = mutableMapOf<PlayerId, Int>()
-    val bets get() = _bets.toMap()
+    private val isBettingComplete get() = _bets.size == players.size
+    val bets get() = if (isBettingComplete) _bets.toMap() else emptyMap()
 
     private val gameEventSubscribers = mutableMapOf<PlayerId, GameEventSubscriber>()
     private val minRoomSizeToStartGame = 2
@@ -39,7 +40,10 @@ class Game {
 
     fun placeBet(playerId: PlayerId, bet: Int) {
         _bets[playerId] = bet
-        this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId, bet))
+        this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId))
+
+        if (isBettingComplete)
+            this.gameEventSubscribers.broadcast(GameEvent.BettingCompleted(bets))
     }
 
     fun subscribeToGameEvents(playerId: PlayerId, subscriber: GameEventSubscriber) {
@@ -69,6 +73,7 @@ sealed class GameEvent {
         GameStarted,
         RoundStarted,
         BetPlaced,
+        BettingCompleted,
     }
 
     data class PlayerJoined(val playerId: PlayerId, val waitingForMorePlayers: Boolean) : GameEvent() {
@@ -83,7 +88,11 @@ sealed class GameEvent {
         override val type: Type = Type.RoundStarted
     }
 
-    data class BetPlaced(val playerId: PlayerId, val bet: Int) : GameEvent() {
+    data class BetPlaced(val playerId: PlayerId) : GameEvent() {
         override val type: Type = Type.BetPlaced
+    }
+
+    data class BettingCompleted(val bets: Map<PlayerId, Int>) : GameEvent() {
+        override val type: Type = Type.BettingCompleted
     }
 }

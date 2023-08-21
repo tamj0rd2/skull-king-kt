@@ -53,6 +53,10 @@ interface Steps {
     fun `Then {Actor} sees the placed {Bets}`(actor: Actor, bets: Map<String, Int>) {
         actor.attemptsTo(ensureThat(theySeeBets, equalTo(bets)))
     }
+
+    fun `Then {Actor} does not see any bets`(actor: Actor) {
+        actor.attemptsTo(ensureThat(theySeeBets, equalTo(emptyMap())))
+    }
 }
 
 fun Steps(): Steps = Proxy.newProxyInstance(

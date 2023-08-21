@@ -66,7 +66,7 @@ sealed class ClientMessage {
         override val type = Type.BetPlaced
     }
 
-    data class UnhandledGameEvent(val offender: Type) : ClientMessage() {
+    data class UnhandledGameEvent(val offender: GameEvent.Type) : ClientMessage() {
         override val type = Type.UnhandledGameEvent
     }
 
