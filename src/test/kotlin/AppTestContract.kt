@@ -3,7 +3,6 @@ import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.describe
 import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.hasElement
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
@@ -76,7 +75,10 @@ abstract class AppTestContract {
         gary.attemptsTo(startTheGame)
 
         listOf(freddy, sally).forEach { actor ->
-            actor.attemptsTo(ensureThat(GameHasStarted, isTrue), ensureThat(TheirCardCount, equalTo(1)))
+            actor.attemptsTo(
+                ensureThat(GameHasStarted, isTrue),
+                ensureThat(TheirCardCount, equalTo(1))
+            )
         }
     }
 
@@ -92,10 +94,10 @@ abstract class AppTestContract {
         players.forEach { actor -> actor.attemptsTo(ensureThat(TheySeeBets, equalTo(bets))) }
     }
 
+    // TODO: continue checking results from here
     @Test
     @Order(5)
     fun `scenario - bids are not shown if not everyone has finished bidding`() {
-        // TODO: I saw something online about "setting the scene". Maybe I can borrow that...
         val players = listOf(freddy, sally)
 
         players.forEach { it.attemptsTo(sitAtTheTable) }
@@ -104,26 +106,26 @@ abstract class AppTestContract {
         freddy.attemptsTo(placeABet(1))
         players.forEach { actor ->
             actor.attemptsTo(
-                ensureThat(PlayersWhoHavePlacedABet, hasElement(freddy.name)),
+                ensureThat(PlayersWhoHavePlacedABet, onlyIncludes(freddy.name)),
                 ensureThat(TheySeeBets, equalTo(emptyMap()))
             )
         }
     }
 
-    @Test
-    @Order(6)
-    @Ignore
-    // TODO: WIP. ignore this.
-    fun `scenario - taking tricks once bidding is complete`() {
-        val bets = mapOf(freddy to 0, sally to 1)
-
-        // Given the game master has rigged the deck
-        listOf(freddy, sally).forEach { it.attemptsTo(sitAtTheTable) }
-        gary.attemptsTo(startTheGame)
-        bets.forEach { (actor, bet) -> actor.attemptsTo(placeABet(bet)) }
-        gary.attemptsTo(startTheTrickTakingPhase)
-        //TODO("write the Then")
-    }
+    //@Test
+    //@Order(6)
+    //@Ignore
+    //// TODO: WIP. ignore this.
+    //fun `scenario - taking tricks once bidding is complete`() {
+    //    val bets = mapOf(freddy to 0, sally to 1)
+    //
+    //    // Given the game master has rigged the deck
+    //    listOf(freddy, sally).forEach { it.attemptsTo(sitAtTheTable) }
+    //    gary.attemptsTo(startTheGame)
+    //    bets.forEach { (actor, bet) -> actor.attemptsTo(placeABet(bet)) }
+    //    gary.attemptsTo(startTheTrickTakingPhase)
+    //    //TODO("write the Then")
+    //}
 }
 
 
@@ -131,12 +133,11 @@ private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activit
     val clock = Clock.systemDefaultZone()
     val startTime = clock.instant()
     val mustEndBy = startTime.plusSeconds(2)
-    val questionName = question::class.simpleName
 
     do {
         try {
             val answer = question.ask(actor)
-            assertThat(answer, matcher) { "$actor asked a question about $questionName" }
+            assertThat(answer, matcher) { "$actor asked $question" }
             break
         } catch (e: AssertionError) {
             if (clock.instant() > mustEndBy) throw e
