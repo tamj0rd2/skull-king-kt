@@ -1,7 +1,9 @@
 package testsupport.adapters
 
 import Driver
+import GameState
 import PlayerId
+import com.natpryce.hamkrest.contains
 import org.openqa.selenium.By
 import org.openqa.selenium.chrome.ChromeDriver
 
@@ -14,14 +16,8 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Driver {
 
     override fun joinDefaultRoom() = driver.findElement(By.id("joinGame")).submit()
 
-    override val isWaitingForMorePlayers: Boolean
-        get() = driver.findElement(By.tagName("h2")).text.lowercase().contains("waiting for more players")
-
     override val playersInRoom: List<PlayerId>
         get() = driver.findElement(By.id("players")).findElements(By.tagName("li")).mapNotNull { it.text }
-
-    override val hasGameStarted: Boolean
-        get() = driver.findElement(By.tagName("h2")).text.lowercase().contains("game has started")
 
     override val cardCount: Int
         get() = driver.findElement(By.id("hand")).findElements(By.tagName("li")).size
@@ -29,6 +25,13 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Driver {
     override fun placeBet(bet: Int) {
         driver.findElement(By.name("bet")).sendKeys(bet.toString())
         driver.findElement(By.id("placeBet")).click()
+    }
+
+    override val gameState: GameState get() {
+        val gameState = driver.findElement(By.tagName("h2")).text.lowercase()
+        if (gameState.contains("waiting for more players")) return GameState.WaitingForMorePlayers
+        if (gameState.contains("game has started")) return GameState.InProgress
+        return GameState.WaitingToStart
     }
 
     override val bets: Map<PlayerId, Int>

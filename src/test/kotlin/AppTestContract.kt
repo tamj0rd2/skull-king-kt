@@ -11,16 +11,15 @@ import org.junit.jupiter.api.TestMethodOrder
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.ApplicationDriver
-import testsupport.TheGameHasStarted
 import testsupport.GameMasterDriver
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.ThePlayersAtTheTable
 import testsupport.ThePlayersWhoHavePlacedABet
 import testsupport.Question
+import testsupport.TheGameState
 import testsupport.TheirCardCount
 import testsupport.TheySeeBets
-import testsupport.TheyAreWaitingForMorePlayers
 import testsupport.placeABet
 import testsupport.sitAtTheTable
 import testsupport.startTheGame
@@ -44,24 +43,21 @@ abstract class AppTestContract {
         freddy.attemptsTo(
             sitAtTheTable,
             ensureThat(ThePlayersAtTheTable, onlyIncludes(freddy.name)),
-            ensureThat(TheyAreWaitingForMorePlayers, isTrue)
+            ensureThat(TheGameState, equalTo(GameState.WaitingForMorePlayers)),
         )
     }
 
-    @TestFactory
+    @Test
     @Order(2)
-    fun `scenario - joining a game when someone else is already waiting to play`(): List<DynamicTest> {
+    fun `scenario - joining a game when someone else is already waiting to play`() {
         freddy.attemptsTo(sitAtTheTable)
         sally.attemptsTo(sitAtTheTable)
 
-        return listOf(freddy, sally).map { actor ->
-            DynamicTest.dynamicTest("from ${actor}'s perspective") {
-                actor.attemptsTo(
-                    ensureThat(ThePlayersAtTheTable, onlyIncludes(freddy.name, sally.name)),
-                    ensureThat(TheyAreWaitingForMorePlayers, isFalse),
-                    ensureThat(TheGameHasStarted, isFalse),
-                )
-            }
+        listOf(freddy, sally).map { actor ->
+            actor.attemptsTo(
+                ensureThat(ThePlayersAtTheTable, onlyIncludes(freddy.name, sally.name)),
+                ensureThat(TheGameState, equalTo(GameState.WaitingToStart))
+            )
         }
     }
 
@@ -74,7 +70,7 @@ abstract class AppTestContract {
 
         listOf(freddy, sally).forEach { actor ->
             actor.attemptsTo(
-                ensureThat(TheGameHasStarted, isTrue),
+                ensureThat(TheGameState, equalTo(GameState.InProgress)),
                 ensureThat(TheirCardCount, equalTo(1))
             )
         }
@@ -126,7 +122,6 @@ abstract class AppTestContract {
     //    //TODO("write the Then")
     //}
 }
-
 
 private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activity { actor ->
     val clock = Clock.systemDefaultZone()

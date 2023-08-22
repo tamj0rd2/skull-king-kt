@@ -1,5 +1,6 @@
 package testsupport
 
+import GameState
 import PlayerId
 
 interface Ability
@@ -9,9 +10,8 @@ interface ApplicationDriver {
     fun joinDefaultRoom()
     fun placeBet(bet: Int)
 
-    val isWaitingForMorePlayers: Boolean
+    val gameState: GameState
     val playersInRoom: List<PlayerId>
-    val hasGameStarted: Boolean
     val cardCount: Int
     val bets: Map<PlayerId, Int>
     val playersWhoHavePlacedBets: List<PlayerId>

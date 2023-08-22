@@ -12,21 +12,23 @@ class Game {
     val playersWhoHavePlacedBet get() = _bets.keys.toList()
 
     private val gameEventSubscribers = mutableMapOf<PlayerId, GameEventSubscriber>()
-    private val minRoomSizeToStartGame = 2
+    private val roomSizeToStartGame = 2
 
-    val waitingForMorePlayers get() = players.size < minRoomSizeToStartGame
-    private var _hasStarted = false
-    val hasStarted get() = _hasStarted
+    private var _state = GameState.WaitingForMorePlayers
+    val state: GameState get() = _state
+
+    private val waitingForMorePlayers get() = players.size < roomSizeToStartGame
 
     fun addPlayer(playerId: PlayerId) {
         _players += playerId
+        if (!waitingForMorePlayers) _state = GameState.WaitingToStart
         gameEventSubscribers.broadcast(GameEvent.PlayerJoined(playerId, waitingForMorePlayers))
     }
 
     fun start() {
-        if (players.size < minRoomSizeToStartGame) error("not enough players to start game - ${players.size}")
+        if (waitingForMorePlayers) error("not enough players to start game - ${players.size}/$roomSizeToStartGame")
 
-        _hasStarted = true
+        _state = GameState.InProgress
         gameEventSubscribers.broadcast(GameEvent.GameStarted())
 
         players.forEach { hands[it] = listOf(Card()) }
@@ -99,4 +101,10 @@ sealed class GameEvent {
     data class BettingCompleted(val bets: Map<PlayerId, Int>) : GameEvent() {
         override val type: Type = Type.BettingCompleted
     }
+}
+
+enum class GameState {
+    WaitingForMorePlayers,
+    WaitingToStart,
+    InProgress,
 }

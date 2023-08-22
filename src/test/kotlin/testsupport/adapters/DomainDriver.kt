@@ -2,6 +2,7 @@ package testsupport.adapters
 
 import App
 import Driver
+import GameState
 import PlayerId
 
 class DomainDriver(val app: App) : Driver {
@@ -14,15 +15,12 @@ class DomainDriver(val app: App) : Driver {
 
     override fun joinDefaultRoom() = app.game.addPlayer(playerId)
 
-    override val isWaitingForMorePlayers get() = app.game.waitingForMorePlayers
-
     override val playersInRoom get() = app.game.players
-
-    override val hasGameStarted get() = app.game.hasStarted
 
     override val cardCount get() = app.game.getCardsInHand(playerId).size
 
     override fun placeBet(bet: Int) = app.game.placeBet(playerId, bet)
+    override val gameState: GameState get() = app.game.state
 
     override val bets: Map<PlayerId, Int>
         get() = app.game.bets

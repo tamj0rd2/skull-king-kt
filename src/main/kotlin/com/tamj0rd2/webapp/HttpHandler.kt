@@ -42,7 +42,7 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
             val model = Game(
                 wsHost = "ws://localhost:$port",
                 players = app.game.players,
-                waitingForMorePlayers = app.game.waitingForMorePlayers,
+                waitingForMorePlayers = app.game.state == GameState.WaitingForMorePlayers,
                 playerId = playerId,
             )
             Response(Status.OK).with(view of model)
