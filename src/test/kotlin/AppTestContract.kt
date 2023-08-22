@@ -47,8 +47,8 @@ abstract class AppTestContract {
     fun `scenario - joining a game when no one else is waiting`() {
         freddy.attemptsTo(
             sitAtTheTable,
-            ensureThat(playersAtTheTable, onlyIncludes(freddy.name)),
-            ensureThat(waitingForMorePlayers, isFalse)
+            ensureThat(playersAtTheTable(), onlyIncludes(freddy.name)),
+            ensureThat(waitingForMorePlayers(), isFalse)
         )
     }
 
@@ -61,9 +61,9 @@ abstract class AppTestContract {
         return listOf(freddy, sally).map { actor ->
             DynamicTest.dynamicTest("from ${actor}'s perspective") {
                 actor.attemptsTo(
-                    ensureThat(playersAtTheTable, onlyIncludes(freddy.name, sally.name)),
-                    ensureThat(waitingForMorePlayers, isFalse),
-                    ensureThat(gameHasStarted, isFalse),
+                    ensureThat(playersAtTheTable(), onlyIncludes(freddy.name, sally.name)),
+                    ensureThat(waitingForMorePlayers(), isFalse),
+                    ensureThat(gameHasStarted(), isFalse),
                 )
             }
         }
@@ -77,7 +77,7 @@ abstract class AppTestContract {
         gary.attemptsTo(startTheGame)
 
         listOf(freddy, sally).forEach { actor ->
-            actor.attemptsTo(ensureThat(gameHasStarted, isTrue), ensureThat(theirCardCount, equalTo(1)))
+            actor.attemptsTo(ensureThat(gameHasStarted(), isTrue), ensureThat(theirCardCount(), equalTo(1)))
         }
     }
 
@@ -90,7 +90,7 @@ abstract class AppTestContract {
         players.forEach { it.attemptsTo(sitAtTheTable) }
         gary.attemptsTo(startTheGame)
         players.forEach { actor -> actor.attemptsTo(placeABet(bets[actor.name]!!)) }
-        players.forEach { actor -> actor.attemptsTo(ensureThat(theySeeBets, equalTo(bets))) }
+        players.forEach { actor -> actor.attemptsTo(ensureThat(theySeeBets(), equalTo(bets))) }
     }
 
     @Test
@@ -105,8 +105,8 @@ abstract class AppTestContract {
         freddy.attemptsTo(placeABet(1))
         players.forEach { actor ->
             actor.attemptsTo(
-                ensureThat(seeWhoHasPlacedABet, hasElement(freddy.name)),
-                ensureThat(theySeeBets, equalTo(emptyMap()))
+                ensureThat(seeWhoHasPlacedABet(), hasElement(freddy.name)),
+                ensureThat(theySeeBets(), equalTo(emptyMap()))
             )
         }
     }
