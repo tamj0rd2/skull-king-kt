@@ -1,10 +1,12 @@
 typealias PlayerId = String
 
+typealias Hand = List<Card>
+
 class Game {
     private val _players = mutableListOf<PlayerId>()
     val players get() = _players.toList()
 
-    private val hands = mutableMapOf<PlayerId, List<Card>>()
+    private val hands = mutableMapOf<PlayerId, Hand>()
 
     private val _bets = mutableMapOf<PlayerId, Int>()
     private val isBettingComplete get() = _bets.size == players.size

@@ -1,6 +1,8 @@
 package testsupport.adapters
 
+import Card
 import GameState
+import Hand
 import PlayerId
 import org.openqa.selenium.By
 import org.openqa.selenium.chrome.ChromeDriver
@@ -18,8 +20,8 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Application
     override val playersInRoom: List<PlayerId>
         get() = driver.findElement(By.id("players")).findElements(By.tagName("li")).mapNotNull { it.text }
 
-    override val cardCount: Int
-        get() = driver.findElement(By.id("hand")).findElements(By.tagName("li")).size
+    override val hand: Hand
+        get() = driver.findElement(By.id("hand")).findElements(By.tagName("li")).map { Card() }
 
     override fun placeBet(bet: Int) {
         driver.findElement(By.name("bet")).sendKeys(bet.toString())

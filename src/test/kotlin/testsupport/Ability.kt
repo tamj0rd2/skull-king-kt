@@ -1,6 +1,7 @@
 package testsupport
 
 import GameState
+import Hand
 import PlayerId
 
 interface Ability
@@ -12,7 +13,7 @@ interface ApplicationDriver {
 
     val gameState: GameState
     val playersInRoom: List<PlayerId>
-    val cardCount: Int
+    val hand: Hand
     val bets: Map<PlayerId, Int>
     val playersWhoHavePlacedBets: List<PlayerId>
 }

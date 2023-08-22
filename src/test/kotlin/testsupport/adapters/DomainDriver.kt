@@ -18,7 +18,7 @@ class DomainDriver(val app: App) : ApplicationDriver, GameMasterDriver {
 
     override val playersInRoom get() = app.game.players
 
-    override val cardCount get() = app.game.getCardsInHand(playerId).size
+    override val hand get() = app.game.getCardsInHand(playerId)
 
     override fun placeBet(bet: Int) = app.game.placeBet(playerId, bet)
     override val gameState: GameState get() = app.game.state

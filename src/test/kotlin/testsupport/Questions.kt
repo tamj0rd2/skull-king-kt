@@ -16,9 +16,8 @@ val TheGameState = Question.about("the game state") { actor ->
     actor.use<ParticipateInGames>().gameState
 }
 
-// TODO: this should probably be "a question about their hand"
-val TheirCardCount = Question.about("their card count") { actor ->
-    actor.use<ParticipateInGames>().cardCount
+val TheirHand = Question.about("their hand") { actor ->
+    actor.use<ParticipateInGames>().hand
 }
 
 val TheySeeBets = Question.about("the bets that have been made") { actor ->
