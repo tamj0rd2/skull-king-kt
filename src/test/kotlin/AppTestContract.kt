@@ -16,18 +16,17 @@ import testsupport.GameMasterDriver
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.Question
-import testsupport.gameHasStarted
+import testsupport.GameHasStarted
 import testsupport.placeABet
-import testsupport.playersAtTheTable
-import testsupport.seeWhoHasPlacedABet
+import testsupport.PlayersAtTheTable
+import testsupport.PlayersWhoHavePlacedABet
 import testsupport.sitAtTheTable
 import testsupport.startTheGame
 import testsupport.startTheTrickTakingPhase
-import testsupport.theirCardCount
-import testsupport.theySeeBets
-import testsupport.waitingForMorePlayers
+import testsupport.TheirCardCount
+import testsupport.TheySeeBets
+import testsupport.WaitingForMorePlayers
 import java.time.Clock
-import kotlin.reflect.jvm.jvmName
 import kotlin.test.Ignore
 import kotlin.test.Test
 
@@ -47,8 +46,8 @@ abstract class AppTestContract {
     fun `scenario - joining a game when no one else is waiting`() {
         freddy.attemptsTo(
             sitAtTheTable,
-            ensureThat(playersAtTheTable(), onlyIncludes(freddy.name)),
-            ensureThat(waitingForMorePlayers(), isFalse)
+            ensureThat(PlayersAtTheTable, onlyIncludes(freddy.name)),
+            ensureThat(WaitingForMorePlayers, isTrue)
         )
     }
 
@@ -61,9 +60,9 @@ abstract class AppTestContract {
         return listOf(freddy, sally).map { actor ->
             DynamicTest.dynamicTest("from ${actor}'s perspective") {
                 actor.attemptsTo(
-                    ensureThat(playersAtTheTable(), onlyIncludes(freddy.name, sally.name)),
-                    ensureThat(waitingForMorePlayers(), isFalse),
-                    ensureThat(gameHasStarted(), isFalse),
+                    ensureThat(PlayersAtTheTable, onlyIncludes(freddy.name, sally.name)),
+                    ensureThat(WaitingForMorePlayers, isFalse),
+                    ensureThat(GameHasStarted, isFalse),
                 )
             }
         }
@@ -77,7 +76,7 @@ abstract class AppTestContract {
         gary.attemptsTo(startTheGame)
 
         listOf(freddy, sally).forEach { actor ->
-            actor.attemptsTo(ensureThat(gameHasStarted(), isTrue), ensureThat(theirCardCount(), equalTo(1)))
+            actor.attemptsTo(ensureThat(GameHasStarted, isTrue), ensureThat(TheirCardCount, equalTo(1)))
         }
     }
 
@@ -90,7 +89,7 @@ abstract class AppTestContract {
         players.forEach { it.attemptsTo(sitAtTheTable) }
         gary.attemptsTo(startTheGame)
         players.forEach { actor -> actor.attemptsTo(placeABet(bets[actor.name]!!)) }
-        players.forEach { actor -> actor.attemptsTo(ensureThat(theySeeBets(), equalTo(bets))) }
+        players.forEach { actor -> actor.attemptsTo(ensureThat(TheySeeBets, equalTo(bets))) }
     }
 
     @Test
@@ -105,8 +104,8 @@ abstract class AppTestContract {
         freddy.attemptsTo(placeABet(1))
         players.forEach { actor ->
             actor.attemptsTo(
-                ensureThat(seeWhoHasPlacedABet(), hasElement(freddy.name)),
-                ensureThat(theySeeBets(), equalTo(emptyMap()))
+                ensureThat(PlayersWhoHavePlacedABet, hasElement(freddy.name)),
+                ensureThat(TheySeeBets, equalTo(emptyMap()))
             )
         }
     }
@@ -132,7 +131,7 @@ private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activit
     val clock = Clock.systemDefaultZone()
     val startTime = clock.instant()
     val mustEndBy = startTime.plusSeconds(2)
-    val questionName = question.fn::class.jvmName.substringAfter("$").substringBefore("$")
+    val questionName = question::class.simpleName
 
     do {
         try {
