@@ -7,6 +7,7 @@ import com.natpryce.hamkrest.has
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestMethodOrder
+import org.openqa.selenium.remote.http.UrlTemplate.Match
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.ManageGames
@@ -14,6 +15,7 @@ import testsupport.ParticipateInGames
 import testsupport.ThePlayersAtTheTable
 import testsupport.ThePlayersWhoHavePlacedABet
 import testsupport.Question
+import testsupport.TheGamePhase
 import testsupport.TheGameState
 import testsupport.TheirHand
 import testsupport.TheySeeBets
@@ -35,7 +37,7 @@ abstract class AppTestContract {
 
     @Test
     @Order(1)
-    fun `scenario - joining a game when no one else is waiting`() {
+    fun `joining a game when no one else is waiting`() {
         freddy.attemptsTo(
             sitAtTheTable,
             ensureThat(ThePlayersAtTheTable, onlyIncludes(freddy.name)),
@@ -45,7 +47,7 @@ abstract class AppTestContract {
 
     @Test
     @Order(2)
-    fun `scenario - joining a game when someone else is already waiting to play`() {
+    fun `joining a game when someone else is already waiting to play`() {
         freddy.attemptsTo(sitAtTheTable)
         sally.attemptsTo(sitAtTheTable)
 
@@ -59,7 +61,7 @@ abstract class AppTestContract {
 
     @Test
     @Order(3)
-    fun `scenario - starting round 1`() {
+    fun `entering the bidding phase`() {
         freddy.attemptsTo(sitAtTheTable)
         sally.attemptsTo(sitAtTheTable)
         gary.attemptsTo(startTheGame)
@@ -67,25 +69,29 @@ abstract class AppTestContract {
         players.forEach { actor ->
             actor.attemptsTo(
                 ensureThat(TheGameState, equalTo(GameState.InProgress)),
-                ensureThat(TheirHand, has(List<*>::size, equalTo(1)))
+                ensureThat(TheGamePhase, equalTo(GamePhase.Bidding)),
+                ensureThat(TheirHand, hasSize(1)),
             )
         }
     }
 
     @Test
     @Order(4)
-    fun `scenario - bids are shown after completing bidding`() {
+    fun `when everyone has completed their bid`() {
         val bets = mapOf(freddy.name to 1, sally.name to 0)
 
         players.forEach { it.attemptsTo(sitAtTheTable) }
         gary.attemptsTo(startTheGame)
         players.forEach { actor -> actor.attemptsTo(placeABet(bets[actor.name]!!)) }
-        players.forEach { actor -> actor.attemptsTo(ensureThat(TheySeeBets, equalTo(bets))) }
+        players.forEach { actor -> actor.attemptsTo(
+            ensureThat(TheySeeBets, equalTo(bets)),
+            ensureThat(TheGamePhase, equalTo(GamePhase.TrickTaking))
+        )}
     }
 
     @Test
     @Order(5)
-    fun `scenario - bids are not shown if not everyone has finished bidding`() {
+    fun `when not everyone has finished bidding`() {
         players.forEach { it.attemptsTo(sitAtTheTable) }
         gary.attemptsTo(startTheGame)
         freddy.attemptsTo(placeABet(1))
@@ -93,10 +99,25 @@ abstract class AppTestContract {
         players.forEach { actor ->
             actor.attemptsTo(
                 ensureThat(ThePlayersWhoHavePlacedABet, onlyIncludes(freddy.name)),
-                ensureThat(TheySeeBets, equalTo(emptyMap()))
+                ensureThat(TheGamePhase, equalTo(GamePhase.Bidding)),
+                ensureThat(TheySeeBets, equalTo(emptyMap())),
             )
         }
     }
+
+    //@Test
+    //@Order(6)
+    //fun `playing the first round`() {
+    //    // given the game has started and all bets have been placed
+    //    players.forEach { it.attemptsTo(sitAtTheTable) }
+    //    gary.attemptsTo(startTheGame)
+    //    players.forEach { it.attemptsTo(placeABet(1)) }
+    //
+    //    // when freddy plays a card
+    //    freddy.attemptsTo(playACard)
+    //
+    //    // then freddy and sally can both see the card
+    //}
 }
 
 private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activity { actor ->
@@ -126,3 +147,5 @@ private fun <T> onlyIncludes(vararg expected: T): Matcher<Collection<T>> =
         override val description: String get() = "contains exactly the same items as ${describe(expected.toList())}"
         override val negatedDescription: String get() = "does not $description"
     }
+
+fun <T> hasSize(expected: Int): Matcher<List<T>> = has(List<T>::size, equalTo(expected))

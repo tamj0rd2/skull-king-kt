@@ -1,6 +1,7 @@
 package testsupport.adapters
 
 import Card
+import GamePhase
 import GameState
 import Hand
 import PlayerId
@@ -29,10 +30,17 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Application
     }
 
     override val gameState: GameState get() {
-        val gameState = driver.findElement(By.tagName("h2")).text.lowercase()
+        val gameState = driver.findElement(By.id("gameState")).text.lowercase()
         if (gameState.contains("waiting for more players")) return GameState.WaitingForMorePlayers
         if (gameState.contains("game has started")) return GameState.InProgress
         return GameState.WaitingToStart
+    }
+
+    override val gamePhase: GamePhase get() {
+        val gamePhase = driver.findElement(By.id("gamePhase")).text.lowercase()
+        if (gamePhase.contains("place your bid")) return GamePhase.Bidding
+        if (gamePhase.contains("it's trick taking time")) return GamePhase.TrickTaking
+        TODO("got an unknown game phase: $gamePhase")
     }
 
     override val bets: Map<PlayerId, Int>

@@ -3,13 +3,16 @@ typealias PlayerId = String
 typealias Hand = List<Card>
 
 class Game {
+    private var _phase: GamePhase = GamePhase.None
+    val phase: GamePhase get() = _phase
+
     private val _players = mutableListOf<PlayerId>()
     val players get() = _players.toList()
 
     private val hands = mutableMapOf<PlayerId, Hand>()
+    private val isBettingComplete get() = _bets.size == players.size
 
     private val _bets = mutableMapOf<PlayerId, Int>()
-    private val isBettingComplete get() = _bets.size == players.size
     val bets get() = if (isBettingComplete) _bets.toMap() else emptyMap()
     val playersWhoHavePlacedBet get() = _bets.keys.toList()
 
@@ -31,6 +34,7 @@ class Game {
         if (waitingForMorePlayers) error("not enough players to start game - ${players.size}/$roomSizeToStartGame")
 
         _state = GameState.InProgress
+        _phase = GamePhase.Bidding
         gameEventSubscribers.broadcast(GameEvent.GameStarted())
 
         players.forEach { hands[it] = listOf(Card()) }
@@ -45,10 +49,12 @@ class Game {
 
     fun placeBet(playerId: PlayerId, bet: Int) {
         _bets[playerId] = bet
-        this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId))
+        this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId, isBettingComplete))
 
-        if (isBettingComplete)
+        if (isBettingComplete) {
+            this._phase = GamePhase.TrickTaking
             this.gameEventSubscribers.broadcast(GameEvent.BettingCompleted(bets))
+        }
     }
 
     fun subscribeToGameEvents(playerId: PlayerId, subscriber: GameEventSubscriber) {
@@ -96,7 +102,7 @@ sealed class GameEvent {
         override val type: Type = Type.RoundStarted
     }
 
-    data class BetPlaced(val playerId: PlayerId) : GameEvent() {
+    data class BetPlaced(val playerId: PlayerId, val isBettingComplete: Boolean) : GameEvent() {
         override val type: Type = Type.BetPlaced
     }
 
@@ -109,4 +115,10 @@ enum class GameState {
     WaitingForMorePlayers,
     WaitingToStart,
     InProgress,
+}
+
+enum class GamePhase {
+    None,
+    Bidding,
+    TrickTaking,
 }

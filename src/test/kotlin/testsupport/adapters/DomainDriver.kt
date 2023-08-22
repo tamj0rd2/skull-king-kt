@@ -1,6 +1,7 @@
 package testsupport.adapters
 
 import App
+import GamePhase
 import GameState
 import PlayerId
 import testsupport.ApplicationDriver
@@ -22,12 +23,11 @@ class DomainDriver(val app: App) : ApplicationDriver, GameMasterDriver {
 
     override fun placeBet(bet: Int) = app.game.placeBet(playerId, bet)
     override val gameState: GameState get() = app.game.state
+    override val gamePhase: GamePhase get() = app.game.phase
 
-    override val bets: Map<PlayerId, Int>
-        get() = app.game.bets
+    override val bets: Map<PlayerId, Int> get() = app.game.bets
 
-    override val playersWhoHavePlacedBets: List<PlayerId>
-        get() = app.game.playersWhoHavePlacedBet
+    override val playersWhoHavePlacedBets: List<PlayerId> get() = app.game.playersWhoHavePlacedBet
 
     override fun startGame() = app.game.start()
     override fun startTrickTaking() = app.game.startTrickTaking()

@@ -16,6 +16,10 @@ val TheGameState = Question.about("the game state") { actor ->
     actor.use<ParticipateInGames>().gameState
 }
 
+val TheGamePhase = Question.about("the game phase") { actor ->
+    actor.use<ParticipateInGames>().gamePhase
+}
+
 val TheirHand = Question.about("their hand") { actor ->
     actor.use<ParticipateInGames>().hand
 }

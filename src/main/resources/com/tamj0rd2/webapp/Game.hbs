@@ -12,6 +12,8 @@
         {{/if}}
     </h2>
 
+    <h2 id="gamePhase"></h2>
+
     <ul id="players">
         {{#each players}}
             <li>{{this}}</li>
@@ -74,6 +76,9 @@
                 case "GameStarted": {
                     const gameStateEl = document.getElementById("gameState")
                     gameStateEl.innerText = "The game has started :D"
+
+                    const gamePhaseEl = document.getElementById("gamePhase")
+                    gamePhaseEl.innerText = "Place your bid!"
                     break;
                 }
                 case "RoundStarted": {
@@ -90,6 +95,11 @@
                     const li = document.createElement("li")
                     li.innerText = gameEvent.playerId
                     playersWhoHaveBet.appendChild(li)
+
+                    if (gameEvent.isBettingComplete) {
+                        const gamePhaseEl = document.getElementById("gamePhase")
+                        gamePhaseEl.innerText = "It's trick taking time!"
+                    }
                     break
                 }
                 case "BettingCompleted": {

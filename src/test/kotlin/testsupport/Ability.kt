@@ -1,5 +1,6 @@
 package testsupport
 
+import GamePhase
 import GameState
 import Hand
 import PlayerId
@@ -11,6 +12,7 @@ interface ApplicationDriver {
     fun joinDefaultRoom()
     fun placeBet(bet: Int)
 
+    val gamePhase: GamePhase
     val gameState: GameState
     val playersInRoom: List<PlayerId>
     val hand: Hand
