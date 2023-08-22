@@ -34,9 +34,13 @@ tasks.test {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "17"
 }
-
 application {
     mainClass.set("MainKt")
 }
+
+// if I want backing fields:
+// https://gist.github.com/dellisd/a1e2ae1a7e6b61590bef4b2542a555a0
+// https://kotlinlang.org/docs/whatsnew-eap.html#share-your-feedback-on-the-new-k2-compiler
+// this goes into gradle.properties - kotlin.experimental.tryK2=true
