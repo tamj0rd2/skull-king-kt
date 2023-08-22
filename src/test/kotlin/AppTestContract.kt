@@ -1,8 +1,8 @@
+import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
-import com.natpryce.hamkrest.and
 import com.natpryce.hamkrest.assertion.assertThat
+import com.natpryce.hamkrest.describe
 import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.has
 import com.natpryce.hamkrest.hasElement
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.MethodOrderer
@@ -27,6 +27,7 @@ import testsupport.theirCardCount
 import testsupport.theySeeBets
 import testsupport.waitingForMorePlayers
 import java.time.Clock
+import kotlin.reflect.jvm.jvmName
 import kotlin.test.Ignore
 import kotlin.test.Test
 
@@ -47,7 +48,7 @@ abstract class AppTestContract {
         freddy.attemptsTo(
             sitAtTheTable,
             ensureThat(playersAtTheTable, onlyIncludes(freddy.name)),
-            ensureThat(waitingForMorePlayers, isTrue)
+            ensureThat(waitingForMorePlayers, isFalse)
         )
     }
 
@@ -127,15 +128,16 @@ abstract class AppTestContract {
 }
 
 
-private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activity { abilities ->
+private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activity { actor ->
     val clock = Clock.systemDefaultZone()
     val startTime = clock.instant()
     val mustEndBy = startTime.plusSeconds(2)
+    val questionName = question.fn::class.jvmName.substringAfter("$").substringBefore("$")
 
     do {
         try {
-            val answer = question.ask(abilities)
-            assertThat(answer, matcher)
+            val answer = question.ask(actor)
+            assertThat(answer, matcher) { "$actor asked a question about $questionName" }
             break
         } catch (e: AssertionError) {
             if (clock.instant() > mustEndBy) throw e
@@ -144,11 +146,16 @@ private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activit
     } while (true)
 }
 
-private fun <T> onlyIncludes(vararg elements: T): Matcher<Collection<T>> = elements.toList()
-    .map { it }
-    .drop(1)
-    .fold(hasElement(elements[0])) { acc, name -> acc.and(hasElement(name)) }
-    .and(has(Collection<T>::size, equalTo(elements.size)))
+private fun <T> onlyIncludes(vararg expected: T): Matcher<Collection<T>> =
+    object : Matcher<Collection<T>?> {
+        override fun invoke(actual: Collection<T>?): MatchResult {
+            if (actual?.toSet() != expected.toSet()) return MatchResult.Mismatch("was: ${describe(actual)}")
+            return MatchResult.Match
+        }
+
+        override val description: String get() = "contains exactly the same items as ${describe(expected.toList())}"
+        override val negatedDescription: String get() = "does not $description"
+    }
 
 private val isTrue = equalTo(true)
 private val isFalse = equalTo(false)

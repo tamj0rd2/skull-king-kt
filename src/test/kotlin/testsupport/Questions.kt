@@ -1,7 +1,7 @@
 package testsupport
 
-fun interface Question<T> {
-    fun ask(actor: Actor): T
+class Question<T>(val fn: (Actor) -> T) {
+    fun ask(actor: Actor): T = fn(actor)
 }
 
 val waitingForMorePlayers = Question { actor ->
