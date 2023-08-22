@@ -1,13 +1,12 @@
 package testsupport.adapters
 
-import Driver
 import GameState
 import PlayerId
-import com.natpryce.hamkrest.contains
 import org.openqa.selenium.By
 import org.openqa.selenium.chrome.ChromeDriver
+import testsupport.ApplicationDriver
 
-class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Driver {
+class WebDriver(baseUrl: String, private val driver: ChromeDriver) : ApplicationDriver {
     init {
         driver.navigate().to(baseUrl)
     }
@@ -43,12 +42,4 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Driver {
         get() = driver.findElement(By.id("playersWhoHaveBet"))
             .findElements(By.tagName("li"))
             .map { it.text }
-
-    // TODO: this doesn't need to be in a web driver. I can just use an HTTP client to make the requests
-    // This is breaking cohesion
-    override fun startGame() {
-        return driver.findElement(By.id("startGame")).submit()
-    }
-
-    override fun startTrickTaking() = driver.findElement(By.id("startTrickTaking")).submit()
 }

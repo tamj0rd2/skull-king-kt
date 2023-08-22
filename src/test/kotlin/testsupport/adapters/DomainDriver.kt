@@ -1,11 +1,12 @@
 package testsupport.adapters
 
 import App
-import Driver
 import GameState
 import PlayerId
+import testsupport.ApplicationDriver
+import testsupport.GameMasterDriver
 
-class DomainDriver(val app: App) : Driver {
+class DomainDriver(val app: App) : ApplicationDriver, GameMasterDriver {
 
     private lateinit var playerId: String
 

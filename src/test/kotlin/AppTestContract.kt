@@ -26,8 +26,6 @@ import testsupport.startTheGame
 import java.time.Clock
 import kotlin.test.Test
 
-interface Driver : ApplicationDriver, GameMasterDriver
-
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 abstract class AppTestContract {
     abstract val participateInGames: () -> ParticipateInGames
