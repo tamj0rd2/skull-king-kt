@@ -38,7 +38,7 @@ abstract class AppTestContract {
     fun `scenario - joining a game when no one else is waiting`() {
         freddy.attemptsTo(
             sitAtTheTable,
-            ensureThat(ThePlayersAtTheTable, onlyIncludes(freddy.name)),
+            ensureThat(ThePlayersAtTheTable, onlyIncludes(sally.name)),
             ensureThat(TheGameState, equalTo(GameState.WaitingForMorePlayers)),
         )
     }

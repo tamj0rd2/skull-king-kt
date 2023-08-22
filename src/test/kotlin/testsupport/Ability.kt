@@ -22,5 +22,3 @@ interface GameMasterDriver {
     fun startGame()
     fun startTrickTaking()
 }
-
-class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver

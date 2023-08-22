@@ -1,5 +1,7 @@
 package testsupport
 
+class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
+
 val enterName = Interaction { actor ->
     actor.use<ParticipateInGames>().enterName(actor.name)
 }
