@@ -11,22 +11,20 @@ import org.junit.jupiter.api.TestMethodOrder
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.ApplicationDriver
+import testsupport.TheGameHasStarted
 import testsupport.GameMasterDriver
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
+import testsupport.ThePlayersAtTheTable
+import testsupport.ThePlayersWhoHavePlacedABet
 import testsupport.Question
-import testsupport.GameHasStarted
-import testsupport.placeABet
-import testsupport.PlayersAtTheTable
-import testsupport.PlayersWhoHavePlacedABet
-import testsupport.sitAtTheTable
-import testsupport.startTheGame
-import testsupport.startTheTrickTakingPhase
 import testsupport.TheirCardCount
 import testsupport.TheySeeBets
-import testsupport.WaitingForMorePlayers
+import testsupport.TheyAreWaitingForMorePlayers
+import testsupport.placeABet
+import testsupport.sitAtTheTable
+import testsupport.startTheGame
 import java.time.Clock
-import kotlin.test.Ignore
 import kotlin.test.Test
 
 interface Driver : ApplicationDriver, GameMasterDriver
@@ -45,8 +43,8 @@ abstract class AppTestContract {
     fun `scenario - joining a game when no one else is waiting`() {
         freddy.attemptsTo(
             sitAtTheTable,
-            ensureThat(PlayersAtTheTable, onlyIncludes(freddy.name)),
-            ensureThat(WaitingForMorePlayers, isTrue)
+            ensureThat(ThePlayersAtTheTable, onlyIncludes(freddy.name)),
+            ensureThat(TheyAreWaitingForMorePlayers, isTrue)
         )
     }
 
@@ -59,9 +57,9 @@ abstract class AppTestContract {
         return listOf(freddy, sally).map { actor ->
             DynamicTest.dynamicTest("from ${actor}'s perspective") {
                 actor.attemptsTo(
-                    ensureThat(PlayersAtTheTable, onlyIncludes(freddy.name, sally.name)),
-                    ensureThat(WaitingForMorePlayers, isFalse),
-                    ensureThat(GameHasStarted, isFalse),
+                    ensureThat(ThePlayersAtTheTable, onlyIncludes(freddy.name, sally.name)),
+                    ensureThat(TheyAreWaitingForMorePlayers, isFalse),
+                    ensureThat(TheGameHasStarted, isFalse),
                 )
             }
         }
@@ -76,7 +74,7 @@ abstract class AppTestContract {
 
         listOf(freddy, sally).forEach { actor ->
             actor.attemptsTo(
-                ensureThat(GameHasStarted, isTrue),
+                ensureThat(TheGameHasStarted, isTrue),
                 ensureThat(TheirCardCount, equalTo(1))
             )
         }
@@ -98,6 +96,7 @@ abstract class AppTestContract {
     @Test
     @Order(5)
     fun `scenario - bids are not shown if not everyone has finished bidding`() {
+        // this is repeated a lot. I read online about "setting the scene" in the screenplay pattern. maybe I can borrow that
         val players = listOf(freddy, sally)
 
         players.forEach { it.attemptsTo(sitAtTheTable) }
@@ -106,7 +105,7 @@ abstract class AppTestContract {
         freddy.attemptsTo(placeABet(1))
         players.forEach { actor ->
             actor.attemptsTo(
-                ensureThat(PlayersWhoHavePlacedABet, onlyIncludes(freddy.name)),
+                ensureThat(ThePlayersWhoHavePlacedABet, onlyIncludes(freddy.name)),
                 ensureThat(TheySeeBets, equalTo(emptyMap()))
             )
         }
@@ -137,7 +136,7 @@ private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activit
     do {
         try {
             val answer = question.ask(actor)
-            assertThat(answer, matcher) { "$actor asked $question" }
+            assertThat(answer, matcher) { "$actor asked a $question" }
             break
         } catch (e: AssertionError) {
             if (clock.instant() > mustEndBy) throw e
