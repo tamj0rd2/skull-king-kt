@@ -9,7 +9,7 @@ class Game {
     private val _bets = mutableMapOf<PlayerId, Int>()
     private val isBettingComplete get() = _bets.size == players.size
     val bets get() = if (isBettingComplete) _bets.toMap() else emptyMap()
-    val playersWhoHaveBet get() = _bets.keys.toList()
+    val playersWhoHavePlacedBet get() = _bets.keys.toList()
 
     private val gameEventSubscribers = mutableMapOf<PlayerId, GameEventSubscriber>()
     private val minRoomSizeToStartGame = 2

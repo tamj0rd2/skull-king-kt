@@ -7,13 +7,14 @@ interface Ability
 interface ApplicationDriver {
     fun enterName(name: String)
     fun joinDefaultRoom()
-    fun isWaitingForMorePlayers(): Boolean
-    fun getPlayersInRoom(): List<PlayerId>
-    fun hasGameStarted(): Boolean
-    fun getCardCount(name: String): Int
     fun placeBet(bet: Int)
-    fun getBets(): Map<PlayerId, Int>
-    fun getPlayersWhoHavePlacedBets(): List<PlayerId>
+
+    val isWaitingForMorePlayers: Boolean
+    val playersInRoom: List<PlayerId>
+    val hasGameStarted: Boolean
+    val cardCount: Int
+    val bets: Map<PlayerId, Int>
+    val playersWhoHavePlacedBets: List<PlayerId>
 }
 
 interface GameMasterDriver {
@@ -22,4 +23,3 @@ interface GameMasterDriver {
 }
 
 class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
-class ManageGames(driver: GameMasterDriver): Ability, GameMasterDriver by driver

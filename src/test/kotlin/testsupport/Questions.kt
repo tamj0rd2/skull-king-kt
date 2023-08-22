@@ -1,26 +1,30 @@
 package testsupport
 
+fun interface Question<T> {
+    fun ask(actor: Actor): T
+}
+
 val waitingForMorePlayers = Question { actor ->
-    actor.abilities.mustFind<ParticipateInGames>().isWaitingForMorePlayers()
+    actor.use<ParticipateInGames>().isWaitingForMorePlayers
 }
 
 val playersAtTheTable = Question { actor ->
-    actor.abilities.mustFind<ParticipateInGames>().getPlayersInRoom()
+    actor.use<ParticipateInGames>().playersInRoom
 }
 
 val gameHasStarted = Question { actor ->
-    actor.abilities.mustFind<ParticipateInGames>().hasGameStarted()
+    actor.use<ParticipateInGames>().hasGameStarted
 }
 
 val theirCardCount = Question { actor ->
-    actor.abilities.mustFind<ParticipateInGames>().getCardCount(actor.name)
+    actor.use<ParticipateInGames>().cardCount
 }
 
 val theySeeBets = Question { actor ->
-    actor.abilities.mustFind<ParticipateInGames>().getBets()
+    actor.use<ParticipateInGames>().bets
 }
 
 val seeWhoHasPlacedABet = Question { actor ->
-    actor.abilities.mustFind<ParticipateInGames>().getPlayersWhoHavePlacedBets()
+    actor.use<ParticipateInGames>().playersWhoHavePlacedBets
 }
 
