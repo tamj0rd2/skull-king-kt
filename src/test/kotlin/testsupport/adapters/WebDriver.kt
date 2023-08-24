@@ -1,13 +1,13 @@
 package testsupport.adapters
 
-import Card
-import CardId
-import GamePhase
-import GameState
-import Hand
-import PlayedCard
-import PlayerId
-import Trick
+import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.CardId
+import com.tamj0rd2.domain.GamePhase
+import com.tamj0rd2.domain.GameState
+import com.tamj0rd2.domain.Hand
+import com.tamj0rd2.domain.PlayedCard
+import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.Trick
 import org.openqa.selenium.By
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
@@ -22,16 +22,6 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Application
 
     override fun joinDefaultRoom() = driver.findElement(By.id("joinGame")).submit()
 
-    override val playersInRoom: List<PlayerId>
-        get() = driver.findElement(By.id("players"))
-            .findElements(By.tagName("li"))
-            .mapNotNull { it.text }
-
-    override val hand: Hand
-        get() = driver.findElement(By.id("hand"))
-            .findElements(By.tagName("li"))
-            .map { Card(it.toCardId()) }
-
     override fun placeBet(bet: Int) {
         driver.findElement(By.name("bet")).sendKeys(bet.toString())
         driver.findElement(By.id("placeBet")).click()
@@ -45,6 +35,16 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Application
             .findElement(By.tagName("button"))
             .click()
     }
+
+    override val playersInRoom: List<PlayerId>
+        get() = driver.findElement(By.id("players"))
+            .findElements(By.tagName("li"))
+            .mapNotNull { it.text }
+
+    override val hand: Hand
+        get() = driver.findElement(By.id("hand"))
+            .findElements(By.tagName("li"))
+            .map { Card(it.toCardId()) }
 
     override val trick: Trick
         get() = driver.findElement(By.id("trick"))
@@ -66,6 +66,7 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Application
             val gamePhase = driver.findElement(By.id("gamePhase")).text.lowercase()
             if (gamePhase.contains("place your bid")) return GamePhase.Bidding
             if (gamePhase.contains("it's trick taking time")) return GamePhase.TrickTaking
+            // TODO: this could use its own error code too
             TODO("got an unknown game phase: $gamePhase")
         }
 

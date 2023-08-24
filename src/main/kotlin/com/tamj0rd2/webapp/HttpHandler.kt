@@ -1,8 +1,9 @@
 package com.tamj0rd2.webapp
 
-import App
-import Hands
-import PlayerId
+import com.tamj0rd2.domain.App
+import com.tamj0rd2.domain.GameState
+import com.tamj0rd2.domain.Hands
+import com.tamj0rd2.domain.PlayerId
 import org.http4k.core.Body
 import org.http4k.core.ContentType
 import org.http4k.core.HttpHandler

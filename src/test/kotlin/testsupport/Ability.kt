@@ -1,12 +1,12 @@
 package testsupport
 
-import Card
-import CardId
-import GamePhase
-import GameState
-import Hand
-import PlayerId
-import Trick
+import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.CardId
+import com.tamj0rd2.domain.GamePhase
+import com.tamj0rd2.domain.GameState
+import com.tamj0rd2.domain.Hand
+import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.Trick
 
 interface Ability
 

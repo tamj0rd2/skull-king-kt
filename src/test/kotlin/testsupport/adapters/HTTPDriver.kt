@@ -1,7 +1,7 @@
 package testsupport.adapters
 
-import Card
-import PlayerId
+import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.webapp.RigDeckCommand
 import org.eclipse.jetty.client.HttpClient
 import org.http4k.client.JettyClient

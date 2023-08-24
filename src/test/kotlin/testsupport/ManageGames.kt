@@ -1,7 +1,7 @@
 package testsupport
 
-import Card
-import PlayerId
+import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.PlayerId
 
 class ManageGames(driver: GameMasterDriver): Ability, GameMasterDriver by driver
 

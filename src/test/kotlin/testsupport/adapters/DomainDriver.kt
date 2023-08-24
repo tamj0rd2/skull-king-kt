@@ -1,12 +1,12 @@
 package testsupport.adapters
 
-import App
-import Card
-import CardId
-import GamePhase
-import GameState
-import PlayerId
-import Trick
+import com.tamj0rd2.domain.App
+import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.CardId
+import com.tamj0rd2.domain.GamePhase
+import com.tamj0rd2.domain.GameState
+import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.Trick
 import testsupport.ApplicationDriver
 import testsupport.GameMasterDriver
 

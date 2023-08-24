@@ -14,12 +14,14 @@
 
     <h2 id="gamePhase"></h2>
 
+    <h3>Players</h3>
     <ul id="players">
         {{#each players}}
             <li>{{this}}</li>
         {{/each}}
     </ul>
 
+    <h3>Hand</h3>
     <ul id="hand"></ul>
 
     <form>
@@ -30,9 +32,13 @@
         <button id="placeBet" type="button" onclick="onBetSubmit()">Place Bet</button>
     </form>
 
+    <h3>Players who have bet</h3>
     <ul id="playersWhoHaveBet"></ul>
+
+    <h3>Bets</h3>
     <ul id="bets"></ul>
 
+    <h3>Cards in trick</h3>
     <ul id="trick"></ul>
 </div>
 <script>

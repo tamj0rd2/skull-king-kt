@@ -1,6 +1,6 @@
 package testsupport
 
-import CardId
+import com.tamj0rd2.domain.CardId
 
 class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
 

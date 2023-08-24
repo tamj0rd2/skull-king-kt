@@ -1,10 +1,9 @@
 package com.tamj0rd2.webapp
 
-import App
-import Card
-import CardId
-import GameEvent
-import PlayerId
+import com.tamj0rd2.domain.App
+import com.tamj0rd2.domain.CardId
+import com.tamj0rd2.domain.GameEvent
+import com.tamj0rd2.domain.PlayerId
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonTypeInfo

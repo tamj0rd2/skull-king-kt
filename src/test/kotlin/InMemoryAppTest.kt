@@ -1,3 +1,4 @@
+import com.tamj0rd2.domain.App
 import testsupport.ParticipateInGames
 import testsupport.ManageGames
 import testsupport.adapters.DomainDriver

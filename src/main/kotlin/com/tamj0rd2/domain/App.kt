@@ -1,3 +1,5 @@
+package com.tamj0rd2.domain
+
 typealias PlayerId = String
 
 typealias Hand = List<Card>

@@ -1,3 +1,4 @@
+import com.tamj0rd2.domain.App
 import com.tamj0rd2.webapp.httpHandler
 import com.tamj0rd2.webapp.wsHandler
 import org.http4k.server.Http4kServer
