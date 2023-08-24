@@ -9,7 +9,7 @@ class Game {
     private val _players = mutableListOf<PlayerId>()
     val players get() = _players.toList()
 
-    private val hands = mutableMapOf<PlayerId, Hand>()
+    private val hands = mutableMapOf<PlayerId, MutableList<Card>>()
     private val isBettingComplete get() = _bets.size == players.size
 
     private val _bets = mutableMapOf<PlayerId, Int>()
@@ -24,6 +24,11 @@ class Game {
 
     private val waitingForMorePlayers get() = players.size < roomSizeToStartGame
 
+    private val _currentTrick = mutableListOf<PlayedCard>()
+    val currentTrick: List<PlayedCard> get() = _currentTrick
+
+    private var riggedHands: Map<PlayerId, Hand>? = null
+
     fun addPlayer(playerId: PlayerId) {
         _players += playerId
         if (!waitingForMorePlayers) _state = GameState.WaitingToStart
@@ -37,7 +42,11 @@ class Game {
         _phase = GamePhase.Bidding
         gameEventSubscribers.broadcast(GameEvent.GameStarted())
 
-        players.forEach { hands[it] = listOf(Card()) }
+        var cardId = 0
+        players.forEach { hands[it] =
+            (riggedHands?.get(it) ?: listOf(Card(cardId.apply { cardId += 1 }.toString()))).toMutableList()
+        }
+
         gameEventSubscribers.forEach {
             it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key)))
         }
@@ -65,7 +74,17 @@ class Game {
         this.forEach { it.value.handleEvent(event) }
     }
 
-    fun startTrickTaking() {
+    fun playCard(playerId: String, cardId: CardId) {
+        // TODO: I should start extracting these specific error codes out. I wrote the same thing in the webdriver earlier
+        val card = getCardsInHand(playerId).find { it.id == cardId } ?: error("card $cardId not found in $playerId's hand")
+        hands[playerId]?.remove(card) ?: error("the player's hand somehow doesn't exist...")
+        _currentTrick += PlayedCard(playerId, card)
+
+        gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, cardId))
+    }
+
+    fun rigDeck(hands: Hands) {
+        this.riggedHands = hands
     }
 }
 
@@ -73,7 +92,9 @@ class App {
     val game = Game()
 }
 
-class Card
+data class Card(val id: CardId)
+
+typealias CardId = String
 
 fun interface GameEventSubscriber {
     fun handleEvent(event: GameEvent)
@@ -88,6 +109,7 @@ sealed class GameEvent {
         RoundStarted,
         BetPlaced,
         BettingCompleted,
+        CardPlayed,
     }
 
     data class PlayerJoined(val playerId: PlayerId, val waitingForMorePlayers: Boolean) : GameEvent() {
@@ -109,6 +131,10 @@ sealed class GameEvent {
     data class BettingCompleted(val bets: Map<PlayerId, Int>) : GameEvent() {
         override val type: Type = Type.BettingCompleted
     }
+
+    data class CardPlayed(val playerId: String, val cardId: CardId) : GameEvent() {
+        override val type: Type = Type.CardPlayed
+    }
 }
 
 enum class GameState {
@@ -122,3 +148,8 @@ enum class GamePhase {
     Bidding,
     TrickTaking,
 }
+
+typealias Trick = List<PlayedCard>
+
+data class PlayedCard(val playerId: PlayerId, val card: Card)
+typealias Hands = Map<PlayerId, Hand>

@@ -1,17 +1,22 @@
 package testsupport
 
+import Card
+import CardId
 import GamePhase
 import GameState
 import Hand
 import PlayerId
+import Trick
 
 interface Ability
 
 interface ApplicationDriver {
-    fun enterName(name: String)
+    fun enterPlayerId(playerId: String)
     fun joinDefaultRoom()
     fun placeBet(bet: Int)
+    fun playCard(playerId: String, cardId: CardId)
 
+    val trick: Trick
     val gamePhase: GamePhase
     val gameState: GameState
     val playersInRoom: List<PlayerId>
@@ -22,5 +27,5 @@ interface ApplicationDriver {
 
 interface GameMasterDriver {
     fun startGame()
-    fun startTrickTaking()
+    fun rigDeck(hands: Map<PlayerId, List<Card>>)
 }

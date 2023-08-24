@@ -4,24 +4,27 @@ import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.describe
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
+import com.natpryce.hamkrest.isEmpty
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestMethodOrder
-import org.openqa.selenium.remote.http.UrlTemplate.Match
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
+import testsupport.PlayACard
 import testsupport.ThePlayersAtTheTable
 import testsupport.ThePlayersWhoHavePlacedABet
 import testsupport.Question
+import testsupport.RigTheDeckWith
+import testsupport.TheCurrentTrick
 import testsupport.TheGamePhase
 import testsupport.TheGameState
 import testsupport.TheirHand
 import testsupport.TheySeeBets
 import testsupport.placeABet
 import testsupport.sitAtTheTable
-import testsupport.startTheGame
+import testsupport.StartTheGame
 import java.time.Clock
 import kotlin.test.Test
 
@@ -64,7 +67,7 @@ abstract class AppTestContract {
     fun `entering the bidding phase`() {
         freddy.attemptsTo(sitAtTheTable)
         sally.attemptsTo(sitAtTheTable)
-        gary.attemptsTo(startTheGame)
+        gary.attemptsTo(StartTheGame)
 
         players.forEach { actor ->
             actor.attemptsTo(
@@ -81,7 +84,7 @@ abstract class AppTestContract {
         val bets = mapOf(freddy.name to 1, sally.name to 0)
 
         players.forEach { it.attemptsTo(sitAtTheTable) }
-        gary.attemptsTo(startTheGame)
+        gary.attemptsTo(StartTheGame)
         players.forEach { actor -> actor.attemptsTo(placeABet(bets[actor.name]!!)) }
         players.forEach { actor -> actor.attemptsTo(
             ensureThat(TheySeeBets, equalTo(bets)),
@@ -93,7 +96,7 @@ abstract class AppTestContract {
     @Order(5)
     fun `when not everyone has finished bidding`() {
         players.forEach { it.attemptsTo(sitAtTheTable) }
-        gary.attemptsTo(startTheGame)
+        gary.attemptsTo(StartTheGame)
         freddy.attemptsTo(placeABet(1))
 
         players.forEach { actor ->
@@ -105,19 +108,32 @@ abstract class AppTestContract {
         }
     }
 
-    //@Test
-    //@Order(6)
-    //fun `playing the first round`() {
-    //    // given the game has started and all bets have been placed
-    //    players.forEach { it.attemptsTo(sitAtTheTable) }
-    //    gary.attemptsTo(startTheGame)
-    //    players.forEach { it.attemptsTo(placeABet(1)) }
-    //
-    //    // when freddy plays a card
-    //    freddy.attemptsTo(playACard)
-    //
-    //    // then freddy and sally can both see the card
-    //}
+    @Test
+    @Order(6)
+    fun `playing the first round`() {
+        players.forEach { it.attemptsTo(sitAtTheTable) }
+
+        val handsToDeal = mapOf(
+            freddy.name to listOf(Card("1")),
+            sally.name to listOf(Card("2")),
+        )
+
+        fun Map<PlayerId, List<Card>>.playedCard(actor: Actor, index: Int) = PlayedCard(actor.name, this[actor.name]!![index])
+
+        gary.attemptsTo(RigTheDeckWith(handsToDeal))
+        gary.attemptsTo(StartTheGame)
+
+        players.forEach { it.attemptsTo(placeABet(1)) }
+
+        freddy.attemptsTo(
+            ensureThat(TheirHand, onlyIncludes(Card("1"))),
+            PlayACard("1"),
+            ensureThat(TheirHand, isEmpty),
+        )
+        players.forEach { it.attemptsTo(ensureThat(TheCurrentTrick, onlyIncludes(handsToDeal.playedCard(freddy, 0)))) }
+
+        // then freddy and sally can both see the card
+    }
 }
 
 private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activity { actor ->

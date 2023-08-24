@@ -1,6 +1,8 @@
 package com.tamj0rd2.webapp
 
 import App
+import Card
+import CardId
 import GameEvent
 import PlayerId
 import com.fasterxml.jackson.annotation.JsonAutoDetect
@@ -40,6 +42,7 @@ fun wsHandler(app: App): RoutingWsHandler {
                         is ClientMessage.BetPlaced -> app.game.placeBet(message.playerId, message.bet)
                         is ClientMessage.UnhandledGameEvent -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
                         is ClientMessage.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
+                        is ClientMessage.CardPlayed -> app.game.playCard(playerId, message.cardId)
                     }
                 }
             }
@@ -59,11 +62,16 @@ sealed class ClientMessage {
         BetPlaced,
         UnhandledGameEvent,
         Error,
+        CardPlayed,
     }
 
     // TODO maybe this is a GameEvent, rather than a ClientMessage? Or perhaps, a ClientMessage that happens to contain a GameEvent?
     data class BetPlaced(val playerId: PlayerId, val bet: Int) : ClientMessage() {
         override val type = Type.BetPlaced
+    }
+
+    data class CardPlayed(val cardId: CardId) : ClientMessage() {
+        override val type = Type.CardPlayed
     }
 
     data class UnhandledGameEvent(val offender: GameEvent.Type) : ClientMessage() {

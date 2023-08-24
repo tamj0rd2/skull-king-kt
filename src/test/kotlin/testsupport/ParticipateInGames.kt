@@ -1,12 +1,18 @@
 package testsupport
 
+import CardId
+
 class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
 
-val enterName = Interaction { actor ->
-    actor.use<ParticipateInGames>().enterName(actor.name)
+val EnterName = Interaction { actor ->
+    actor.use<ParticipateInGames>().enterPlayerId(actor.name)
 }
 
-val joinRoom = Interaction { actor ->
+fun PlayACard(cardId: CardId) = Interaction { actor ->
+    actor.use<ParticipateInGames>().playCard(actor.name, cardId)
+}
+
+private val JoinRoom = Interaction { actor ->
     actor.use<ParticipateInGames>().joinDefaultRoom()
 }
 
@@ -14,4 +20,4 @@ fun placeABet(bet: Int) = Interaction { actor ->
     actor.use<ParticipateInGames>().placeBet(bet)
 }
 
-val sitAtTheTable = Task(enterName, joinRoom)
+val sitAtTheTable = Task(EnterName, JoinRoom)
