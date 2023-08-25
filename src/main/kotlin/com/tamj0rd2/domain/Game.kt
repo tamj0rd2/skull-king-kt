@@ -37,7 +37,7 @@ class Game {
 
         _state = GameState.InProgress
         _phase = GamePhase.Bidding
-        gameEventSubscribers.broadcast(GameEvent.GameStarted())
+        gameEventSubscribers.broadcast(GameEvent.GameStarted)
 
         var cardId = 0
         players.forEach { hands[it] =

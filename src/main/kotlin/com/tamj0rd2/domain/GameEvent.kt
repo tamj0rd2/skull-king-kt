@@ -1,38 +1,20 @@
 package com.tamj0rd2.domain
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 sealed class GameEvent {
-    abstract val type: Type
+    data class PlayerJoined(val playerId: PlayerId, val waitingForMorePlayers: Boolean) : GameEvent()
 
-    enum class Type {
-        PlayerJoined,
-        GameStarted,
-        RoundStarted,
-        BetPlaced,
-        BettingCompleted,
-        CardPlayed,
-    }
+    object GameStarted : GameEvent()
 
-    data class PlayerJoined(val playerId: PlayerId, val waitingForMorePlayers: Boolean) : GameEvent() {
-        override val type: Type = Type.PlayerJoined
-    }
+    data class RoundStarted(val cardsDealt: List<Card>) : GameEvent()
 
-    class GameStarted : GameEvent() {
-        override val type: Type = Type.GameStarted
-    }
+    data class BetPlaced(val playerId: PlayerId, val isBettingComplete: Boolean) : GameEvent()
 
-    data class RoundStarted(val cardsDealt: List<Card>) : GameEvent() {
-        override val type: Type = Type.RoundStarted
-    }
+    data class BettingCompleted(val bets: Map<PlayerId, Int>) : GameEvent()
 
-    data class BetPlaced(val playerId: PlayerId, val isBettingComplete: Boolean) : GameEvent() {
-        override val type: Type = Type.BetPlaced
-    }
-
-    data class BettingCompleted(val bets: Map<PlayerId, Int>) : GameEvent() {
-        override val type: Type = Type.BettingCompleted
-    }
-
-    data class CardPlayed(val playerId: String, val cardId: CardId) : GameEvent() {
-        override val type: Type = Type.CardPlayed
-    }
+    data class CardPlayed(val playerId: String, val cardId: CardId) : GameEvent()
 }

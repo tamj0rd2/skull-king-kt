@@ -14,21 +14,21 @@ function connectToWs(wsAddress) {
             console.log("Message from server ", event.data);
 
             try {
-                const gameEvent = JSON.parse(event.data)
-                switch (gameEvent.type) {
+                const data = JSON.parse(event.data)
+                switch (data.type) {
                     // TODO: all of this stuff could do with some furniture arranging
-                    case "PlayerJoined": return handlers.playerJoined(gameEvent);
-                    case "GameStarted": return handlers.gameStarted();
-                    case "RoundStarted": return handlers.roundStarted(gameEvent);
-                    case "BetPlaced": return handlers.betPlaced(gameEvent);
-                    case "BettingCompleted": return handlers.bettingCompleted(gameEvent);
-                    case "CardPlayed": return handlers.cardPlayed(gameEvent);
+                    case "GameEvent$PlayerJoined": return handlers.playerJoined(data);
+                    case "GameEvent$GameStarted": return handlers.gameStarted();
+                    case "GameEvent$RoundStarted": return handlers.roundStarted(data);
+                    case "GameEvent$BetPlaced": return handlers.betPlaced(data);
+                    case "GameEvent$BettingCompleted": return handlers.bettingCompleted(data);
+                    case "GameEvent$CardPlayed": return handlers.cardPlayed(data);
                     default: {
                         socket.send(JSON.stringify({
-                            type: "ClientMessage$UnhandledGameEvent",
-                            offender: gameEvent.type,
+                            type: "ClientMessage$UnhandledMessageFromServer",
+                            offender: data.type,
                         }))
-                        console.error(`Unknown game event ${gameEvent.type}`)
+                        console.error(`Unknown message from server: ${data.type}`)
                     }
                 }
             } catch (e) {

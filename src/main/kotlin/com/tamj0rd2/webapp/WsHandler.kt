@@ -40,7 +40,7 @@ fun wsHandler(app: App): RoutingWsHandler {
 
                     when(val message = clientMessageLens(it)) {
                         is ClientMessage.BetPlaced -> app.game.placeBet(playerId, message.bet)
-                        is ClientMessage.UnhandledGameEvent -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
+                        is ClientMessage.UnhandledMessageFromServer -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
                         is ClientMessage.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
                         is ClientMessage.CardPlayed -> app.game.playCard(playerId, message.cardId)
                     }
@@ -51,34 +51,16 @@ fun wsHandler(app: App): RoutingWsHandler {
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 // NOTE: for this parsing to work, the FE needs to specifically reference ClientMessage$SubTypeName.
 // the prefix wouldn't be necessary if I didn't nest the Subtypes here, but I wanted better organisation :D
 sealed class ClientMessage {
-    abstract val type: Type
-
-    enum class Type {
-        BetPlaced,
-        UnhandledGameEvent,
-        Error,
-        CardPlayed,
-    }
-
     // TODO maybe this is a GameEvent, rather than a ClientMessage? Or perhaps, a ClientMessage that happens to contain a GameEvent?
-    data class BetPlaced(val bet: Int) : ClientMessage() {
-        override val type = Type.BetPlaced
-    }
+    data class BetPlaced(val bet: Int) : ClientMessage()
 
-    data class CardPlayed(val cardId: CardId) : ClientMessage() {
-        override val type = Type.CardPlayed
-    }
+    data class CardPlayed(val cardId: CardId) : ClientMessage()
 
-    data class UnhandledGameEvent(val offender: GameEvent.Type) : ClientMessage() {
-        override val type = Type.UnhandledGameEvent
-    }
+    data class UnhandledMessageFromServer(val offender: String) : ClientMessage()
 
-    data class Error(val stackTrace: String) : ClientMessage() {
-        override val type = Type.Error
-    }
+    data class Error(val stackTrace: String) : ClientMessage()
 }
