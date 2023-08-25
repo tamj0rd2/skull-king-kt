@@ -2,6 +2,7 @@ package testsupport.adapters
 
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardId
+import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GamePhase
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
@@ -31,7 +32,7 @@ class WebDriver(baseUrl: String, private val driver: ChromeDriver) : Application
         driver.findElement(By.id("hand"))
             .findElements(By.tagName("li"))
             .find { it.toCardId() == cardId }
-            .let { it ?: error("card $cardId not found in $playerId's hand") }
+            .let { it ?: throw GameException.CardNotInHand(playerId, cardId) }
             .findElement(By.tagName("button"))
             .click()
     }

@@ -33,7 +33,7 @@ class Game {
     }
 
     fun start() {
-        if (waitingForMorePlayers) error("not enough players to start game - ${players.size}/$roomSizeToStartGame")
+        if (waitingForMorePlayers) throw GameException.NotEnoughPlayers(players.size, roomSizeToStartGame)
 
         _state = GameState.InProgress
         _phase = GamePhase.Bidding
@@ -50,7 +50,7 @@ class Game {
     }
 
     fun getCardsInHand(playerId: PlayerId): List<Card> {
-        return hands[playerId] ?: error("hand not found for player $playerId not found")
+        return hands[playerId] ?: throw GameException.NoHandFoundFor(playerId)
     }
 
     fun placeBet(playerId: PlayerId, bet: Int) {
@@ -68,9 +68,8 @@ class Game {
     }
 
     fun playCard(playerId: String, cardId: CardId) {
-        // TODO: I should start extracting these specific error codes out. I wrote the same thing in the webdriver earlier
-        val card = getCardsInHand(playerId).find { it.id == cardId } ?: error("card $cardId not found in $playerId's hand")
-        hands[playerId]?.remove(card) ?: error("the player's hand somehow doesn't exist...")
+        val card = getCardsInHand(playerId).find { it.id == cardId } ?: throw GameException.CardNotInHand(playerId, cardId)
+        hands[playerId]?.remove(card) ?: error("the player's hand somehow doesn't exist. this should never happen")
         _currentTrick += PlayedCard(playerId, card)
 
         gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, cardId))
