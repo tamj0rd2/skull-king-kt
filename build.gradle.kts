@@ -12,9 +12,12 @@ repositories {
     mavenCentral()
 }
 
-val http4kVersion by extra { "5.6.3.0" }
 
 dependencies {
+    val http4kVersion = "5.6.3.0"
+    val seleniumVersion = "4.11.0"
+    val chromeVersion = "v114"
+
     implementation("org.http4k:http4k-core:$http4kVersion")
     implementation("org.http4k:http4k-template-handlebars:$http4kVersion")
     implementation("org.http4k:http4k-format-jackson:$http4kVersion")
@@ -22,8 +25,10 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.4.11")
 
     testImplementation(kotlin("test"))
-    testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:4.11.0")
-    testImplementation("org.seleniumhq.selenium:selenium-java:4.11.0")
+    // TODO: somehow get the latest release from https://github.com/SeleniumHQ/selenium/releases/latest
+    testImplementation("org.seleniumhq.selenium:selenium-devtools-$chromeVersion:$seleniumVersion")
+    testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion")
+    testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
     testImplementation("com.natpryce:hamkrest:1.8.0.1")
     testImplementation("org.http4k:http4k-client-jetty:$http4kVersion")
 }
