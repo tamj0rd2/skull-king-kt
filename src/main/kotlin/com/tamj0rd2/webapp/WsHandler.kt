@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory
 fun wsHandler(app: App): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
     val gameEventLens = WsMessage.auto<GameEvent>().toLens()
+    val clientMessageLens = WsMessage.auto<ClientMessage>().toLens()
     val logger = LoggerFactory.getLogger("wsHandler")
 
     return websockets(
@@ -35,9 +36,9 @@ fun wsHandler(app: App): RoutingWsHandler {
                 }
 
                 ws.onMessage {
-                    logger.info("received message: ${it.bodyString()}")
+                    logger.info("received client message: ${it.bodyString()}")
 
-                    when(val message = it.bodyString().asJsonObject().asA(ClientMessage::class)) {
+                    when(val message = clientMessageLens(it)) {
                         is ClientMessage.BetPlaced -> app.game.placeBet(playerId, message.bet)
                         is ClientMessage.UnhandledGameEvent -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
                         is ClientMessage.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
@@ -53,7 +54,7 @@ fun wsHandler(app: App): RoutingWsHandler {
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 // NOTE: for this parsing to work, the FE needs to specifically reference ClientMessage$SubTypeName.
-// the prefix wouldn't be necessary if I didn't nest the Subtypes here, but I wanted to for better organisation :D
+// the prefix wouldn't be necessary if I didn't nest the Subtypes here, but I wanted better organisation :D
 sealed class ClientMessage {
     abstract val type: Type
 
