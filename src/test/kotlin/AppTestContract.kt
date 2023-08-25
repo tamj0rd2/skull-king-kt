@@ -31,16 +31,28 @@ import testsupport.PlacesABet
 import testsupport.SitsAtTheTable
 import testsupport.StartsTheGame
 import java.time.Clock
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-abstract class AppTestContract {
-    abstract val participateInGames: () -> ParticipateInGames
-    abstract val manageGames: () -> ManageGames
+interface AbilityFactory {
+    fun participateInGames(): ParticipateInGames
+    fun manageGames(): ManageGames
+}
 
-    private val freddy by lazy { Actor("Freddy First").whoCan(participateInGames()) }
-    private val sally by lazy { Actor("Sally Second").whoCan(participateInGames()) }
-    private val gary by lazy { Actor("Gary GameMaster").whoCan(manageGames()) }
+interface TestConfiguration : AbilityFactory {
+    fun setup()
+    fun teardown()
+}
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
+sealed class AppTestContract(private val d: TestConfiguration) {
+    @BeforeTest fun setup() = d.setup()
+    @AfterTest fun teardown() = d.teardown()
+
+    private val freddy = Actor("Freddy First").whoCan(d.participateInGames())
+    private val sally = Actor("Sally Second").whoCan(d.participateInGames())
+    private val gary = Actor("Gary GameMaster").whoCan(d.manageGames())
     private val players get() = listOf(freddy, sally)
 
     @Test

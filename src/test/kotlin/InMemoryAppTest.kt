@@ -3,9 +3,14 @@ import testsupport.ParticipateInGames
 import testsupport.ManageGames
 import testsupport.adapters.DomainDriver
 
-class InMemoryAppTest : AppTestContract() {
+class InMemoryAppTest : AppTestContract(object : TestConfiguration {
+    override fun setup() {}
+
+    override fun teardown() {}
+
     private val app = App()
 
-    override val participateInGames = { ParticipateInGames(DomainDriver(app)) }
-    override val manageGames = { ManageGames(DomainDriver(app)) }
-}
+    override fun participateInGames(): ParticipateInGames = ParticipateInGames(DomainDriver(app))
+
+    override fun manageGames(): ManageGames = ManageGames(DomainDriver(app))
+})

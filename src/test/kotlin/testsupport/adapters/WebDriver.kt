@@ -14,11 +14,7 @@ import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
 import testsupport.ApplicationDriver
 
-class WebDriver(baseUrl: String, private val driver: ChromeDriver) : ApplicationDriver {
-    init {
-        driver.navigate().to(baseUrl)
-    }
-
+class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     override fun enterPlayerId(playerId: String) = driver.findElement(By.name("playerId")).sendKeys(playerId)
 
     override fun joinDefaultRoom() = driver.findElement(By.id("joinGame")).submit()
