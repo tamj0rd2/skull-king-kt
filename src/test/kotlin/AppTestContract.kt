@@ -17,19 +17,19 @@ import testsupport.Activity
 import testsupport.Actor
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
-import testsupport.PlayACard
+import testsupport.PlaysACard
 import testsupport.ThePlayersAtTheTable
 import testsupport.ThePlayersWhoHavePlacedABet
 import testsupport.Question
-import testsupport.RigTheDeckWith
+import testsupport.RigsTheDeck
 import testsupport.TheCurrentTrick
 import testsupport.TheGamePhase
 import testsupport.TheGameState
 import testsupport.TheirHand
 import testsupport.TheySeeBets
-import testsupport.placeABet
-import testsupport.sitAtTheTable
-import testsupport.StartTheGame
+import testsupport.PlacesABet
+import testsupport.SitsAtTheTable
+import testsupport.StartsTheGame
 import java.time.Clock
 import kotlin.test.Test
 
@@ -46,23 +46,23 @@ abstract class AppTestContract {
     @Test
     @Order(1)
     fun `joining a game when no one else is waiting`() {
-        freddy.attemptsTo(
-            sitAtTheTable,
-            ensureThat(ThePlayersAtTheTable, onlyIncludes(freddy.name)),
-            ensureThat(TheGameState, equalTo(GameState.WaitingForMorePlayers)),
+        freddy(
+            SitsAtTheTable,
+            ensuresThat(ThePlayersAtTheTable, onlyIncludes(freddy.name)),
+            ensuresThat(TheGameState, equalTo(GameState.WaitingForMorePlayers)),
         )
     }
 
     @Test
     @Order(2)
     fun `joining a game when someone else is already waiting to play`() {
-        freddy.attemptsTo(sitAtTheTable)
-        sally.attemptsTo(sitAtTheTable)
+        freddy(SitsAtTheTable)
+        sally(SitsAtTheTable)
 
         players.map { actor ->
-            actor.attemptsTo(
-                ensureThat(ThePlayersAtTheTable, onlyIncludes(freddy.name, sally.name)),
-                ensureThat(TheGameState, equalTo(GameState.WaitingToStart))
+            actor(
+                ensuresThat(ThePlayersAtTheTable, onlyIncludes(freddy.name, sally.name)),
+                ensuresThat(TheGameState, equalTo(GameState.WaitingToStart))
             )
         }
     }
@@ -70,15 +70,15 @@ abstract class AppTestContract {
     @Test
     @Order(3)
     fun `entering the bidding phase`() {
-        freddy.attemptsTo(sitAtTheTable)
-        sally.attemptsTo(sitAtTheTable)
-        gary.attemptsTo(StartTheGame)
+        freddy(SitsAtTheTable)
+        sally(SitsAtTheTable)
+        gary(StartsTheGame)
 
         players.forEach { actor ->
-            actor.attemptsTo(
-                ensureThat(TheGameState, equalTo(GameState.InProgress)),
-                ensureThat(TheGamePhase, equalTo(GamePhase.Bidding)),
-                ensureThat(TheirHand, hasSize(1)),
+            actor(
+                ensuresThat(TheGameState, equalTo(GameState.InProgress)),
+                ensuresThat(TheGamePhase, equalTo(GamePhase.Bidding)),
+                ensuresThat(TheirHand, hasSize(1)),
             )
         }
     }
@@ -88,27 +88,27 @@ abstract class AppTestContract {
     fun `when everyone has completed their bid`() {
         val bets = mapOf(freddy.name to 1, sally.name to 0)
 
-        players.forEach { it.attemptsTo(sitAtTheTable) }
-        gary.attemptsTo(StartTheGame)
-        players.forEach { actor -> actor.attemptsTo(placeABet(bets[actor.name]!!)) }
-        players.forEach { actor -> actor.attemptsTo(
-            ensureThat(TheySeeBets, equalTo(bets)),
-            ensureThat(TheGamePhase, equalTo(GamePhase.TrickTaking))
+        players.forEach { it(SitsAtTheTable) }
+        gary(StartsTheGame)
+        players.forEach { actor -> actor(PlacesABet(bets[actor.name]!!)) }
+        players.forEach { actor -> actor(
+            ensuresThat(TheySeeBets, equalTo(bets)),
+            ensuresThat(TheGamePhase, equalTo(GamePhase.TrickTaking))
         )}
     }
 
     @Test
     @Order(5)
     fun `when not everyone has finished bidding`() {
-        players.forEach { it.attemptsTo(sitAtTheTable) }
-        gary.attemptsTo(StartTheGame)
-        freddy.attemptsTo(placeABet(1))
+        players.forEach { it(SitsAtTheTable) }
+        gary(StartsTheGame)
+        freddy(PlacesABet(1))
 
         players.forEach { actor ->
-            actor.attemptsTo(
-                ensureThat(ThePlayersWhoHavePlacedABet, onlyIncludes(freddy.name)),
-                ensureThat(TheGamePhase, equalTo(GamePhase.Bidding)),
-                ensureThat(TheySeeBets, equalTo(emptyMap())),
+            actor(
+                ensuresThat(ThePlayersWhoHavePlacedABet, onlyIncludes(freddy.name)),
+                ensuresThat(TheGamePhase, equalTo(GamePhase.Bidding)),
+                ensuresThat(TheySeeBets, equalTo(emptyMap())),
             )
         }
     }
@@ -116,7 +116,7 @@ abstract class AppTestContract {
     @Test
     @Order(6)
     fun `playing the first round`() {
-        players.forEach { it.attemptsTo(sitAtTheTable) }
+        players.forEach { it(SitsAtTheTable) }
 
         val handsToDeal = mapOf(
             freddy.name to listOf(Card("1")),
@@ -125,23 +125,23 @@ abstract class AppTestContract {
 
         fun Map<PlayerId, List<Card>>.playedCard(actor: Actor, index: Int) = PlayedCard(actor.name, this[actor.name]!![index])
 
-        gary.attemptsTo(RigTheDeckWith(handsToDeal))
-        gary.attemptsTo(StartTheGame)
+        gary(RigsTheDeck(handsToDeal))
+        gary(StartsTheGame)
 
-        players.forEach { it.attemptsTo(placeABet(1)) }
+        players.forEach { it(PlacesABet(1)) }
 
-        freddy.attemptsTo(
-            ensureThat(TheirHand, onlyIncludes(Card("1"))),
-            PlayACard("1"),
-            ensureThat(TheirHand, isEmpty),
+        freddy(
+            ensuresThat(TheirHand, onlyIncludes(Card("1"))),
+            PlaysACard("1"),
+            ensuresThat(TheirHand, isEmpty),
         )
-        players.forEach { it.attemptsTo(ensureThat(TheCurrentTrick, onlyIncludes(handsToDeal.playedCard(freddy, 0)))) }
+        players.forEach { it(ensuresThat(TheCurrentTrick, onlyIncludes(handsToDeal.playedCard(freddy, 0)))) }
 
         // then freddy and sally can both see the card
     }
 }
 
-private fun <T> ensureThat(question: Question<T>, matcher: Matcher<T>) = Activity { actor ->
+private fun <T> ensuresThat(question: Question<T>, matcher: Matcher<T>) = Activity { actor ->
     val clock = Clock.systemDefaultZone()
     val startTime = clock.instant()
     val mustEndBy = startTime.plusSeconds(2)

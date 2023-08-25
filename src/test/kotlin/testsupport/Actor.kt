@@ -9,7 +9,7 @@ class Actor(val name: String) {
         return this
     }
 
-    fun attemptsTo(vararg activities: Activity) {
+    operator fun invoke(vararg activities: Activity) {
         activities.forEach { it.invoke(this) }
     }
 
