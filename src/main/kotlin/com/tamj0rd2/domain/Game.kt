@@ -1,5 +1,7 @@
 package com.tamj0rd2.domain
 
+import com.github.jknack.handlebars.internal.lang3.ObjectUtils.Null
+
 class Game {
     private var _phase: GamePhase = GamePhase.None
     val phase: GamePhase get() = _phase
@@ -114,3 +116,52 @@ typealias Trick = List<PlayedCard>
 data class PlayedCard(val playerId: PlayerId, val card: Card)
 
 typealias Hands = Map<PlayerId, Hand>
+
+
+private class Bids {
+    private var bids = mutableMapOf<PlayerId, Bid>()
+
+    val areComplete get() = bids.none { it.value is Bid.None }
+
+    fun initFor(players: Collection<PlayerId>) {
+        bids = players.associateWith { Bid.None }.toMutableMap()
+    }
+
+    fun forDisplay(): Map<PlayerId, Bid> = when {
+        areComplete -> bids
+        else -> bids.mapValues { Bid.None }
+    }
+
+    fun place(playerId: PlayerId, bid: Int) {
+        bids[playerId] = Bid.Placed(bid)
+    }
+
+    fun asCompleted(): CompletedBids {
+        return bids.mapValues {
+            if (it.value is Bid.None) throw GameException.NotAllPlayersHaveBid()
+            it.value as Bid.Placed
+        }
+    }
+}
+
+typealias CompletedBids = Map<PlayerId, Bid.Placed>
+
+sealed class Bid {
+    fun toInt() = when(this) {
+        is None -> null
+        is Placed -> bid
+    }
+
+    companion object {
+        fun from(value: Int?): Bid = when (value) {
+            null -> None
+            else -> Placed(value)
+        }
+        fun from(value: Int) = Placed(value)
+        fun from(value: Null) = None
+    }
+
+    object None : Bid()
+
+    data class Placed(val bid: Int) : Bid()
+}

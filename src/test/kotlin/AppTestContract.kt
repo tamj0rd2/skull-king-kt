@@ -1,11 +1,11 @@
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
-import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.describe
 import com.natpryce.hamkrest.equalTo as Is
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
 import com.natpryce.hamkrest.isEmpty
+import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GamePhase.*
 import com.tamj0rd2.domain.GameState.*
@@ -25,7 +25,6 @@ import testsupport.ParticipateInGames
 import testsupport.PlaysCard
 import testsupport.ThePlayersAtTheTable
 import testsupport.ThePlayersWhoHaveBid
-import testsupport.Question
 import testsupport.RigsTheDeck
 import testsupport.TheCurrentTrick
 import testsupport.TheGamePhase
@@ -35,7 +34,6 @@ import testsupport.TheySeeBids
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
 import testsupport.StartsTheGame
-import java.time.Clock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -121,7 +119,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             // TODO: maybe this can just be part of TheySeeBids? If someone hasn't bid, their bid can be null
             that(ThePlayersWhoHaveBid, areOnly(freddy.name))
             that(TheGamePhase, Is(Bidding))
-            that(TheySeeBids, equalTo(NoBids))
+            that(TheySeeBids, where(freddy bid null, sally bid null))
         }
     }
 
@@ -195,9 +193,9 @@ private fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> =
 
 fun <T> sizeIs(expected: Int): Matcher<List<T>> = has(List<T>::size, equalTo(expected))
 
-fun where(vararg bets: Pair<Actor, Int>): Matcher<Map<PlayerId, Int>> =
-    equalTo(bets.map { it.first.name to it.second }.toMap())
+fun where(vararg bets: Pair<Actor, Bid>): Matcher<Map<PlayerId, Int?>> =
+    equalTo<Map<PlayerId, Int?>>(bets.associate { it.first.name to it.second.toInt() })
 
-infix fun <A, B> A.bid(that: B): Pair<A, B> = Pair(this, that)
+infix fun Actor.bid(bid: Int?): Pair<Actor, Bid> = Pair(this, Bid.from(bid))
 
 val NoBids = emptyMap<PlayerId, Int>()
