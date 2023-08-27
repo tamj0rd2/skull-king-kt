@@ -72,112 +72,13 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     private val gary = Actor("Gary GameMaster").whoCan(d.manageGames())
 
     @Test
-    @Order(1)
-    fun `sitting at an empty table`() {
-        freddy(
-            SitsAtTheTable,
-            Ensures {
-                that(ThePlayersAtTheTable, areOnly(freddy))
-                that(TheGameState, Is(WaitingForMorePlayers))
-            },
-        )
-    }
-
-    @Test
-    @Order(2)
-    fun `once enough people are at the table`() {
-        freddy(SitsAtTheTable)
-        sally(SitsAtTheTable)
+    @Order(0)
+    fun `playing a game from start to finish`() {
+        freddy and sally both SitAtTheTable
         freddy and sally both Ensure {
             that(ThePlayersAtTheTable, areOnly(freddy, sally))
             that(TheGameState, Is(WaitingToStart))
         }
-    }
-
-    @Test
-    @Order(3)
-    fun `starting a game`() {
-        freddy and sally both SitAtTheTable
-        gary(SaysTheGameCanStart)
-        freddy and sally both Ensure {
-            that(TheGameState, Is(InProgress))
-            that(TheGamePhase, Is(Bidding))
-            that(HisHand, sizeIs(1))
-        }
-    }
-
-    @Test
-    @Order(4)
-    fun `when everyone has bid`() {
-        freddy and sally both SitAtTheTable
-        gary(SaysTheGameCanStart)
-        freddy(Bids(1))
-        sally(Bids(2))
-        freddy and sally both Ensure {
-            that(TheySeeBids, where(freddy bid 1, sally bid 2))
-            that(TheGamePhase, Is(TrickTaking))
-        }
-    }
-
-    @Test
-    @Order(5)
-    fun `when someone hasn't bid`() {
-        freddy and sally both SitAtTheTable
-        gary(SaysTheGameCanStart)
-        freddy(Bids(1))
-        freddy and sally both Ensure {
-            that(TheGamePhase, Is(Bidding))
-            that(TheySeeBids, where(freddy.bidIsHidden(), sally.hasNotBid()))
-        }
-    }
-
-    @Test
-    @Order(6)
-    fun `when someone plays a card in the first round`() {
-        freddy and sally both SitAtTheTable
-        gary(
-            RigsTheDeck.SoThat(freddy).willEndUpWith(Card("A")),
-            RigsTheDeck.SoThat(sally).willEndUpWith(Card("B")),
-            SaysTheGameCanStart
-        )
-
-        freddy and sally both Bid(1)
-        freddy(
-            Ensures(HisHand, sizeIs(1)),
-            Plays.card("A"),
-            Ensures(HisHand, isEmpty),
-        )
-        freddy and sally both Ensure(TheCurrentTrick, onlyContains(Card("A").playedBy(freddy)))
-    }
-
-    @Test
-    @Order(6)
-    fun `when everyone has played a card in the first round`() {
-        freddy and sally both SitAtTheTable
-        gary(
-            RigsTheDeck.SoThat(freddy).willEndUpWith(Card("C")),
-            RigsTheDeck.SoThat(sally).willEndUpWith(Card("D")),
-            SaysTheGameCanStart
-        )
-
-        freddy and sally both Bid(1)
-        freddy(Plays.card("C"))
-        sally(Plays.card("D"))
-        freddy and sally both Ensure(
-            TheCurrentTrick, onlyContains(
-                Card("C").playedBy(freddy),
-                Card("D").playedBy(sally)
-            )
-        )
-
-        // TODO: put something here about ending the trick and/or round1
-    }
-
-
-    @Test
-    @Order(7)
-    fun `playing a game from start to finish`() {
-        freddy and sally both SitAtTheTable
 
         // round 1
         gary(SaysTheGameCanStart)
@@ -223,6 +124,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheCurrentTrick, onlyContains(Card("1").playedBy(freddy), Card("3").playedBy(sally)))
             that(TheGamePhase, Is(TrickComplete))
+            that(TheirHand, sizeIs(1))
         }
 
         // round 2 trick 2
@@ -233,6 +135,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheCurrentTrick, onlyContains(Card("2").playedBy(freddy), Card("4").playedBy(sally)))
             that(TheGamePhase, Is(TrickComplete))
+            that(TheirHand, isEmpty)
         }
 
         // rounds 3 - 10
@@ -244,8 +147,15 @@ sealed class AppTestContract(private val d: TestConfiguration) {
                 that(TheirHand, sizeIs(roundNumber))
             }
 
+            // round X bidding
+            freddy and sally both Bid(roundNumber)
+            freddy and sally both Ensure {
+                that(TheySeeBids, where(freddy bid roundNumber, sally bid roundNumber))
+                that(TheGamePhase, Is(TrickTaking))
+            }
+
             // round X trick 1
-            freddy and sally both Play.theirFirstCard
+            freddy and sally both Play.theFirstCardInTheirHand
             freddy and sally both Ensure {
                 that(TheCurrentTrick, sizeIs(2))
                 that(TheGamePhase, Is(TrickComplete))
@@ -260,10 +170,11 @@ sealed class AppTestContract(private val d: TestConfiguration) {
                     that(TheirHand, sizeIs(roundNumber - trickNumber + 1))
                 }
 
-                freddy and sally both Play.theirFirstCard
+                freddy and sally both Play.theFirstCardInTheirHand
                 freddy and sally both Ensure {
                     that(TheCurrentTrick, sizeIs(2))
                     that(TheGamePhase, Is(TrickComplete))
+                    that(TheirHand, sizeIs(roundNumber - trickNumber))
                 }
             }
         }
@@ -273,6 +184,52 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             that(TheTrickNumber, Is(10))
             that(TheirHand, isEmpty)
             that(TheGameState, Is(Complete))
+        }
+    }
+
+    @Test
+    @Order(1)
+    fun `sitting at an empty table`() {
+        freddy(
+            SitsAtTheTable,
+            Ensures {
+                that(ThePlayersAtTheTable, areOnly(freddy))
+                that(TheGameState, Is(WaitingForMorePlayers))
+            },
+        )
+    }
+
+    @Test
+    @Order(2)
+    fun `waiting for sally to bid`() {
+        freddy and sally both SitAtTheTable
+        gary(SaysTheGameCanStart)
+        freddy(Bids(1))
+        freddy and sally both Ensure {
+            that(TheGamePhase, Is(Bidding))
+            that(TheySeeBids, where(freddy.bidIsHidden(), sally.hasNotBid()))
+        }
+    }
+
+    @Test
+    @Order(3)
+    fun `playing a card and waiting for the next player to do the same`() {
+        freddy and sally both SitAtTheTable
+        gary(
+            RigsTheDeck.SoThat(freddy).willEndUpWith(Card("A")),
+            SaysTheGameCanStart
+        )
+        freddy and sally both Bid(1)
+
+        freddy(
+            Ensures(HisHand, sizeIs(1)),
+            Plays.card("A"),
+            Ensures(HisHand, isEmpty),
+        )
+
+        freddy and sally both Ensure {
+            that(TheCurrentTrick, onlyContains(Card("A").playedBy(freddy)))
+            that(TheGamePhase, Is(TrickTaking))
         }
     }
 }
@@ -302,8 +259,7 @@ private fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> =
         override val negatedDescription: String get() = "does not $description"
     }
 
-// TODO: this can use Collection
-fun <T> sizeIs(expected: Int): Matcher<List<T>> = has(List<T>::size, equalTo(expected))
+fun <T> sizeIs(expected: Int): Matcher<Collection<T>> = has(Collection<T>::size, equalTo(expected))
 
 fun where(vararg bets: Pair<Actor, Bid>): Matcher<Map<PlayerId, Bid>> =
     equalTo(bets.associate { it.first.name to it.second })

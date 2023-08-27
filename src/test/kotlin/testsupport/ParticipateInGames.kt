@@ -7,10 +7,13 @@ class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver 
 val Play = Plays
 object Plays {
     fun card(cardId: CardId) = playsCard(cardId)
-    val theirFirstCard = Interaction {actor ->
+    val theFirstCardInTheirHand = Interaction { actor ->
         val firstCard = TheirHand.answeredBy(actor).first()
         actor(card(firstCard.id))
     }
+
+    val theFirstCardInHisHand = theFirstCardInTheirHand
+    val theFirstCardInHerHand = theFirstCardInTheirHand
 }
 
 private fun playsCard(cardId: CardId) = Interaction { actor ->
@@ -22,11 +25,11 @@ fun Bids(bet: Int) = Interaction { actor ->
 }
 fun Bid(bet: Int) = Bids(bet)
 
-val EntersTheirName = Interaction { actor ->
+private val EntersTheirName = Interaction { actor ->
     actor.use<ParticipateInGames>().enterPlayerId(actor.name)
 }
 
-val JoinsARoom = Interaction { actor ->
+private val JoinsARoom = Interaction { actor ->
     actor.use<ParticipateInGames>().joinDefaultRoom()
 }
 
