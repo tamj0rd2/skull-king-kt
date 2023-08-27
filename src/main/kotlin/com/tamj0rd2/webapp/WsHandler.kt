@@ -32,11 +32,12 @@ fun wsHandler(app: App): RoutingWsHandler {
                 val playerId = playerIdPath(req)
 
                 app.game.subscribeToGameEvents(playerId) {
+                    logger.info("sending game event to $playerId: ${it.asJsonObject()}")
                     ws.send(gameEventLens(it))
                 }
 
                 ws.onMessage {
-                    logger.info("received client message: ${it.bodyString()}")
+                    logger.info("received client message from $playerId: ${it.bodyString()}")
 
                     when(val message = clientMessageLens(it)) {
                         is ClientMessage.BetPlaced -> app.game.placeBet(playerId, message.bet)

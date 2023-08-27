@@ -119,11 +119,6 @@ function connectToWs(wsAddress) {
                     trick.appendChild(li)
                 },
                 trickCompleted: function(gameEvent) {
-                    const trick = document.getElementById("trick")
-                    const li = document.createElement("li")
-                    li.innerText = `${gameEvent.playerId}:${gameEvent.cardId}`
-                    trick.appendChild(li)
-
                     const gamePhaseEl = document.getElementById("gamePhase")
                     gamePhaseEl.innerText = "Trick completed :)"
                 },

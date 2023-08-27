@@ -1,4 +1,5 @@
 import org.eclipse.jetty.client.HttpClient
+import org.openqa.selenium.By
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import testsupport.ParticipateInGames
@@ -33,7 +34,10 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
     }
 
     override fun teardown() {
-        chromeDrivers.forEach { it.quit() }
+        chromeDrivers.forEach {
+            //it.findElement(By.tagName("body")).getAttribute("outerHTML").let(::println)
+            it.quit()
+        }
         httpClient.stop()
         server.stop()
     }
