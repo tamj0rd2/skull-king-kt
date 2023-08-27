@@ -75,6 +75,9 @@ function connectToWs(wsAddress) {
                     const trickNumberEl = document.getElementById("trickNumber")
                     trickNumberEl.innerText = gameEvent.trickNumber
 
+                    const betEl = document.getElementsByName("bet")[0]
+                    betEl.value = ""
+
                     const handEl = document.getElementById("hand")
                     gameEvent.cardsDealt.forEach(card => {
                         const li = document.createElement("li")
@@ -104,12 +107,10 @@ function connectToWs(wsAddress) {
                 },
                 bettingCompleted: function(gameEvent) {
                     const bets = gameEvent.bets
-                    const betsEl = document.getElementById("bets")
-                    betsEl.innerHTML = ""
-                    Object.entries(bets).forEach(([playerId, bet]) => {
-                        const li = document.createElement("li")
-                        li.innerText = `${playerId}:${bet}`
-                        betsEl.appendChild(li)
+                    document.querySelectorAll(`[data-playerBet]`).forEach(el => {
+                        const playerId = el.getAttribute("data-playerBet")
+                        const bet = bets[playerId]
+                        el.getElementsByTagName("span")[0].innerText = ":" + bet
                     })
                 },
                 cardPlayed: function(gameEvent) {

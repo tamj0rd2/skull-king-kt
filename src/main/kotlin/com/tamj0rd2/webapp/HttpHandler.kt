@@ -66,14 +66,14 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
             logger.info("received command: ${req.bodyString()}")
 
             when (val command = gameMasterCommandLens(req)) {
-                is GameMasterCommand.RigDeck -> app.game.rigDeck(command.playerId, command.cards)
-                is GameMasterCommand.StartRound -> app.game.startNextRound()
-                else -> error("unknown command: $command")
+                is GameMasterCommand.RigDeck -> app.game.rigDeck(command.playerId, command.cards).respondOK()
+                is GameMasterCommand.StartRound -> app.game.startNextRound().respondOK()
             }
-            Response(Status.OK)
         }
     )
 }
+
+private fun Any.respondOK() = Response(Status.OK)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")

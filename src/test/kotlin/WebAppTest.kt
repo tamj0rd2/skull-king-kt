@@ -10,9 +10,11 @@ import testsupport.adapters.WebDriver
 
 // NOTE: this needs to manually be kept in line with the version in gradle.build.kts
 private const val chromeVersion = 114
+private const val headless = true
+
 private val chromeDriverBinary = "${System.getProperty("user.dir")}/.chromedriver/chromedriver-$chromeVersion"
 private val chromeOptions = ChromeOptions()
-    .addArguments("--headless=chrome")
+    .apply { if (headless) addArguments("--headless") }
     .setBinary("${System.getProperty("user.dir")}/.chrome/chrome-$chromeVersion.app/Contents/MacOS/Google Chrome for Testing")
 
 @SkipWip

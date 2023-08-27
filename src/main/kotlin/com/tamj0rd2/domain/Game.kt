@@ -41,7 +41,6 @@ class Game {
 
         _state = GameState.InProgress
         _phase = GamePhase.Bidding
-        _bids.initFor(players)
         players.forEach { hands[it] = mutableListOf() }
         gameEventSubscribers.broadcast(GameEvent.GameStarted)
         startNextRound()
@@ -109,6 +108,7 @@ class Game {
         dealCards()
         _trickNumber = 0
         startNextTrick()
+        _bids.initFor(players)
 
         gameEventSubscribers.forEach {
             it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key), roundNumber))
