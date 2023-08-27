@@ -4,7 +4,7 @@ import com.tamj0rd2.domain.Card
 
 class ManageGames(driver: GameMasterDriver): Ability, GameMasterDriver by driver
 
-val StartsTheGame = Interaction { actor -> actor.use<ManageGames>().startGame() }
+val SaysTheGameCanStart = Interaction { actor -> actor.use<ManageGames>().startGame() }
 
 object RigsTheDeck {
     data class SoThat(private val thePlayer: Actor) {

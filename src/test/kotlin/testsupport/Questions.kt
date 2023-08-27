@@ -2,8 +2,6 @@ package testsupport
 
 import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.assertion.assertThat
-import com.tamj0rd2.domain.Bid
-import com.tamj0rd2.domain.PlayerId
 import java.time.Clock
 
 open class Question<T>(private val description: String, private val answer: (Actor) -> T) {
@@ -29,6 +27,8 @@ val TheGamePhase = Question.about("the game phase") { actor ->
 val TheirHand = Question.about("their hand") { actor ->
     actor.use<ParticipateInGames>().hand
 }
+val HisHand = TheirHand
+val HerHand = TheirHand
 
 val TheySeeBids = Question.about("the bets that have been made") { actor ->
     actor.use<ParticipateInGames>().bets

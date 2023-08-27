@@ -1,5 +1,6 @@
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
+import com.natpryce.hamkrest.and
 import com.natpryce.hamkrest.describe
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
@@ -26,12 +27,12 @@ import testsupport.PlaysCard
 import testsupport.RigsTheDeck
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
-import testsupport.StartsTheGame
+import testsupport.SaysTheGameCanStart
 import testsupport.TheCurrentTrick
 import testsupport.TheGamePhase
 import testsupport.TheGameState
 import testsupport.ThePlayersAtTheTable
-import testsupport.TheirHand
+import testsupport.HisHand
 import testsupport.TheySeeBids
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -85,13 +86,13 @@ sealed class AppTestContract(private val d: TestConfiguration) {
 
     @Test
     @Order(3)
-    fun `staring the game`() {
+    fun `starting a game`() {
         freddy and sally both SitAtTheTable
-        gary(StartsTheGame)
+        gary(SaysTheGameCanStart)
         freddy and sally both Ensure {
             that(TheGameState, Is(InProgress))
             that(TheGamePhase, Is(Bidding))
-            that(TheirHand, sizeIs(1))
+            that(HisHand, sizeIs(1))
         }
     }
 
@@ -99,7 +100,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     @Order(4)
     fun `when everyone has bid`() {
         freddy and sally both SitAtTheTable
-        gary(StartsTheGame)
+        gary(SaysTheGameCanStart)
         freddy(Bids(1))
         sally(Bids(2))
         freddy and sally both Ensure {
@@ -112,7 +113,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     @Order(5)
     fun `when someone hasn't bid`() {
         freddy and sally both SitAtTheTable
-        gary(StartsTheGame)
+        gary(SaysTheGameCanStart)
         freddy(Bids(1))
         freddy and sally both Ensure {
             that(TheGamePhase, Is(Bidding))
@@ -127,14 +128,14 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         gary(
             RigsTheDeck.SoThat(freddy).willEndUpWith(Card("A")),
             RigsTheDeck.SoThat(sally).willEndUpWith(Card("B")),
-            StartsTheGame
+            SaysTheGameCanStart
         )
 
         freddy and sally both Bid(1)
         freddy(
-            Ensures(TheirHand, !isEmpty),
+            Ensures(HisHand, sizeIs(1)),
             PlaysCard("A"),
-            Ensures(TheirHand, isEmpty),
+            Ensures(HisHand, isEmpty),
         )
         freddy and sally both Ensure(TheCurrentTrick, onlyContains(Card("A").playedBy(freddy)))
     }
@@ -146,7 +147,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         gary(
             RigsTheDeck.SoThat(freddy).willEndUpWith(Card("C")),
             RigsTheDeck.SoThat(sally).willEndUpWith(Card("D")),
-            StartsTheGame
+            SaysTheGameCanStart
         )
 
         freddy and sally both Bid(1)
