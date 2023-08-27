@@ -189,7 +189,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
 
     @Test
     @Order(1)
-    fun `sitting at an empty table`() {
+    fun `sitting at an empty table and waiting for more players to join`() {
         freddy(
             SitsAtTheTable,
             Ensures {

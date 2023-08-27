@@ -15,7 +15,7 @@ sealed class GameEvent {
         val trickNumber = 1
     }
 
-    data class BetPlaced(val playerId: PlayerId, val isBettingComplete: Boolean) : GameEvent()
+    data class BetPlaced(val playerId: PlayerId) : GameEvent()
 
     data class BettingCompleted(val bets: Map<PlayerId, Int>) : GameEvent()
 

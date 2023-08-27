@@ -65,7 +65,7 @@ class Game {
 
     fun placeBet(playerId: PlayerId, bid: Int) {
         _bids.place(playerId, bid)
-        this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId, _bids.areComplete))
+        this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId))
 
         if (_bids.areComplete) {
             this._phase = GamePhase.TrickTaking
@@ -79,7 +79,7 @@ class Game {
 
     fun playCard(playerId: String, cardId: CardId) {
         val cards = getCardsInHand(playerId)
-        val card = cards.find { it.id == cardId } ?: throw GameException.CardNotInHand(playerId, cardId, cards)
+        val card = cards.find { it.id == cardId } ?: throw GameException.CardNotInHand(playerId, cardId)
         hands[playerId]?.remove(card) ?: error("the player's hand somehow doesn't exist. this should never happen")
         _currentTrick += PlayedCard(playerId, card)
         gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, cardId))

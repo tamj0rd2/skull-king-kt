@@ -29,7 +29,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         driver.findElement(By.id("hand"))
             .findElements(By.tagName("li"))
             .find { it.toCardId() == cardId }
-            .let { it ?: throw GameException.CardNotInHand(playerId, cardId, TODO()) }
+            .let { it ?: throw GameException.CardNotInHand(playerId, cardId) }
             .findElement(By.tagName("button"))
             .click()
     }
@@ -75,8 +75,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 gamePhase.contains("place your bid") -> GamePhase.Bidding
                 gamePhase.contains("it's trick taking time") -> GamePhase.TrickTaking
                 gamePhase.contains("trick complete") -> GamePhase.TrickComplete
-                // TODO: this could use its own error code too
-                else -> TODO("got an unknown game phase: $gamePhase")
+                else -> error("could not determine game phase: $gamePhase")
             }
         }
 

@@ -15,11 +15,7 @@ import testsupport.GameMasterDriver
 class HTTPDriver(private val baseUrl: String, httpClient: HttpClient) : GameMasterDriver {
     private val client = JettyClient.invoke(httpClient)
 
-    override fun startGame() {
-        // TODO: make this a GM command too
-        val res = client(Request(Method.POST, "$baseUrl/startGame"))
-        if (res.status != Status.OK) throw RuntimeException("failed to start game")
-    }
+    override fun startGame() = doCommand(GameMasterCommand.StartGame)
 
     override fun rigDeck(playerId: PlayerId, cards: List<Card>) = doCommand(GameMasterCommand.RigDeck(playerId, cards))
 

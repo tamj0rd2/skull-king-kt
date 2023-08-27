@@ -16,7 +16,6 @@ function connectToWs(wsAddress) {
             try {
                 const data = JSON.parse(event.data)
                 switch (data.type) {
-                    // TODO: all of this stuff could do with some furniture arranging
                     case "GameEvent$PlayerJoined": return handlers.playerJoined(data);
                     case "GameEvent$GameStarted": return handlers.gameStarted();
                     case "GameEvent$RoundStarted": return handlers.roundStarted(data);
@@ -103,16 +102,13 @@ function connectToWs(wsAddress) {
                 },
                 betPlaced: function(gameEvent) {
                     document.querySelector(`[data-playerBet="${gameEvent.playerId}"] span`).innerText = ":" + "has bet"
-
-                    // TODO why is this even here? It should be in the bettingCompleted handler
-                    if (gameEvent.isBettingComplete) {
-                        const gamePhaseEl = document.getElementById("gamePhase")
-                        gamePhaseEl.innerText = "It's trick taking time!"
-                    }
                 },
                 bettingCompleted: function(gameEvent) {
                     const bets = gameEvent.bets
                     document.querySelectorAll(`[data-playerBet]`).forEach(el => {
+                        const gamePhaseEl = document.getElementById("gamePhase")
+                        gamePhaseEl.innerText = "It's trick taking time!"
+
                         const playerId = el.getAttribute("data-playerBet")
                         const bet = bets[playerId]
                         el.getElementsByTagName("span")[0].innerText = ":" + bet

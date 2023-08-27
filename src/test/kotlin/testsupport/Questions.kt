@@ -16,6 +16,15 @@ val ThePlayersAtTheTable = Question.about("the players at the table") { actor ->
     actor.use<ParticipateInGames>().playersInRoom
 }
 
+// NOTE: these could all be rolled up into a single question about the game state...
+val TheRoundNumber = Question.about("the round number") { actor ->
+    actor.use<ParticipateInGames>().roundNumber
+}
+
+val TheTrickNumber = Question.about("the trick number") { actor ->
+    actor.use<ParticipateInGames>().trickNumber
+}
+
 val TheGameState = Question.about("the game state") { actor ->
     actor.use<ParticipateInGames>().gameState
 }
@@ -30,14 +39,7 @@ val TheirHand = Question.about("their hand") { actor ->
 val HisHand = TheirHand
 val HerHand = TheirHand
 
-val TheRoundNumber = Question.about("the round number") { actor ->
-    actor.use<ParticipateInGames>().roundNumber
-}
 
-// TODO: these can all be rolled up into a single question about the game state...
-val TheTrickNumber = Question.about("the trick number") { actor ->
-    actor.use<ParticipateInGames>().trickNumber
-}
 
 val TheySeeBids = Question.about("the bets that have been made") { actor ->
     actor.use<ParticipateInGames>().bets

@@ -50,10 +50,9 @@ fun wsHandler(app: App): RoutingWsHandler {
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-// NOTE: for this parsing to work, the FE needs to specifically reference ClientMessage$SubTypeName.
+// For this parsing to work, the FE needs to specifically reference ClientMessage$SubTypeName.
 // the prefix wouldn't be necessary if I didn't nest the Subtypes here, but I wanted better organisation :D
 sealed class ClientMessage {
-    // TODO maybe this is a GameEvent, rather than a ClientMessage? Or perhaps, a ClientMessage that happens to contain a GameEvent?
     data class BetPlaced(val bet: Int) : ClientMessage()
 
     data class CardPlayed(val cardId: CardId) : ClientMessage()

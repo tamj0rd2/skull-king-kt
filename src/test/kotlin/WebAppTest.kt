@@ -8,7 +8,7 @@ import testsupport.SkipWip
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebDriver
 
-// NOTE: this needs to manually be kept in line with the version in gradle.build.kts
+// this needs to manually be kept in line with the version in gradle.build.kts
 private const val chromeVersion = 114
 private const val headless = true
 

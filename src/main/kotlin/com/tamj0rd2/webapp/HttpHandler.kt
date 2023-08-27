@@ -55,14 +55,12 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
             )
             Response(Status.OK).with(view of model)
         },
-        "/startGame" bind Method.POST to {
-            app.game.start()
-            Response(Status.OK)
-        },
+        "/startGame" bind Method.POST to { Response(Status.MOVED_PERMANENTLY) },
         "/do-game-master-command" bind Method.POST to { req ->
             logger.info("received command: ${req.bodyString()}")
 
             when (val command = gameMasterCommandLens(req)) {
+                is GameMasterCommand.StartGame -> app.game.start().respondOK()
                 is GameMasterCommand.RigDeck -> app.game.rigDeck(command.playerId, command.cards).respondOK()
                 is GameMasterCommand.StartNextRound -> app.game.startNextRound().respondOK()
                 is GameMasterCommand.StartNextTrick -> app.game.startNextTrick().respondOK()
@@ -76,6 +74,7 @@ private fun Any.respondOK() = Response(Status.OK)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 sealed class GameMasterCommand {
+    object StartGame : GameMasterCommand()
     data class RigDeck(val playerId: PlayerId, val cards: List<Card>) : GameMasterCommand()
     object StartNextRound : GameMasterCommand()
     object StartNextTrick : GameMasterCommand()

@@ -25,7 +25,6 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.4.11")
 
     testImplementation(kotlin("test"))
-    // TODO: somehow get the latest release from https://github.com/SeleniumHQ/selenium/releases/latest
     testImplementation("org.seleniumhq.selenium:selenium-devtools-$chromeVersion:$seleniumVersion")
     testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion")
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
