@@ -1,6 +1,7 @@
 package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.App
+import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hands
 import com.tamj0rd2.domain.PlayerId
@@ -8,6 +9,7 @@ import org.http4k.core.Body
 import org.http4k.core.ContentType
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
+import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.body.form
@@ -56,14 +58,16 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
             Response(Status.OK)
         },
         "/rigDeck" bind Method.PUT to { req ->
-            val command = req.bodyString().asJsonObject().asA(RigDeckCommand::class)
-            app.game.rigDeck(command.hands)
+            val command = req.asA<RigDeckCommand>()
+            app.game.rigDeck(command.playerId, command.cards)
             Response(Status.OK)
         }
     )
 }
 
-data class RigDeckCommand(val hands: Hands)
+private inline fun <reified T : Any> Request.asA() = bodyString().asJsonObject().asA(T::class)
+
+data class RigDeckCommand(val playerId: PlayerId, val cards: List<Card>)
 
 private fun buildResourceLoaders(hotReload: Boolean) = when {
     hotReload -> HandlebarsTemplates().HotReload("./src/main/resources") to ResourceLoader.Classpath("public")

@@ -11,7 +11,7 @@ class Game {
     val players get() = _players.toList()
 
     private val hands = mutableMapOf<PlayerId, MutableList<Card>>()
-    private var riggedHands: Map<PlayerId, Hand>? = null
+    private var riggedHands: MutableMap<PlayerId, Hand>? = null
 
     private val isBettingComplete get() = _bets.size == players.size
     private val _bets = mutableMapOf<PlayerId, Int>()
@@ -76,7 +76,12 @@ class Game {
     }
 
     fun rigDeck(hands: Hands) {
-        this.riggedHands = hands
+        this.riggedHands = hands.toMutableMap()
+    }
+
+    fun rigDeck(playerId: PlayerId, cards: List<Card>) {
+        if (riggedHands == null) riggedHands = players.associateWith { emptyList<Card>() }.toMutableMap()
+        riggedHands!![playerId] = cards
     }
 
     private fun Map<PlayerId, GameEventSubscriber>.broadcast(event: GameEvent) {

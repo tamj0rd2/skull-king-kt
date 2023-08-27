@@ -2,12 +2,13 @@ import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.describe
+import com.natpryce.hamkrest.equalTo as Is
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
 import com.natpryce.hamkrest.isEmpty
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.GamePhase
-import com.tamj0rd2.domain.GameState
+import com.tamj0rd2.domain.GamePhase.*
+import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import org.junit.jupiter.api.MethodOrderer
@@ -15,19 +16,23 @@ import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestMethodOrder
 import testsupport.Activity
 import testsupport.Actor
+import testsupport.Bid
+import testsupport.Bids
+import testsupport.Ensure
+import testsupport.Ensures
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
-import testsupport.PlaysACard
+import testsupport.PlaysCard
 import testsupport.ThePlayersAtTheTable
-import testsupport.ThePlayersWhoHavePlacedABet
+import testsupport.ThePlayersWhoHaveBid
 import testsupport.Question
 import testsupport.RigsTheDeck
 import testsupport.TheCurrentTrick
 import testsupport.TheGamePhase
 import testsupport.TheGameState
 import testsupport.TheirHand
-import testsupport.TheySeeBets
-import testsupport.PlacesABet
+import testsupport.TheySeeBids
+import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
 import testsupport.StartsTheGame
 import java.time.Clock
@@ -47,130 +52,137 @@ interface TestConfiguration : AbilityFactory {
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 sealed class AppTestContract(private val d: TestConfiguration) {
-    @BeforeTest fun setup() = d.setup()
-    @AfterTest fun teardown() = d.teardown()
+    @BeforeTest
+    fun setup() = d.setup()
+
+    @AfterTest
+    fun teardown() = d.teardown()
 
     private val freddy = Actor("Freddy First").whoCan(d.participateInGames())
     private val sally = Actor("Sally Second").whoCan(d.participateInGames())
     private val gary = Actor("Gary GameMaster").whoCan(d.manageGames())
-    private val players get() = listOf(freddy, sally)
 
     @Test
     @Order(1)
-    fun `joining a game when no one else is waiting`() {
+    fun `sitting at an empty table`() {
         freddy(
             SitsAtTheTable,
-            ensuresThat(ThePlayersAtTheTable, onlyIncludes(freddy.name)),
-            ensuresThat(TheGameState, equalTo(GameState.WaitingForMorePlayers)),
+            Ensures {
+                that(ThePlayersAtTheTable, areOnly(freddy))
+                that(TheGameState, Is(WaitingForMorePlayers))
+            },
         )
     }
 
     @Test
     @Order(2)
-    fun `joining a game when someone else is already waiting to play`() {
+    fun `once enough people are at the table`() {
         freddy(SitsAtTheTable)
         sally(SitsAtTheTable)
-
-        players.map { actor ->
-            actor(
-                ensuresThat(ThePlayersAtTheTable, onlyIncludes(freddy.name, sally.name)),
-                ensuresThat(TheGameState, equalTo(GameState.WaitingToStart))
-            )
+        freddy and sally both Ensure {
+            that(ThePlayersAtTheTable, areOnly(freddy, sally))
+            that(TheGameState, Is(WaitingToStart))
         }
     }
 
     @Test
     @Order(3)
-    fun `entering the bidding phase`() {
-        freddy(SitsAtTheTable)
-        sally(SitsAtTheTable)
+    fun `staring the game`() {
+        freddy and sally both SitAtTheTable
         gary(StartsTheGame)
-
-        players.forEach { actor ->
-            actor(
-                ensuresThat(TheGameState, equalTo(GameState.InProgress)),
-                ensuresThat(TheGamePhase, equalTo(GamePhase.Bidding)),
-                ensuresThat(TheirHand, hasSize(1)),
-            )
+        freddy and sally both Ensure {
+            that(TheGameState, Is(InProgress))
+            that(TheGamePhase, Is(Bidding))
+            that(TheirHand, sizeIs(1))
         }
     }
 
     @Test
     @Order(4)
-    fun `when everyone has completed their bid`() {
-        val bets = mapOf(freddy.name to 1, sally.name to 0)
-
-        players.forEach { it(SitsAtTheTable) }
+    fun `when everyone has bid`() {
+        freddy and sally both SitAtTheTable
         gary(StartsTheGame)
-        players.forEach { actor -> actor(PlacesABet(bets[actor.name]!!)) }
-        players.forEach { actor -> actor(
-            ensuresThat(TheySeeBets, equalTo(bets)),
-            ensuresThat(TheGamePhase, equalTo(GamePhase.TrickTaking))
-        )}
+        freddy(Bids(1))
+        sally(Bids(2))
+        freddy and sally both Ensure {
+            // TODO: If I had a bids structure, I likely wouldn't need extensions to do this
+            that(TheySeeBids, where(freddy bid 1, sally bid 2))
+            that(TheGamePhase, Is(TrickTaking))
+        }
     }
 
     @Test
     @Order(5)
-    fun `when not everyone has finished bidding`() {
-        players.forEach { it(SitsAtTheTable) }
+    fun `when someone hasn't bid`() {
+        freddy and sally both SitAtTheTable
         gary(StartsTheGame)
-        freddy(PlacesABet(1))
-
-        players.forEach { actor ->
-            actor(
-                ensuresThat(ThePlayersWhoHavePlacedABet, onlyIncludes(freddy.name)),
-                ensuresThat(TheGamePhase, equalTo(GamePhase.Bidding)),
-                ensuresThat(TheySeeBets, equalTo(emptyMap())),
-            )
+        freddy(Bids(1))
+        freddy and sally both Ensure {
+            // TODO: maybe this can just be part of TheySeeBids? If someone hasn't bid, their bid can be null
+            that(ThePlayersWhoHaveBid, areOnly(freddy.name))
+            that(TheGamePhase, Is(Bidding))
+            that(TheySeeBids, equalTo(NoBids))
         }
     }
 
     @Test
     @Order(6)
-    fun `playing the first round`() {
-        players.forEach { it(SitsAtTheTable) }
-
-        val handsToDeal = mapOf(
-            freddy.name to listOf(Card("1")),
-            sally.name to listOf(Card("2")),
+    fun `when someone plays a card in the first round`() {
+        freddy and sally both SitAtTheTable
+        gary(
+            RigsTheDeck.SoThat(freddy).willEndUpWith(Card("A")),
+            RigsTheDeck.SoThat(sally).willEndUpWith(Card("B")),
+            StartsTheGame
         )
 
-        fun Map<PlayerId, List<Card>>.playedCard(actor: Actor, index: Int) = PlayedCard(actor.name, this[actor.name]!![index])
-
-        gary(RigsTheDeck(handsToDeal))
-        gary(StartsTheGame)
-
-        players.forEach { it(PlacesABet(1)) }
-
+        freddy and sally both Bid(1)
         freddy(
-            ensuresThat(TheirHand, onlyIncludes(Card("1"))),
-            PlaysACard("1"),
-            ensuresThat(TheirHand, isEmpty),
+            Ensures(TheirHand, !isEmpty),
+            PlaysCard("A"),
+            Ensures(TheirHand, isEmpty),
         )
-        players.forEach { it(ensuresThat(TheCurrentTrick, onlyIncludes(handsToDeal.playedCard(freddy, 0)))) }
+        freddy and sally both Ensure(TheCurrentTrick, onlyContains(Card("A").playedBy(freddy)))
+    }
 
-        // then freddy and sally can both see the card
+    @Test
+    @Order(6)
+    fun `when everyone has played a card in the first round`() {
+        freddy and sally both SitAtTheTable
+        gary(
+            RigsTheDeck.SoThat(freddy).willEndUpWith(Card("C")),
+            RigsTheDeck.SoThat(sally).willEndUpWith(Card("D")),
+            StartsTheGame
+        )
+
+        freddy and sally both Bid(1)
+        freddy(PlaysCard("C"))
+        sally(PlaysCard("D"))
+        freddy and sally both Ensure(
+            TheCurrentTrick, onlyContains(
+                Card("C").playedBy(freddy),
+                Card("D").playedBy(sally)
+            )
+        )
+
+        // TODO: put something here about ending the trick and/or round1
     }
 }
 
-private fun <T> ensuresThat(question: Question<T>, matcher: Matcher<T>) = Activity { actor ->
-    val clock = Clock.systemDefaultZone()
-    val startTime = clock.instant()
-    val mustEndBy = startTime.plusSeconds(2)
+private fun Card.playedBy(actor: Actor): PlayedCard = PlayedCard(actor.name, this)
 
-    do {
-        try {
-            val answer = question.ask(actor)
-            assertThat(answer, matcher) { "$actor asked a $question" }
-            break
-        } catch (e: AssertionError) {
-            if (clock.instant() > mustEndBy) throw e
-            Thread.sleep(100)
-        }
-    } while (true)
+private infix fun Pair<Actor, Actor>.both(activity: Activity) {
+    first(activity)
+    second(activity)
 }
 
-private fun <T> onlyIncludes(vararg expected: T): Matcher<Collection<T>> =
+private infix fun Actor.and(other: Actor) = this to other
+
+private fun areOnly(vararg expected: Actor): Matcher<Collection<PlayerId>> =
+    areOnly<PlayerId>(*expected.map { it.name }.toTypedArray())
+
+private fun <T> onlyContains(vararg expected: T): Matcher<Collection<T>> = areOnly(*expected)
+
+private fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> =
     object : Matcher<Collection<T>?> {
         override fun invoke(actual: Collection<T>?): MatchResult {
             if (actual?.toSet() != expected.toSet()) return MatchResult.Mismatch("was: ${describe(actual)}")
@@ -181,4 +193,11 @@ private fun <T> onlyIncludes(vararg expected: T): Matcher<Collection<T>> =
         override val negatedDescription: String get() = "does not $description"
     }
 
-fun <T> hasSize(expected: Int): Matcher<List<T>> = has(List<T>::size, equalTo(expected))
+fun <T> sizeIs(expected: Int): Matcher<List<T>> = has(List<T>::size, equalTo(expected))
+
+fun where(vararg bets: Pair<Actor, Int>): Matcher<Map<PlayerId, Int>> =
+    equalTo(bets.map { it.first.name to it.second }.toMap())
+
+infix fun <A, B> A.bid(that: B): Pair<A, B> = Pair(this, that)
+
+val NoBids = emptyMap<PlayerId, Int>()

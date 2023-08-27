@@ -20,8 +20,8 @@ class HTTPDriver(private val baseUrl: String, httpClient: HttpClient) : GameMast
         if (res.status != Status.OK) throw RuntimeException("failed to start game")
     }
 
-    override fun rigDeck(hands: Map<PlayerId, List<Card>>) {
-        val json = RigDeckCommand(hands).asJsonObject().asCompactJsonString()
+    override fun rigDeck(playerId: PlayerId, cards: List<Card>) {
+        val json = RigDeckCommand(playerId, cards).asJsonObject().asCompactJsonString()
         val res = client(Request(Method.PUT, "$baseUrl/rigDeck").body(json))
         if (res.status != Status.OK) throw RuntimeException("failed to rig deck: ${res.status}\n${res.bodyString()}")
     }

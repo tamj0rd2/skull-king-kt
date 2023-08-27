@@ -27,5 +27,5 @@ interface ApplicationDriver {
 
 interface GameMasterDriver {
     fun startGame()
-    fun rigDeck(hands: Map<PlayerId, List<Card>>)
+    fun rigDeck(playerId: PlayerId, cards: List<Card>)
 }

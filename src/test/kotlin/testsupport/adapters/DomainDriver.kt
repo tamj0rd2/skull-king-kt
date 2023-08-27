@@ -32,5 +32,5 @@ class DomainDriver(val app: App) : ApplicationDriver, GameMasterDriver {
     override fun placeBet(bet: Int) = app.game.placeBet(playerId, bet)
     override fun playCard(playerId: String, cardId: CardId) = app.game.playCard(playerId, cardId)
     override fun startGame() = app.game.start()
-    override fun rigDeck(hands: Map<PlayerId, List<Card>>) = app.game.rigDeck(hands)
+    override fun rigDeck(playerId: PlayerId, cards: List<Card>) = app.game.rigDeck(playerId, cards)
 }
