@@ -3,6 +3,7 @@ import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import testsupport.ParticipateInGames
 import testsupport.ManageGames
+import testsupport.SkipWip
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebDriver
 
@@ -13,6 +14,7 @@ private val chromeOptions = ChromeOptions()
     .addArguments("--headless=chrome")
     .setBinary("${System.getProperty("user.dir")}/.chrome/chrome-$chromeVersion.app/Contents/MacOS/Google Chrome for Testing")
 
+@SkipWip
 class WebAppTest : AppTestContract(object : TestConfiguration {
     private val port = 9001
     private val server = WebServer.make(port, hotReload = false)

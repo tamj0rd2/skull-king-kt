@@ -1,6 +1,5 @@
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
-import com.natpryce.hamkrest.and
 import com.natpryce.hamkrest.describe
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
@@ -34,9 +33,11 @@ import testsupport.TheGameState
 import testsupport.ThePlayersAtTheTable
 import testsupport.HisHand
 import testsupport.TheySeeBids
+import testsupport.Wip
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import com.natpryce.hamkrest.equalTo as Is
 
 interface AbilityFactory {
