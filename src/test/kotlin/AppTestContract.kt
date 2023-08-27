@@ -1,6 +1,5 @@
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
-import com.natpryce.hamkrest.and
 import com.natpryce.hamkrest.describe
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
@@ -21,28 +20,25 @@ import testsupport.Bid
 import testsupport.Bids
 import testsupport.Ensure
 import testsupport.Ensures
+import testsupport.HisHand
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
+import testsupport.Play
+import testsupport.Plays
 import testsupport.RigsTheDeck
+import testsupport.SaysTheGameCanStart
+import testsupport.SaysTheNextRoundCanStart
+import testsupport.SaysTheNextTrickCanStart
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
-import testsupport.SaysTheGameCanStart
 import testsupport.TheCurrentTrick
 import testsupport.TheGamePhase
 import testsupport.TheGameState
 import testsupport.ThePlayersAtTheTable
-import testsupport.HisHand
-import testsupport.Play
-import testsupport.Plays
-import testsupport.Question
-import testsupport.SaysTheNextRoundCanStart
-import testsupport.SaysTheNextTrickCanStart
 import testsupport.TheRoundNumber
 import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.TheySeeBids
-import testsupport.Wip
-import kotlin.math.round
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -178,7 +174,6 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     }
 
 
-    @Wip
     @Test
     @Order(7)
     fun `playing a game from start to finish`() {

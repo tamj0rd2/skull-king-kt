@@ -10,11 +10,16 @@ sealed class GameEvent {
 
     object GameStarted : GameEvent()
 
-    data class RoundStarted(val cardsDealt: List<Card>) : GameEvent()
+    data class RoundStarted(val cardsDealt: List<Card>, val roundNumber: Int) : GameEvent() {
+        // used by the FE
+        val trickNumber = 1
+    }
 
     data class BetPlaced(val playerId: PlayerId, val isBettingComplete: Boolean) : GameEvent()
 
     data class BettingCompleted(val bets: Map<PlayerId, Int>) : GameEvent()
 
     data class CardPlayed(val playerId: String, val cardId: CardId) : GameEvent()
+
+    object TrickCompleted : GameEvent()
 }

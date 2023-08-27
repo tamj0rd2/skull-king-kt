@@ -87,6 +87,7 @@ class Game {
 
         if (_currentTrick.size == players.size) {
             _phase = GamePhase.TrickComplete
+            gameEventSubscribers.broadcast(GameEvent.TrickCompleted)
 
             if (roundNumber == 10) {
                 _state = GameState.Complete
@@ -110,7 +111,7 @@ class Game {
         startNextTrick()
 
         gameEventSubscribers.forEach {
-            it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key)))
+            it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key), roundNumber))
         }
     }
 

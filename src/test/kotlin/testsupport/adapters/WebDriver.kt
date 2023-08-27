@@ -35,10 +35,10 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     }
 
     override val trickNumber: Int
-        get() = TODO("Not yet implemented")
+        get() = driver.findElement(By.id("trickNumber")).text.toInt()
 
     override val roundNumber: Int
-        get() = TODO("Not yet implemented")
+        get() = driver.findElement(By.id("roundNumber")).text.toInt()
 
     override val playersInRoom: List<PlayerId>
         get() = driver.findElement(By.id("players"))
@@ -70,6 +70,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
             val gamePhase = driver.findElement(By.id("gamePhase")).text.lowercase()
             if (gamePhase.contains("place your bid")) return GamePhase.Bidding
             if (gamePhase.contains("it's trick taking time")) return GamePhase.TrickTaking
+            if (gamePhase.contains("trick complete")) return GamePhase.TrickComplete
             // TODO: this could use its own error code too
             TODO("got an unknown game phase: $gamePhase")
         }
