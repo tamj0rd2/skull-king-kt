@@ -104,7 +104,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy(Bids(1))
         sally(Bids(2))
         freddy and sally both Ensure {
-            that(TheySeeBids, where(freddy bid Placed(1), sally bid Placed(2)))
+            that(TheySeeBids, where(freddy bid 1, sally bid 2))
             that(TheGamePhase, Is(TrickTaking))
         }
     }
@@ -117,7 +117,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy(Bids(1))
         freddy and sally both Ensure {
             that(TheGamePhase, Is(Bidding))
-            that(TheySeeBids, where(freddy bid IsHidden, sally bid None))
+            that(TheySeeBids, where(freddy.bidIsHidden(), sally.hasNotBid()))
         }
     }
 
@@ -194,4 +194,6 @@ fun <T> sizeIs(expected: Int): Matcher<List<T>> = has(List<T>::size, equalTo(exp
 fun where(vararg bets: Pair<Actor, Bid>): Matcher<Map<PlayerId, Bid>> =
     equalTo(bets.associate { it.first.name to it.second })
 
-infix fun Actor.bid(bid: Bid): Pair<Actor, Bid> = Pair(this, bid)
+infix fun Actor.bid(bid: Int): Pair<Actor, Bid> = Pair(this, Placed(bid))
+fun Actor.bidIsHidden(): Pair<Actor, Bid> = Pair(this, IsHidden)
+fun Actor.hasNotBid(): Pair<Actor, Bid> = Pair(this, None)
