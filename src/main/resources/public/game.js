@@ -25,6 +25,7 @@ function connectToWs(wsAddress) {
                     case "GameEvent$CardPlayed": return handlers.cardPlayed(data);
                     case "GameEvent$TrickCompleted": return handlers.trickCompleted(data);
                     case "GameEvent$TrickStarted": return handlers.trickStarted(data);
+                    case "GameEvent$GameCompleted": return handlers.gameCompleted(data);
                     default: {
                         socket.send(JSON.stringify({
                             type: "ClientMessage$UnhandledMessageFromServer",
@@ -80,7 +81,7 @@ function connectToWs(wsAddress) {
                     betEl.value = ""
 
                     const trick = document.getElementById("trick")
-                    trick.innerHTML = ""
+                    trick.textContent = ""
 
                     const handEl = document.getElementById("hand")
                     gameEvent.cardsDealt.forEach(card => {
@@ -126,10 +127,17 @@ function connectToWs(wsAddress) {
                 trickStarted: function(gameEvent) {
                     const trickNumberEl = document.getElementById("trickNumber")
                     trickNumberEl.innerText = gameEvent.trickNumber
+
+                    const trick = document.getElementById("trick")
+                    trick.textContent = ""
                 },
                 trickCompleted: function(gameEvent) {
                     const gamePhaseEl = document.getElementById("gamePhase")
                     gamePhaseEl.innerText = "Trick completed :)"
+                },
+                gameCompleted: function (gameEvent) {
+                    const gameStateEl = document.getElementById("gameState")
+                    gameStateEl.innerText = "The game is over!"
                 },
             }
         }

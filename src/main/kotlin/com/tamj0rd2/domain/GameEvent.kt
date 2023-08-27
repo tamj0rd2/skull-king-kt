@@ -24,4 +24,5 @@ sealed class GameEvent {
     data class TrickStarted(val trickNumber: Int) : GameEvent()
 
     object TrickCompleted : GameEvent()
+    object GameCompleted : GameEvent()
 }

@@ -64,7 +64,7 @@ object Ensure {
     operator fun <T> invoke(question: Question<T>, matcher: Matcher<T>) = Activity { actor ->
         val clock = Clock.systemDefaultZone()
         val startTime = clock.instant()
-        val mustEndBy = startTime.plusSeconds(2)
+        val mustEndBy = startTime.plusSeconds(1)
 
         do {
             try {
@@ -73,7 +73,7 @@ object Ensure {
                 break
             } catch (e: AssertionError) {
                 if (clock.instant() > mustEndBy) throw e
-                Thread.sleep(100)
+                Thread.sleep(50)
             }
         } while (true)
     }

@@ -60,19 +60,24 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     override val gameState: GameState
         get() {
             val gameState = driver.findElement(By.id("gameState")).text.lowercase()
-            if (gameState.contains("waiting for more players")) return GameState.WaitingForMorePlayers
-            if (gameState.contains("game has started")) return GameState.InProgress
-            return GameState.WaitingToStart
+            return when {
+                gameState.contains("waiting for more players") -> GameState.WaitingForMorePlayers
+                gameState.contains("game has started") -> GameState.InProgress
+                gameState.contains("the game is over") -> GameState.Complete
+                else -> GameState.WaitingToStart
+            }
         }
 
     override val gamePhase: GamePhase
         get() {
             val gamePhase = driver.findElement(By.id("gamePhase")).text.lowercase()
-            if (gamePhase.contains("place your bid")) return GamePhase.Bidding
-            if (gamePhase.contains("it's trick taking time")) return GamePhase.TrickTaking
-            if (gamePhase.contains("trick complete")) return GamePhase.TrickComplete
-            // TODO: this could use its own error code too
-            TODO("got an unknown game phase: $gamePhase")
+            return when {
+                gamePhase.contains("place your bid") -> GamePhase.Bidding
+                gamePhase.contains("it's trick taking time") -> GamePhase.TrickTaking
+                gamePhase.contains("trick complete") -> GamePhase.TrickComplete
+                // TODO: this could use its own error code too
+                else -> TODO("got an unknown game phase: $gamePhase")
+            }
         }
 
     override val bets: Map<PlayerId, Bid>

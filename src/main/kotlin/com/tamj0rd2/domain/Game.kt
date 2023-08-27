@@ -90,6 +90,7 @@ class Game {
 
             if (roundNumber == 10) {
                 _state = GameState.Complete
+                gameEventSubscribers.broadcast(GameEvent.GameCompleted)
             }
         }
     }
