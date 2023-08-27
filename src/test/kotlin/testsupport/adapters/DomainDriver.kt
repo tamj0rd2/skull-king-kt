@@ -24,8 +24,6 @@ class DomainDriver(private val app: App) : ApplicationDriver, GameMasterDriver {
 
     override val bets: Map<PlayerId, Bid> get() = app.game.bets
 
-    override val playersWhoHavePlacedBets: List<PlayerId> get() = app.game.playersWhoHavePlacedBets
-
     override fun enterPlayerId(playerId: String) {
         this.playerId = playerId
     }

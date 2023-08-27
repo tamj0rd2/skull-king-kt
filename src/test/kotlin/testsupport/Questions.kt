@@ -34,10 +34,6 @@ val TheySeeBids = Question.about("the bets that have been made") { actor ->
     actor.use<ParticipateInGames>().bets
 }
 
-val ThePlayersWhoHaveBid = Question.about("asked which players have placed a bet") { actor ->
-    actor.use<ParticipateInGames>().playersWhoHavePlacedBets
-}
-
 val TheCurrentTrick = Question.about("the game phase") { actor ->
     actor.use<ParticipateInGames>().trick
 }

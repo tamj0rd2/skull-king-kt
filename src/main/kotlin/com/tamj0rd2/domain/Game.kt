@@ -1,8 +1,8 @@
 package com.tamj0rd2.domain
 
 class Game {
-    private var _phase: GamePhase = GamePhase.None
-    val phase: GamePhase get() = _phase
+    private var _phase: GamePhase? = null
+    val phase: GamePhase get() = _phase ?: throw GameException.NotStarted()
 
     private var _state = GameState.WaitingForMorePlayers
     val state: GameState get() = _state
@@ -15,7 +15,6 @@ class Game {
 
     private val _bids = Bids()
     val bets: Map<PlayerId, Bid> get() = _bids.forDisplay()
-    val playersWhoHavePlacedBets get() = _bids.playersWhoHavePlacedBets.toList()
 
     private val gameEventSubscribers = mutableMapOf<PlayerId, GameEventSubscriber>()
     private val roomSizeToStartGame = 2
@@ -104,7 +103,6 @@ enum class GameState {
 }
 
 enum class GamePhase {
-    None,
     Bidding,
     TrickTaking,
 }
@@ -122,7 +120,6 @@ private class Bids {
     private var bids = mutableMapOf<PlayerId, Bid>()
 
     val areComplete get() = bids.none { it.value is Bid.None }
-    val playersWhoHavePlacedBets get() = bids.filterValues { it is Bid.Placed }.keys
 
     fun initFor(players: Collection<PlayerId>) {
         bids = players.associateWith { Bid.None }.toMutableMap()
@@ -130,7 +127,7 @@ private class Bids {
 
     fun forDisplay(): Map<PlayerId, Bid> = when {
         areComplete -> bids
-        else -> bids.mapValues { if (it.value is Bid.Placed) Bid.Hidden else it.value }
+        else -> bids.mapValues { if (it.value is Bid.Placed) Bid.IsHidden else it.value }
     }
 
     fun place(playerId: PlayerId, bid: Int) {
@@ -141,7 +138,7 @@ private class Bids {
         return bids.mapValues {
             when(val bid = it.value) {
                 is Bid.None -> throw GameException.NotAllPlayersHaveBid()
-                is Bid.Hidden -> error("this should be impossible. this is just for display")
+                is Bid.IsHidden -> error("this should be impossible. this is just for display")
                 is Bid.Placed -> bid.bid
             }
         }
@@ -151,12 +148,12 @@ private class Bids {
 sealed class Bid {
     override fun toString(): String = when (this) {
         is None -> "None"
-        is Hidden -> "Hidden"
+        is IsHidden -> "Hidden"
         is Placed -> bid.toString()
     }
 
     object None : Bid()
-    object Hidden : Bid()
+    object IsHidden : Bid()
 
     data class Placed(val bid: Int) : Bid()
 }

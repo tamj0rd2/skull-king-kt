@@ -7,4 +7,5 @@ sealed class GameException(message: String) : Exception(message) {
     class NoHandFoundFor(playerId: PlayerId) : GameException("no hand found for player $playerId")
     class CardNotInHand(playerId: PlayerId, cardId: CardId) : GameException("card $cardId not in $playerId's hand")
     class NotAllPlayersHaveBid : GameException("not all players have bid")
+    class NotStarted : GameException("game not started")
 }

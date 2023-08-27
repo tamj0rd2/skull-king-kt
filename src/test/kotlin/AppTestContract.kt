@@ -5,6 +5,7 @@ import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
 import com.natpryce.hamkrest.isEmpty
 import com.tamj0rd2.domain.Bid
+import com.tamj0rd2.domain.Bid.*
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GamePhase.*
 import com.tamj0rd2.domain.GameState.*
@@ -30,7 +31,6 @@ import testsupport.TheCurrentTrick
 import testsupport.TheGamePhase
 import testsupport.TheGameState
 import testsupport.ThePlayersAtTheTable
-import testsupport.ThePlayersWhoHaveBid
 import testsupport.TheirHand
 import testsupport.TheySeeBids
 import kotlin.test.AfterTest
@@ -103,8 +103,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy(Bids(1))
         sally(Bids(2))
         freddy and sally both Ensure {
-            // TODO: If I had a bids structure, I likely wouldn't need extensions to do this
-            that(TheySeeBids, where(freddy bid Bid.Placed(1), sally bid Bid.Placed(2)))
+            that(TheySeeBids, where(freddy bid Placed(1), sally bid Placed(2)))
             that(TheGamePhase, Is(TrickTaking))
         }
     }
@@ -116,10 +115,8 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         gary(StartsTheGame)
         freddy(Bids(1))
         freddy and sally both Ensure {
-            // TODO: maybe this can just be part of TheySeeBids? If someone hasn't bid, their bid can be null
-            that(ThePlayersWhoHaveBid, areOnly(freddy.name))
             that(TheGamePhase, Is(Bidding))
-            that(TheySeeBids, where(freddy bid Bid.Hidden, sally bid Bid.None))
+            that(TheySeeBids, where(freddy bid IsHidden, sally bid None))
         }
     }
 

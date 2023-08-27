@@ -87,11 +87,6 @@ function connectToWs(wsAddress) {
                     })
                 },
                 betPlaced: function(gameEvent) {
-                    const playersWhoHaveBet = document.getElementById("playersWhoHaveBet")
-                    const li = document.createElement("li")
-                    li.innerText = gameEvent.playerId
-                    playersWhoHaveBet.appendChild(li)
-
                     document.querySelector(`[data-playerBet="${gameEvent.playerId}"] span`).innerText = ":" + "has bet"
 
                     // TODO why is this even here? It should be in the bettingCompleted handler
