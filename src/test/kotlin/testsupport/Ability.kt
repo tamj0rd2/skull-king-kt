@@ -1,5 +1,6 @@
 package testsupport
 
+import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GamePhase
@@ -21,7 +22,7 @@ interface ApplicationDriver {
     val gameState: GameState
     val playersInRoom: List<PlayerId>
     val hand: Hand
-    val bets: Map<PlayerId, Int?>
+    val bets: Map<PlayerId, Bid>
     val playersWhoHavePlacedBets: List<PlayerId>
 }
 

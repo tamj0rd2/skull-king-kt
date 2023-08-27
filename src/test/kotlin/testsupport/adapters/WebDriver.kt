@@ -1,5 +1,6 @@
 package testsupport.adapters
 
+import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GameException
@@ -67,10 +68,10 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
             TODO("got an unknown game phase: $gamePhase")
         }
 
-    override val bets: Map<PlayerId, Int?>
+    override val bets: Map<PlayerId, Bid>
         get() = driver.findElement(By.id("bets"))
             .findElements(By.tagName("li"))
-            .associate { it.text.split(":").let { (name, bet) -> name to bet.toInt() } }
+            .associate { it.text.split(":").let { (name, bet) -> name to Bid.from(bet.toInt()) } }
 
     override val playersWhoHavePlacedBets: List<PlayerId>
         get() = driver.findElement(By.id("playersWhoHaveBet"))

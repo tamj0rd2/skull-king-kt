@@ -2,6 +2,8 @@ package testsupport
 
 import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.assertion.assertThat
+import com.tamj0rd2.domain.Bid
+import com.tamj0rd2.domain.PlayerId
 import java.time.Clock
 
 open class Question<T>(private val description: String, private val answer: (Actor) -> T) {

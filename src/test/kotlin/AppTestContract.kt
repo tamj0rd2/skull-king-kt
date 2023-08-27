@@ -17,6 +17,7 @@ import org.junit.jupiter.api.TestMethodOrder
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.Bid
+//import testsupport.Bid
 import testsupport.Bids
 import testsupport.Ensure
 import testsupport.Ensures
@@ -104,7 +105,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         sally(Bids(2))
         freddy and sally both Ensure {
             // TODO: If I had a bids structure, I likely wouldn't need extensions to do this
-            that(TheySeeBids, where(freddy bid 1, sally bid 2))
+            that(TheySeeBids, where(freddy bid Bid.Placed(1), sally bid Bid.Placed(2)))
             that(TheGamePhase, Is(TrickTaking))
         }
     }
@@ -119,7 +120,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             // TODO: maybe this can just be part of TheySeeBids? If someone hasn't bid, their bid can be null
             that(ThePlayersWhoHaveBid, areOnly(freddy.name))
             that(TheGamePhase, Is(Bidding))
-            that(TheySeeBids, where(freddy bid null, sally bid null))
+            that(TheySeeBids, where(freddy bid Bid.None, sally bid Bid.None))
         }
     }
 
@@ -193,9 +194,9 @@ private fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> =
 
 fun <T> sizeIs(expected: Int): Matcher<List<T>> = has(List<T>::size, equalTo(expected))
 
-fun where(vararg bets: Pair<Actor, Bid>): Matcher<Map<PlayerId, Int?>> =
-    equalTo<Map<PlayerId, Int?>>(bets.associate { it.first.name to it.second.toInt() })
+fun where(vararg bets: Pair<Actor, Bid>): Matcher<Map<PlayerId, Bid>> =
+    equalTo<Map<PlayerId, Bid>>(bets.associate { it.first.name to it.second })
 
-infix fun Actor.bid(bid: Int?): Pair<Actor, Bid> = Pair(this, Bid.from(bid))
+infix fun Actor.bid(bid: Bid): Pair<Actor, Bid> = Pair(this, bid)
 
 val NoBids = emptyMap<PlayerId, Int>()

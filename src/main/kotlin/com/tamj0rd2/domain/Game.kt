@@ -17,7 +17,7 @@ class Game {
 
     private val isBettingComplete get() = _bets.size == players.size
     private val _bets = mutableMapOf<PlayerId, Int>()
-    val bets: Map<PlayerId, Int?> get() = if (isBettingComplete) _bets.toMap() else _players.associateWith { null }
+    val bets: Map<PlayerId, Bid> get() = if (isBettingComplete) _bets.mapValues { Bid.Placed(it.value) }.toMap() else _players.associateWith { Bid.None }
     val playersWhoHavePlacedBet get() = _bets.keys.toList()
 
     private val gameEventSubscribers = mutableMapOf<PlayerId, GameEventSubscriber>()

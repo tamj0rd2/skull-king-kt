@@ -1,6 +1,7 @@
 package testsupport.adapters
 
 import com.tamj0rd2.domain.App
+import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GamePhase
@@ -10,7 +11,7 @@ import com.tamj0rd2.domain.Trick
 import testsupport.ApplicationDriver
 import testsupport.GameMasterDriver
 
-class DomainDriver(val app: App) : ApplicationDriver, GameMasterDriver {
+class DomainDriver(private val app: App) : ApplicationDriver, GameMasterDriver {
 
     private lateinit var playerId: String
 
@@ -21,7 +22,7 @@ class DomainDriver(val app: App) : ApplicationDriver, GameMasterDriver {
     override val gameState: GameState get() = app.game.state
     override val gamePhase: GamePhase get() = app.game.phase
 
-    override val bets: Map<PlayerId, Int?> get() = app.game.bets
+    override val bets: Map<PlayerId, Bid> get() = app.game.bets
 
     override val playersWhoHavePlacedBets: List<PlayerId> get() = app.game.playersWhoHavePlacedBet
 
