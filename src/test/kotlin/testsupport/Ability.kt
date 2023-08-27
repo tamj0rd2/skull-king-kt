@@ -21,7 +21,7 @@ interface ApplicationDriver {
     val gameState: GameState
     val playersInRoom: List<PlayerId>
     val hand: Hand
-    val bets: Map<PlayerId, Int>
+    val bets: Map<PlayerId, Int?>
     val playersWhoHavePlacedBets: List<PlayerId>
 }
 

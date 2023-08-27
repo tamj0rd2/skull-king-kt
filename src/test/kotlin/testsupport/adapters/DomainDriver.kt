@@ -21,7 +21,7 @@ class DomainDriver(val app: App) : ApplicationDriver, GameMasterDriver {
     override val gameState: GameState get() = app.game.state
     override val gamePhase: GamePhase get() = app.game.phase
 
-    override val bets: Map<PlayerId, Int> get() = app.game.bets
+    override val bets: Map<PlayerId, Int?> get() = app.game.bets
 
     override val playersWhoHavePlacedBets: List<PlayerId> get() = app.game.playersWhoHavePlacedBet
 

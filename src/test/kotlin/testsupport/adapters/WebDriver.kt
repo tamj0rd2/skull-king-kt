@@ -67,7 +67,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
             TODO("got an unknown game phase: $gamePhase")
         }
 
-    override val bets: Map<PlayerId, Int>
+    override val bets: Map<PlayerId, Int?>
         get() = driver.findElement(By.id("bets"))
             .findElements(By.tagName("li"))
             .associate { it.text.split(":").let { (name, bet) -> name to bet.toInt() } }
