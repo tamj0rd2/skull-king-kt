@@ -10,13 +10,10 @@ import org.http4k.core.Body
 import org.http4k.core.ContentType
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
-import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.body.form
 import org.http4k.core.with
-import org.http4k.format.Jackson.asA
-import org.http4k.format.Jackson.asJsonObject
 import org.http4k.format.Jackson.auto
 import org.http4k.routing.ResourceLoader
 import org.http4k.routing.bind
@@ -67,7 +64,8 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
 
             when (val command = gameMasterCommandLens(req)) {
                 is GameMasterCommand.RigDeck -> app.game.rigDeck(command.playerId, command.cards).respondOK()
-                is GameMasterCommand.StartRound -> app.game.startNextRound().respondOK()
+                is GameMasterCommand.StartNextRound -> app.game.startNextRound().respondOK()
+                is GameMasterCommand.StartNextTrick -> app.game.startNextTrick().respondOK()
             }
         }
     )
@@ -79,7 +77,8 @@ private fun Any.respondOK() = Response(Status.OK)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 sealed class GameMasterCommand {
     data class RigDeck(val playerId: PlayerId, val cards: List<Card>) : GameMasterCommand()
-    object StartRound : GameMasterCommand()
+    object StartNextRound : GameMasterCommand()
+    object StartNextTrick : GameMasterCommand()
 }
 
 

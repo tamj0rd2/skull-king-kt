@@ -107,17 +107,21 @@ class Game {
         _roundNumber += 1
         dealCards()
         _trickNumber = 0
-        startNextTrick()
         _bids.initFor(players)
 
         gameEventSubscribers.forEach {
             it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key), roundNumber))
         }
+        startNextTrick()
     }
 
     fun startNextTrick() {
         _trickNumber += 1
         _currentTrick.clear()
+
+        gameEventSubscribers.forEach {
+            it.value.handleEvent(GameEvent.TrickStarted(trickNumber))
+        }
     }
 }
 

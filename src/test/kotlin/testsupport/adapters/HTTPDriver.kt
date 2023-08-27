@@ -23,11 +23,9 @@ class HTTPDriver(private val baseUrl: String, httpClient: HttpClient) : GameMast
 
     override fun rigDeck(playerId: PlayerId, cards: List<Card>) = doCommand(GameMasterCommand.RigDeck(playerId, cards))
 
-    override fun startNextRound() = doCommand(GameMasterCommand.StartRound)
+    override fun startNextRound() = doCommand(GameMasterCommand.StartNextRound)
 
-    override fun startNextTrick() {
-        TODO("Not yet implemented")
-    }
+    override fun startNextTrick() = doCommand(GameMasterCommand.StartNextTrick)
 
     private fun doCommand(command: GameMasterCommand) {
         val json = command.asJsonObject().asCompactJsonString()

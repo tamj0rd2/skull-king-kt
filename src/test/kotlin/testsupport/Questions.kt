@@ -35,7 +35,7 @@ val TheRoundNumber = Question.about("the round number") { actor ->
 }
 
 // TODO: these can all be rolled up into a single question about the game state...
-val TheTrickNumber = Question.about("the round number") { actor ->
+val TheTrickNumber = Question.about("the trick number") { actor ->
     actor.use<ParticipateInGames>().trickNumber
 }
 

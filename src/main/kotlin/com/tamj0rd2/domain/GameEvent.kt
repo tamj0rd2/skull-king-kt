@@ -21,5 +21,7 @@ sealed class GameEvent {
 
     data class CardPlayed(val playerId: String, val cardId: CardId) : GameEvent()
 
+    data class TrickStarted(val trickNumber: Int) : GameEvent()
+
     object TrickCompleted : GameEvent()
 }
