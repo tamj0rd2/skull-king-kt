@@ -13,13 +13,9 @@ class Game {
     private val hands = mutableMapOf<PlayerId, MutableList<Card>>()
     private var riggedHands: MutableMap<PlayerId, Hand>? = null
 
-    private val isBettingComplete get() = _bets.size == players.size
-    private val _bets = mutableMapOf<PlayerId, Int>()
-    val bets: Map<PlayerId, Bid> get() {
-        if (isBettingComplete) return _bets.mapValues { Bid.Placed(it.value) }.toMap()
-        return _players.associateWith { if (_bets[it] == null) Bid.None else Bid.Hidden }
-    }
-    val playersWhoHavePlacedBet get() = _bets.keys.toList()
+    private val _bids = Bids()
+    val bets: Map<PlayerId, Bid> get() = _bids.forDisplay()
+    val playersWhoHavePlacedBets get() = _bids.playersWhoHavePlacedBets.toList()
 
     private val gameEventSubscribers = mutableMapOf<PlayerId, GameEventSubscriber>()
     private val roomSizeToStartGame = 2
@@ -40,6 +36,7 @@ class Game {
 
         _state = GameState.InProgress
         _phase = GamePhase.Bidding
+        _bids.initFor(players)
         gameEventSubscribers.broadcast(GameEvent.GameStarted)
 
         var cardId = 0
@@ -57,13 +54,13 @@ class Game {
         return hands[playerId] ?: throw GameException.NoHandFoundFor(playerId)
     }
 
-    fun placeBet(playerId: PlayerId, bet: Int) {
-        _bets[playerId] = bet
-        this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId, isBettingComplete))
+    fun placeBet(playerId: PlayerId, bid: Int) {
+        _bids.place(playerId, bid)
+        this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId, _bids.areComplete))
 
-        if (isBettingComplete) {
+        if (_bids.areComplete) {
             this._phase = GamePhase.TrickTaking
-            this.gameEventSubscribers.broadcast(GameEvent.BettingCompleted(_bets))
+            this.gameEventSubscribers.broadcast(GameEvent.BettingCompleted(_bids.asCompleted()))
         }
     }
 
@@ -125,6 +122,7 @@ private class Bids {
     private var bids = mutableMapOf<PlayerId, Bid>()
 
     val areComplete get() = bids.none { it.value is Bid.None }
+    val playersWhoHavePlacedBets get() = bids.filterValues { it is Bid.Placed }.keys
 
     fun initFor(players: Collection<PlayerId>) {
         bids = players.associateWith { Bid.None }.toMutableMap()
@@ -139,15 +137,16 @@ private class Bids {
         bids[playerId] = Bid.Placed(bid)
     }
 
-    fun asCompleted(): CompletedBids {
+    fun asCompleted(): Map<PlayerId, Int> {
         return bids.mapValues {
-            if (it.value is Bid.None) throw GameException.NotAllPlayersHaveBid()
-            it.value as Bid.Placed
+            when(val bid = it.value) {
+                is Bid.None -> throw GameException.NotAllPlayersHaveBid()
+                is Bid.Hidden -> error("this should be impossible. this is just for display")
+                is Bid.Placed -> bid.bid
+            }
         }
     }
 }
-
-typealias CompletedBids = Map<PlayerId, Bid.Placed>
 
 sealed class Bid {
     override fun toString(): String = when (this) {
