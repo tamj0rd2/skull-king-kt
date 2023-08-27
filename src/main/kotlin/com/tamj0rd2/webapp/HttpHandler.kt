@@ -1,5 +1,7 @@
 package com.tamj0rd2.webapp
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GameState
@@ -15,6 +17,7 @@ import org.http4k.core.body.form
 import org.http4k.core.with
 import org.http4k.format.Jackson.asA
 import org.http4k.format.Jackson.asJsonObject
+import org.http4k.format.Jackson.auto
 import org.http4k.routing.ResourceLoader
 import org.http4k.routing.bind
 import org.http4k.routing.routes
@@ -22,6 +25,7 @@ import org.http4k.routing.static
 import org.http4k.template.HandlebarsTemplates
 import org.http4k.template.ViewModel
 import org.http4k.template.viewModel
+import org.slf4j.LoggerFactory
 
 private data class Game(
     val wsHost: String,
@@ -31,7 +35,9 @@ private data class Game(
 ) : ViewModel
 
 fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
+    val logger = LoggerFactory.getLogger("httpHandler")
     val (renderer, resourceLoader) = buildResourceLoaders(hotReload)
+    val gameMasterCommandLens = Body.auto<GameMasterCommand>().toLens()
 
     return routes(
         static(resourceLoader),
@@ -56,17 +62,26 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
             app.game.start()
             Response(Status.OK)
         },
-        "/rigDeck" bind Method.PUT to { req ->
-            val command = req.asA<RigDeckCommand>()
-            app.game.rigDeck(command.playerId, command.cards)
+        "/do-game-master-command" bind Method.POST to { req ->
+            logger.info("received command: ${req.bodyString()}")
+
+            when (val command = gameMasterCommandLens(req)) {
+                is GameMasterCommand.RigDeck -> app.game.rigDeck(command.playerId, command.cards)
+                is GameMasterCommand.StartRound -> app.game.startNextRound()
+                else -> error("unknown command: $command")
+            }
             Response(Status.OK)
         }
     )
 }
 
-private inline fun <reified T : Any> Request.asA() = bodyString().asJsonObject().asA(T::class)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+sealed class GameMasterCommand {
+    data class RigDeck(val playerId: PlayerId, val cards: List<Card>) : GameMasterCommand()
+    object StartRound : GameMasterCommand()
+}
 
-data class RigDeckCommand(val playerId: PlayerId, val cards: List<Card>)
 
 private fun buildResourceLoaders(hotReload: Boolean) = when {
     hotReload -> HandlebarsTemplates().HotReload("./src/main/resources") to ResourceLoader.Classpath("public")
