@@ -71,7 +71,11 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     override val bets: Map<PlayerId, Bid>
         get() = driver.findElement(By.id("bets"))
             .findElements(By.tagName("li"))
-            .associate { it.text.split(":").let { (name, bet) -> name to Bid.from(bet.toInt()) } }
+            .associate {
+                val (name, bet) = it.text.split(":").apply { if (size < 2) return@associate this[0] to Bid.None }
+                if (bet == "has bet") return@associate name to Bid.Hidden
+                name to Bid.Placed(bet.toInt())
+            }
 
     override val playersWhoHavePlacedBets: List<PlayerId>
         get() = driver.findElement(By.id("playersWhoHaveBet"))

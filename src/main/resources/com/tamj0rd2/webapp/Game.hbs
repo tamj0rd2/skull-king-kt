@@ -36,7 +36,11 @@
     <ul id="playersWhoHaveBet"></ul>
 
     <h3>Bets</h3>
-    <ul id="bets"></ul>
+    <ul id="bets">
+        {{#each players}}
+            <li data-playerBet="{{this}}">{{this}}<span></span></li>
+        {{/each}}
+    </ul>
 
     <h3>Cards in trick</h3>
     <ul id="trick"></ul>

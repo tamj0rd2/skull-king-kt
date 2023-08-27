@@ -1,7 +1,6 @@
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.describe
-import com.natpryce.hamkrest.equalTo as Is
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
 import com.natpryce.hamkrest.isEmpty
@@ -17,27 +16,27 @@ import org.junit.jupiter.api.TestMethodOrder
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.Bid
-//import testsupport.Bid
 import testsupport.Bids
 import testsupport.Ensure
 import testsupport.Ensures
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.PlaysCard
-import testsupport.ThePlayersAtTheTable
-import testsupport.ThePlayersWhoHaveBid
 import testsupport.RigsTheDeck
-import testsupport.TheCurrentTrick
-import testsupport.TheGamePhase
-import testsupport.TheGameState
-import testsupport.TheirHand
-import testsupport.TheySeeBids
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
 import testsupport.StartsTheGame
+import testsupport.TheCurrentTrick
+import testsupport.TheGamePhase
+import testsupport.TheGameState
+import testsupport.ThePlayersAtTheTable
+import testsupport.ThePlayersWhoHaveBid
+import testsupport.TheirHand
+import testsupport.TheySeeBids
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import com.natpryce.hamkrest.equalTo as Is
 
 interface AbilityFactory {
     fun participateInGames(): ParticipateInGames
@@ -120,7 +119,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             // TODO: maybe this can just be part of TheySeeBids? If someone hasn't bid, their bid can be null
             that(ThePlayersWhoHaveBid, areOnly(freddy.name))
             that(TheGamePhase, Is(Bidding))
-            that(TheySeeBids, where(freddy bid Bid.None, sally bid Bid.None))
+            that(TheySeeBids, where(freddy bid Bid.Hidden, sally bid Bid.None))
         }
     }
 
@@ -195,8 +194,6 @@ private fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> =
 fun <T> sizeIs(expected: Int): Matcher<List<T>> = has(List<T>::size, equalTo(expected))
 
 fun where(vararg bets: Pair<Actor, Bid>): Matcher<Map<PlayerId, Bid>> =
-    equalTo<Map<PlayerId, Bid>>(bets.associate { it.first.name to it.second })
+    equalTo(bets.associate { it.first.name to it.second })
 
 infix fun Actor.bid(bid: Bid): Pair<Actor, Bid> = Pair(this, bid)
-
-val NoBids = emptyMap<PlayerId, Int>()

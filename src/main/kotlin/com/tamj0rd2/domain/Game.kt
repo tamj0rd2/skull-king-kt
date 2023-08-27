@@ -1,7 +1,5 @@
 package com.tamj0rd2.domain
 
-import com.github.jknack.handlebars.internal.lang3.ObjectUtils.Null
-
 class Game {
     private var _phase: GamePhase = GamePhase.None
     val phase: GamePhase get() = _phase
@@ -17,7 +15,10 @@ class Game {
 
     private val isBettingComplete get() = _bets.size == players.size
     private val _bets = mutableMapOf<PlayerId, Int>()
-    val bets: Map<PlayerId, Bid> get() = if (isBettingComplete) _bets.mapValues { Bid.Placed(it.value) }.toMap() else _players.associateWith { Bid.None }
+    val bets: Map<PlayerId, Bid> get() {
+        if (isBettingComplete) return _bets.mapValues { Bid.Placed(it.value) }.toMap()
+        return _players.associateWith { if (_bets[it] == null) Bid.None else Bid.Hidden }
+    }
     val playersWhoHavePlacedBet get() = _bets.keys.toList()
 
     private val gameEventSubscribers = mutableMapOf<PlayerId, GameEventSubscriber>()
@@ -42,8 +43,9 @@ class Game {
         gameEventSubscribers.broadcast(GameEvent.GameStarted)
 
         var cardId = 0
-        players.forEach { hands[it] =
-            (riggedHands?.get(it) ?: listOf(Card(cardId.apply { cardId += 1 }.toString()))).toMutableList()
+        players.forEach {
+            hands[it] =
+                (riggedHands?.get(it) ?: listOf(Card(cardId.apply { cardId += 1 }.toString()))).toMutableList()
         }
 
         gameEventSubscribers.forEach {
@@ -70,7 +72,8 @@ class Game {
     }
 
     fun playCard(playerId: String, cardId: CardId) {
-        val card = getCardsInHand(playerId).find { it.id == cardId } ?: throw GameException.CardNotInHand(playerId, cardId)
+        val card =
+            getCardsInHand(playerId).find { it.id == cardId } ?: throw GameException.CardNotInHand(playerId, cardId)
         hands[playerId]?.remove(card) ?: error("the player's hand somehow doesn't exist. this should never happen")
         _currentTrick += PlayedCard(playerId, card)
 
@@ -129,7 +132,7 @@ private class Bids {
 
     fun forDisplay(): Map<PlayerId, Bid> = when {
         areComplete -> bids
-        else -> bids.mapValues { Bid.None }
+        else -> bids.mapValues { if (it.value is Bid.Placed) Bid.Hidden else it.value }
     }
 
     fun place(playerId: PlayerId, bid: Int) {
@@ -147,21 +150,14 @@ private class Bids {
 typealias CompletedBids = Map<PlayerId, Bid.Placed>
 
 sealed class Bid {
-    fun toInt() = when(this) {
-        is None -> null
-        is Placed -> bid
-    }
-
-    companion object {
-        fun from(value: Int?): Bid = when (value) {
-            null -> None
-            else -> Placed(value)
-        }
-        fun from(value: Int) = Placed(value)
-        fun from(value: Null) = None
+    override fun toString(): String = when (this) {
+        is None -> "None"
+        is Hidden -> "Hidden"
+        is Placed -> bid.toString()
     }
 
     object None : Bid()
+    object Hidden : Bid()
 
     data class Placed(val bid: Int) : Bid()
 }

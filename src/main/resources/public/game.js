@@ -48,6 +48,13 @@ function connectToWs(wsAddress) {
                     li.innerText = gameEvent.playerId
                     players.appendChild(li)
 
+                    const betsEl = document.getElementById("bets")
+                    const li2 = document.createElement("li")
+                    li2.innerText = gameEvent.playerId
+                    li2.setAttribute("data-playerBet", gameEvent.playerId)
+                    li2.appendChild(document.createElement("span"))
+                    betsEl.appendChild(li2)
+
                     if (!gameEvent.waitingForMorePlayers) {
                         const gameStateEl = document.getElementById("gameState")
                         gameStateEl.innerText = ""
@@ -85,6 +92,9 @@ function connectToWs(wsAddress) {
                     li.innerText = gameEvent.playerId
                     playersWhoHaveBet.appendChild(li)
 
+                    document.querySelector(`[data-playerBet="${gameEvent.playerId}"] span`).innerText = ":" + "has bet"
+
+                    // TODO why is this even here? It should be in the bettingCompleted handler
                     if (gameEvent.isBettingComplete) {
                         const gamePhaseEl = document.getElementById("gamePhase")
                         gamePhaseEl.innerText = "It's trick taking time!"
