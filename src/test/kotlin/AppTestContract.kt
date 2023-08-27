@@ -1,5 +1,6 @@
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
+import com.natpryce.hamkrest.and
 import com.natpryce.hamkrest.describe
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
@@ -22,7 +23,6 @@ import testsupport.Ensure
 import testsupport.Ensures
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
-import testsupport.PlaysCard
 import testsupport.RigsTheDeck
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
@@ -32,12 +32,20 @@ import testsupport.TheGamePhase
 import testsupport.TheGameState
 import testsupport.ThePlayersAtTheTable
 import testsupport.HisHand
+import testsupport.Play
+import testsupport.Plays
+import testsupport.Question
+import testsupport.SaysTheNextRoundCanStart
+import testsupport.SaysTheNextTrickCanStart
+import testsupport.TheRoundNumber
+import testsupport.TheTrickNumber
+import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.Wip
+import kotlin.math.round
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import com.natpryce.hamkrest.equalTo as Is
 
 interface AbilityFactory {
@@ -49,6 +57,11 @@ interface TestConfiguration : AbilityFactory {
     fun setup()
     fun teardown()
 }
+
+// things for the future:
+// turn order
+// scoring
+// using actual cards lol
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 sealed class AppTestContract(private val d: TestConfiguration) {
@@ -135,7 +148,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy and sally both Bid(1)
         freddy(
             Ensures(HisHand, sizeIs(1)),
-            PlaysCard("A"),
+            Plays.card("A"),
             Ensures(HisHand, isEmpty),
         )
         freddy and sally both Ensure(TheCurrentTrick, onlyContains(Card("A").playedBy(freddy)))
@@ -152,8 +165,8 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         )
 
         freddy and sally both Bid(1)
-        freddy(PlaysCard("C"))
-        sally(PlaysCard("D"))
+        freddy(Plays.card("C"))
+        sally(Plays.card("D"))
         freddy and sally both Ensure(
             TheCurrentTrick, onlyContains(
                 Card("C").playedBy(freddy),
@@ -163,9 +176,113 @@ sealed class AppTestContract(private val d: TestConfiguration) {
 
         // TODO: put something here about ending the trick and/or round1
     }
+
+
+    @Wip
+    @Test
+    @Order(7)
+    fun `playing a game from start to finish`() {
+        freddy and sally both SitAtTheTable
+
+        // round 1
+        gary(SaysTheGameCanStart)
+        freddy and sally both Ensure {
+            that(TheRoundNumber, Is(1))
+            that(TheTrickNumber, Is(1))
+            that(TheirHand, sizeIs(1))
+        }
+
+        // round 1 bidding
+        freddy and sally both Bid(1)
+        freddy and sally both Ensure {
+            that(TheySeeBids, where(freddy bid 1, sally bid 1))
+            that(TheGamePhase, Is(TrickTaking))
+        }
+
+        // round 1 trick taking
+        freddy(Plays.card("1"))
+        sally(Plays.card("2"))
+        freddy and sally both Ensure {
+            that(TheCurrentTrick, onlyContains(Card("1").playedBy(freddy), Card("2").playedBy(sally)))
+            that(TheGamePhase, Is(TrickComplete))
+        }
+
+        // round 2
+        gary(SaysTheNextRoundCanStart)
+        freddy and sally both Ensure {
+            that(TheRoundNumber, Is(2))
+            that(TheTrickNumber, Is(1))
+            that(TheirHand, sizeIs(2))
+        }
+
+        // round 2 bidding
+        freddy and sally both Bid(2)
+        freddy and sally both Ensure {
+            that(TheySeeBids, where(freddy bid 2, sally bid 2))
+            that(TheGamePhase, Is(TrickTaking))
+        }
+
+        // round 2 trick 1
+        freddy(Plays.card("1"))
+        sally(Plays.card("3"))
+        freddy and sally both Ensure {
+            that(TheCurrentTrick, onlyContains(Card("1").playedBy(freddy), Card("3").playedBy(sally)))
+            that(TheGamePhase, Is(TrickComplete))
+        }
+
+        // round 2 trick 2
+        gary(SaysTheNextTrickCanStart)
+        freddy and sally both Ensure(TheTrickNumber, Is(2))
+        freddy(Plays.card("2"))
+        sally(Plays.card("4"))
+        freddy and sally both Ensure {
+            that(TheCurrentTrick, onlyContains(Card("2").playedBy(freddy), Card("4").playedBy(sally)))
+            that(TheGamePhase, Is(TrickComplete))
+        }
+
+        // rounds 3 - 10
+        (3..10).forEach { roundNumber ->
+            gary(SaysTheNextRoundCanStart)
+            freddy and sally both Ensure {
+                that(TheRoundNumber, Is(roundNumber))
+                that(TheTrickNumber, Is(1))
+                that(TheirHand, sizeIs(roundNumber))
+            }
+
+            // round X trick 1
+            freddy and sally both Play.theirFirstCard
+            freddy and sally both Ensure {
+                that(TheCurrentTrick, sizeIs(2))
+                that(TheGamePhase, Is(TrickComplete))
+            }
+
+            // round X trick 2-X
+            (2..roundNumber).forEach { trickNumber ->
+                gary(SaysTheNextTrickCanStart)
+                freddy and sally both Ensure {
+                    that(TheRoundNumber, Is(roundNumber))
+                    that(TheTrickNumber, Is(trickNumber))
+                    that(TheirHand, sizeIs(roundNumber - trickNumber + 1))
+                }
+
+                freddy and sally both Play.theirFirstCard
+                freddy and sally both Ensure {
+                    that(TheCurrentTrick, sizeIs(2))
+                    that(TheGamePhase, Is(TrickComplete))
+                }
+            }
+        }
+
+        freddy and sally both Ensure {
+            that(TheRoundNumber, Is(10))
+            that(TheTrickNumber, Is(10))
+            that(TheirHand, isEmpty)
+            that(TheGameState, Is(Complete))
+        }
+    }
 }
 
-private fun Card.playedBy(actor: Actor): PlayedCard = PlayedCard(actor.name, this)
+private fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.name)
 
 private infix fun Pair<Actor, Actor>.both(activity: Activity) {
     first(activity)
@@ -190,6 +307,7 @@ private fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> =
         override val negatedDescription: String get() = "does not $description"
     }
 
+// TODO: this can use Collection
 fun <T> sizeIs(expected: Int): Matcher<List<T>> = has(List<T>::size, equalTo(expected))
 
 fun where(vararg bets: Pair<Actor, Bid>): Matcher<Map<PlayerId, Bid>> =

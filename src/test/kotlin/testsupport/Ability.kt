@@ -17,6 +17,8 @@ interface ApplicationDriver {
     fun placeBet(bet: Int)
     fun playCard(playerId: String, cardId: CardId)
 
+    val trickNumber: Int
+    val roundNumber: Int
     val trick: Trick
     val gamePhase: GamePhase
     val gameState: GameState
@@ -28,4 +30,6 @@ interface ApplicationDriver {
 interface GameMasterDriver {
     fun startGame()
     fun rigDeck(playerId: PlayerId, cards: List<Card>)
+    fun startNextRound()
+    fun startNextTrick()
 }

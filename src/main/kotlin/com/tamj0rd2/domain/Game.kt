@@ -1,6 +1,12 @@
 package com.tamj0rd2.domain
 
 class Game {
+    private var _trickNumber: Int = 0
+    val trickNumber: Int get() = _trickNumber
+
+    private var _roundNumber = 0
+    val roundNumber: Int get() = _roundNumber
+
     private var _phase: GamePhase? = null
     val phase: GamePhase get() = _phase ?: throw GameException.NotStarted()
 
@@ -36,16 +42,21 @@ class Game {
         _state = GameState.InProgress
         _phase = GamePhase.Bidding
         _bids.initFor(players)
+        players.forEach { hands[it] = mutableListOf() }
         gameEventSubscribers.broadcast(GameEvent.GameStarted)
+        startNextRound()
+    }
 
-        var cardId = 0
-        players.forEach {
-            hands[it] =
-                (riggedHands?.get(it) ?: listOf(Card(cardId.apply { cardId += 1 }.toString()))).toMutableList()
-        }
+    private fun dealCards() {
+        val deck = (1..66).map { Card(it.toString()) }.toMutableList()
 
-        gameEventSubscribers.forEach {
-            it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key)))
+        hands.replaceAll { playerId, _ ->
+            val riggedHand = riggedHands?.get(playerId)
+            if (riggedHand != null) {
+                return@replaceAll riggedHand.toMutableList()
+            }
+
+            (1..roundNumber).map { deck.removeFirst() }.toMutableList()
         }
     }
 
@@ -68,16 +79,19 @@ class Game {
     }
 
     fun playCard(playerId: String, cardId: CardId) {
-        val card =
-            getCardsInHand(playerId).find { it.id == cardId } ?: throw GameException.CardNotInHand(playerId, cardId)
+        val cards = getCardsInHand(playerId)
+        val card = cards.find { it.id == cardId } ?: throw GameException.CardNotInHand(playerId, cardId, cards)
         hands[playerId]?.remove(card) ?: error("the player's hand somehow doesn't exist. this should never happen")
         _currentTrick += PlayedCard(playerId, card)
-
         gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, cardId))
-    }
 
-    fun rigDeck(hands: Hands) {
-        this.riggedHands = hands.toMutableMap()
+        if (_currentTrick.size == players.size) {
+            _phase = GamePhase.TrickComplete
+
+            if (roundNumber == 10) {
+                _state = GameState.Complete
+            }
+        }
     }
 
     fun rigDeck(playerId: PlayerId, cards: List<Card>) {
@@ -87,6 +101,22 @@ class Game {
 
     private fun Map<PlayerId, GameEventSubscriber>.broadcast(event: GameEvent) {
         this.forEach { it.value.handleEvent(event) }
+    }
+
+    fun startNextRound() {
+        _roundNumber += 1
+        dealCards()
+        _trickNumber = 0
+        startNextTrick()
+
+        gameEventSubscribers.forEach {
+            it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key)))
+        }
+    }
+
+    fun startNextTrick() {
+        _trickNumber += 1
+        _currentTrick.clear()
     }
 }
 
@@ -100,21 +130,24 @@ enum class GameState {
     WaitingForMorePlayers,
     WaitingToStart,
     InProgress,
+    Complete,
 }
 
 enum class GamePhase {
     Bidding,
     TrickTaking,
+    TrickComplete,
 }
 
 typealias Hand = List<Card>
 
 typealias Trick = List<PlayedCard>
 
-data class PlayedCard(val playerId: PlayerId, val card: Card)
-
-typealias Hands = Map<PlayerId, Hand>
-
+data class PlayedCard(val playerId: PlayerId, val card: Card) {
+    override fun toString(): String {
+        return "$card played by $playerId"
+    }
+}
 
 private class Bids {
     private var bids = mutableMapOf<PlayerId, Bid>()
@@ -136,7 +169,7 @@ private class Bids {
 
     fun asCompleted(): Map<PlayerId, Int> {
         return bids.mapValues {
-            when(val bid = it.value) {
+            when (val bid = it.value) {
                 is Bid.None -> throw GameException.NotAllPlayersHaveBid()
                 is Bid.IsHidden -> error("this should be impossible. this is just for display")
                 is Bid.Placed -> bid.bid

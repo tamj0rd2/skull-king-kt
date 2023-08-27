@@ -29,10 +29,16 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         driver.findElement(By.id("hand"))
             .findElements(By.tagName("li"))
             .find { it.toCardId() == cardId }
-            .let { it ?: throw GameException.CardNotInHand(playerId, cardId) }
+            .let { it ?: throw GameException.CardNotInHand(playerId, cardId, TODO()) }
             .findElement(By.tagName("button"))
             .click()
     }
+
+    override val trickNumber: Int
+        get() = TODO("Not yet implemented")
+
+    override val roundNumber: Int
+        get() = TODO("Not yet implemented")
 
     override val playersInRoom: List<PlayerId>
         get() = driver.findElement(By.id("players"))

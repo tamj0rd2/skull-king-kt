@@ -3,7 +3,6 @@ package com.tamj0rd2.webapp
 import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GameState
-import com.tamj0rd2.domain.Hands
 import com.tamj0rd2.domain.PlayerId
 import org.http4k.core.Body
 import org.http4k.core.ContentType

@@ -25,4 +25,12 @@ class HTTPDriver(private val baseUrl: String, httpClient: HttpClient) : GameMast
         val res = client(Request(Method.PUT, "$baseUrl/rigDeck").body(json))
         if (res.status != Status.OK) throw RuntimeException("failed to rig deck: ${res.status}\n${res.bodyString()}")
     }
+
+    override fun startNextRound() {
+        TODO("Not yet implemented")
+    }
+
+    override fun startNextTrick() {
+        TODO("Not yet implemented")
+    }
 }

@@ -30,11 +30,20 @@ val TheirHand = Question.about("their hand") { actor ->
 val HisHand = TheirHand
 val HerHand = TheirHand
 
+val TheRoundNumber = Question.about("the round number") { actor ->
+    actor.use<ParticipateInGames>().roundNumber
+}
+
+// TODO: these can all be rolled up into a single question about the game state...
+val TheTrickNumber = Question.about("the round number") { actor ->
+    actor.use<ParticipateInGames>().trickNumber
+}
+
 val TheySeeBids = Question.about("the bets that have been made") { actor ->
     actor.use<ParticipateInGames>().bets
 }
 
-val TheCurrentTrick = Question.about("the game phase") { actor ->
+val TheCurrentTrick = Question.about("the current trick") { actor ->
     actor.use<ParticipateInGames>().trick
 }
 

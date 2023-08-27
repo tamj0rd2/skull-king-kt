@@ -6,6 +6,10 @@ class ManageGames(driver: GameMasterDriver): Ability, GameMasterDriver by driver
 
 val SaysTheGameCanStart = Interaction { actor -> actor.use<ManageGames>().startGame() }
 
+val SaysTheNextRoundCanStart = Interaction { actor -> actor.use<ManageGames>().startNextRound() }
+
+val SaysTheNextTrickCanStart = Interaction { actor -> actor.use<ManageGames>().startNextTrick() }
+
 object RigsTheDeck {
     data class SoThat(private val thePlayer: Actor) {
         fun willEndUpWith(vararg cards: Card) = Interaction { actor ->
