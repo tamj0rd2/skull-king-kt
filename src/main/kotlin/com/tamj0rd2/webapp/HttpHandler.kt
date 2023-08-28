@@ -68,7 +68,7 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
             )
             Response(Status.OK).with(view of model)
         },
-        "/startGame" bind Method.POST to { Response(Status.MOVED_PERMANENTLY) },
+        "/startGame" bind Method.POST to { app.game.start().respondOK() },
         "/do-game-master-command" bind Method.POST to { req ->
             logger.info("received command: ${req.bodyString()}")
 
