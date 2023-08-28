@@ -1,5 +1,6 @@
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
+import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.describe
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
@@ -7,13 +8,16 @@ import com.natpryce.hamkrest.isEmpty
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Bid.*
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GamePhase.*
 import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
+import org.checkerframework.framework.qual.IgnoreInWholeProgramInference
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestMethodOrder
+import org.junit.jupiter.api.assertThrows
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.Bid
@@ -39,8 +43,11 @@ import testsupport.TheRoundNumber
 import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.TheySeeBids
+import testsupport.Wip
+import java.lang.Exception
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Ignore
 import kotlin.test.Test
 import com.natpryce.hamkrest.equalTo as Is
 
@@ -61,18 +68,77 @@ interface TestConfiguration : AbilityFactory {
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 sealed class AppTestContract(private val d: TestConfiguration) {
+    private lateinit var freddy: Actor
+    private lateinit var sally: Actor
+    private lateinit var gary: Actor
+
     @BeforeTest
-    fun setup() = d.setup()
+    fun setup() {
+        d.setup()
+        freddy = Actor("Freddy First").whoCan(d.participateInGames())
+        sally = Actor("Sally Second").whoCan(d.participateInGames())
+        gary = Actor("Gary GameMaster").whoCan(d.manageGames())
+    }
 
     @AfterTest
     fun teardown() = d.teardown()
 
-    private val freddy = Actor("Freddy First").whoCan(d.participateInGames())
-    private val sally = Actor("Sally Second").whoCan(d.participateInGames())
-    private val gary = Actor("Gary GameMaster").whoCan(d.manageGames())
-
     @Test
     @Order(0)
+    fun `sitting at an empty table and waiting for more players to join`() {
+        freddy(
+            SitsAtTheTable,
+            Ensures {
+                that(ThePlayersAtTheTable, areOnly(freddy))
+                that(TheGameState, Is(WaitingForMorePlayers))
+            },
+        )
+    }
+
+    @Test
+    @Order(1)
+    fun `a player can't join twice`() {
+        freddy(SitsAtTheTable)
+        val freddyOnASecondDevice = Actor(freddy.name).whoCan(d.participateInGames())
+        assertThrows<GameException.PlayerWithSameNameAlreadyJoined> { freddyOnASecondDevice(SitsAtTheTable) }
+    }
+
+    @Test
+    @Order(2)
+    fun `waiting for sally to bid`() {
+        freddy and sally both SitAtTheTable
+        gary(SaysTheGameCanStart)
+        freddy(Bids(1))
+        freddy and sally both Ensure {
+            that(TheGamePhase, Is(Bidding))
+            that(TheySeeBids, where(freddy.bidIsHidden(), sally.hasNotBid()))
+        }
+    }
+
+    @Test
+    @Order(3)
+    fun `playing a card and waiting for the next player to do the same`() {
+        freddy and sally both SitAtTheTable
+        gary(
+            RigsTheDeck.SoThat(freddy).willEndUpWith(Card("A")),
+            SaysTheGameCanStart
+        )
+        freddy and sally both Bid(1)
+
+        freddy(
+            Ensures(HisHand, sizeIs(1)),
+            Plays.card("A"),
+            Ensures(HisHand, isEmpty),
+        )
+
+        freddy and sally both Ensure {
+            that(TheCurrentTrick, onlyContains(Card("A").playedBy(freddy)))
+            that(TheGamePhase, Is(TrickTaking))
+        }
+    }
+
+    @Test
+    @Order(100)
     fun `playing a game from start to finish`() {
         freddy and sally both SitAtTheTable
         freddy and sally both Ensure {
@@ -184,52 +250,6 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             that(TheTrickNumber, Is(10))
             that(TheirHand, isEmpty)
             that(TheGameState, Is(Complete))
-        }
-    }
-
-    @Test
-    @Order(1)
-    fun `sitting at an empty table and waiting for more players to join`() {
-        freddy(
-            SitsAtTheTable,
-            Ensures {
-                that(ThePlayersAtTheTable, areOnly(freddy))
-                that(TheGameState, Is(WaitingForMorePlayers))
-            },
-        )
-    }
-
-    @Test
-    @Order(2)
-    fun `waiting for sally to bid`() {
-        freddy and sally both SitAtTheTable
-        gary(SaysTheGameCanStart)
-        freddy(Bids(1))
-        freddy and sally both Ensure {
-            that(TheGamePhase, Is(Bidding))
-            that(TheySeeBids, where(freddy.bidIsHidden(), sally.hasNotBid()))
-        }
-    }
-
-    @Test
-    @Order(3)
-    fun `playing a card and waiting for the next player to do the same`() {
-        freddy and sally both SitAtTheTable
-        gary(
-            RigsTheDeck.SoThat(freddy).willEndUpWith(Card("A")),
-            SaysTheGameCanStart
-        )
-        freddy and sally both Bid(1)
-
-        freddy(
-            Ensures(HisHand, sizeIs(1)),
-            Plays.card("A"),
-            Ensures(HisHand, isEmpty),
-        )
-
-        freddy and sally both Ensure {
-            that(TheCurrentTrick, onlyContains(Card("A").playedBy(freddy)))
-            that(TheGamePhase, Is(TrickTaking))
         }
     }
 }

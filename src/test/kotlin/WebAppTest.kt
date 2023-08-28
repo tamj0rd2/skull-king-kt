@@ -26,13 +26,12 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
     private val chromeDrivers = mutableListOf<ChromeDriver>()
 
     init {
-        System.setProperty("webdriver.chrome.driver", chromeDriverBinary);
+        System.setProperty("webdriver.chrome.driver", chromeDriverBinary)
     }
 
     override fun setup() {
         server.start()
         httpClient.start()
-        chromeDrivers.forEach { it.navigate().to(baseUrl) }
     }
 
     override fun teardown() {
@@ -45,7 +44,10 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
     }
 
     override fun participateInGames(): ParticipateInGames {
-        val chromeDriver = ChromeDriver(chromeOptions).apply { chromeDrivers += this }
+        val chromeDriver = ChromeDriver(chromeOptions).apply {
+            this.navigate().to(baseUrl)
+            chromeDrivers += this
+        }
         return ParticipateInGames(WebDriver(chromeDriver))
     }
 

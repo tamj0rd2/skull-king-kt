@@ -31,6 +31,8 @@ class Game {
     val currentTrick: List<PlayedCard> get() = _currentTrick
 
     fun addPlayer(playerId: PlayerId) {
+        if (_players.contains(playerId)) throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
+
         _players += playerId
         if (!waitingForMorePlayers) _state = GameState.WaitingToStart
         gameEventSubscribers.broadcast(GameEvent.PlayerJoined(playerId, waitingForMorePlayers))

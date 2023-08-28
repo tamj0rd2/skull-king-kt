@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
 import org.http4k.core.Body
@@ -31,20 +32,32 @@ private data class Game(
     val playerId: PlayerId,
 ) : ViewModel
 
+data class Index(val errorMessage: String? = null) : ViewModel {
+    companion object {
+        val withoutError = Index()
+        fun withError(errorMessage: String) = Index(errorMessage)
+    }
+}
+
 fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
     val logger = LoggerFactory.getLogger("httpHandler")
     val (renderer, resourceLoader) = buildResourceLoaders(hotReload)
     val gameMasterCommandLens = Body.auto<GameMasterCommand>().toLens()
 
+    val indexView = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
     return routes(
         static(resourceLoader),
         "/" bind Method.GET to {
-            val body = resourceLoader.load("index.html")?.readText() ?: error("index.html not found!")
-            Response(Status.OK).body(body)
+            Response(Status.OK).with(indexView of Index.withoutError)
         },
         "/play" bind Method.POST to {
             val playerId = it.form("playerId") ?: error("playerId not posted!")
-            app.game.addPlayer(playerId)
+
+            try {
+                app.game.addPlayer(playerId)
+            } catch (e: GameException.PlayerWithSameNameAlreadyJoined) {
+                return@to Response(Status.OK).with(indexView of Index.withError(e::class.simpleName!!))
+            }
 
             val view = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
             val model = Game(

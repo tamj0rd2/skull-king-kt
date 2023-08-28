@@ -11,6 +11,9 @@
             <input name="playerId"/>
         </label>
         <input type="submit" value="Join Game"/>
+        {{#if errorMessage}}
+            <p>Error: <span id="errorMessage">{{errorMessage}}</span></p>
+        {{/if}}
     </form>
     <form id="startGame" action="/startGame" method="post">
         <input type="submit" value="ADMIN ONLY: Start Game"/>

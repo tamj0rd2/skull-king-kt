@@ -2,10 +2,11 @@ package com.tamj0rd2.domain
 
 import java.lang.Exception
 
-sealed class GameException(message: String) : Exception(message) {
+sealed class GameException(override val message: String) : Exception(message) {
     class NotEnoughPlayers(playerCount: Int, requiredCount: Int) : GameException("$playerCount/$requiredCount players isn't enough to start the game")
     class NoHandFoundFor(playerId: PlayerId) : GameException("no hand found for player $playerId")
     class CardNotInHand(playerId: PlayerId, cardId: CardId) : GameException("card $cardId not in $playerId's hand")
     class NotAllPlayersHaveBid : GameException("not all players have bid")
     class NotStarted : GameException("game not started")
+    class PlayerWithSameNameAlreadyJoined(playerId: PlayerId) : GameException("a player with the name $playerId is already in the game")
 }
