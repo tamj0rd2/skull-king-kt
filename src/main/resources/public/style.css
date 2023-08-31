@@ -2,6 +2,10 @@ body {
     font-family: "Droid Sans", sans-serif;
 }
 
+.u-hide {
+    display: none;
+}
+
 /*.content {*/
 /*    padding: 50px;*/
 /*}*/

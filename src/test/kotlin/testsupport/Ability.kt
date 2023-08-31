@@ -15,7 +15,7 @@ interface ApplicationDriver {
     fun enterPlayerId(playerId: String)
     fun joinDefaultRoom()
     fun placeBet(bet: Int)
-    fun playCard(playerId: String, cardId: CardId)
+    fun playCard(cardId: CardId)
 
     val trickNumber: Int
     val roundNumber: Int

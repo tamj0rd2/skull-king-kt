@@ -43,6 +43,20 @@ function connectToWs(wsAddress) {
         });
 
         function newGameEventHandlers() {
+
+            function updateGamePhase(gamePhase) {
+                const gamePhaseEl = document.getElementById("gamePhase")
+                const gamePhaseMapping = {
+                    "Bidding": "Place your bid!",
+                    "TrickTaking": "It's trick taking time!",
+                    "TrickComplete": "Trick completed :)"
+                }
+
+                const text = gamePhaseMapping[gamePhase]
+                if (!text) throw new Error("Unknown game phase: " + gamePhase)
+                gamePhaseEl.innerText = gamePhaseMapping[gamePhase]
+            }
+
             return {
                 playerJoined: function(gameEvent) {
                     const players = document.getElementById("players")
@@ -66,15 +80,16 @@ function connectToWs(wsAddress) {
                     const gameStateEl = document.getElementById("gameState")
                     gameStateEl.innerText = "The game has started :D"
 
-                    const gamePhaseEl = document.getElementById("gamePhase")
-                    gamePhaseEl.innerText = "Place your bid!"
+                    document.getElementById("handArea").classList.remove("u-hide")
+                    document.getElementById("betsArea").classList.remove("u-hide")
                 },
                 roundStarted: function(gameEvent) {
                     const roundNumberEl = document.getElementById("roundNumber")
                     roundNumberEl.innerText = gameEvent.roundNumber
+                    updateGamePhase("Bidding")
 
                     const trickNumberEl = document.getElementById("trickNumber")
-                    trickNumberEl.innerText = gameEvent.trickNumber
+                    trickNumberEl.innerText = ""
 
                     const betEl = document.getElementsByName("bet")[0]
                     betEl.value = ""
@@ -104,13 +119,11 @@ function connectToWs(wsAddress) {
                     document.querySelector(`[data-playerBet="${gameEvent.playerId}"] span`).innerText = ":" + "has bet"
                 },
                 bettingCompleted: function(gameEvent) {
-                    const bets = gameEvent.bets
-                    document.querySelectorAll(`[data-playerBet]`).forEach(el => {
-                        const gamePhaseEl = document.getElementById("gamePhase")
-                        gamePhaseEl.innerText = "It's trick taking time!"
+                    updateGamePhase("TrickTaking")
 
+                    document.querySelectorAll(`[data-playerBet]`).forEach(el => {
                         const playerId = el.getAttribute("data-playerBet")
-                        const bet = bets[playerId]
+                        const bet = gameEvent.bets[playerId]
                         el.getElementsByTagName("span")[0].innerText = ":" + bet
                     })
                 },
@@ -126,10 +139,12 @@ function connectToWs(wsAddress) {
 
                     const trick = document.getElementById("trick")
                     trick.textContent = ""
+
+                    // TODO: this should be re-hidden when the trick is completed
+                    document.getElementById("trickArea").classList.remove("u-hide")
                 },
                 trickCompleted: function(gameEvent) {
-                    const gamePhaseEl = document.getElementById("gamePhase")
-                    gamePhaseEl.innerText = "Trick completed :)"
+                    updateGamePhase("TrickComplete")
                 },
                 gameCompleted: function (gameEvent) {
                     const gameStateEl = document.getElementById("gameState")

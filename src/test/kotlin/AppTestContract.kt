@@ -50,6 +50,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Ignore
 import kotlin.test.Test
 import com.natpryce.hamkrest.equalTo as Is
+import com.natpryce.hamkrest.equalTo as IsNow
 
 interface AbilityFactory {
     fun participateInGames(): ParticipateInGames
@@ -125,6 +126,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         )
         freddy and sally both Bid(1)
 
+        gary(SaysTheNextTrickCanStart)
         freddy(
             Ensures(HisHand, sizeIs(1)),
             Plays.card("A"),
@@ -150,8 +152,8 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         gary(SaysTheGameCanStart)
         freddy and sally both Ensure {
             that(TheRoundNumber, Is(1))
-            that(TheTrickNumber, Is(1))
             that(TheirHand, sizeIs(1))
+            that(TheGamePhase, Is(Bidding))
         }
 
         // round 1 bidding
@@ -162,6 +164,8 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         }
 
         // round 1 trick taking
+        gary(SaysTheNextTrickCanStart)
+        freddy and sally both Ensure(TheTrickNumber, Is(1))
         freddy(Plays.card("1"))
         sally(Plays.card("2"))
         freddy and sally both Ensure {
@@ -173,8 +177,8 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         gary(SaysTheNextRoundCanStart)
         freddy and sally both Ensure {
             that(TheRoundNumber, Is(2))
-            that(TheTrickNumber, Is(1))
             that(TheirHand, sizeIs(2))
+            that(TheGamePhase, Is(Bidding))
         }
 
         // round 2 bidding
@@ -185,6 +189,8 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         }
 
         // round 2 trick 1
+        gary(SaysTheNextTrickCanStart)
+        freddy and sally both Ensure(TheTrickNumber, Is(1))
         freddy(Plays.card("1"))
         sally(Plays.card("3"))
         freddy and sally both Ensure {
@@ -209,7 +215,6 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             gary(SaysTheNextRoundCanStart)
             freddy and sally both Ensure {
                 that(TheRoundNumber, Is(roundNumber))
-                that(TheTrickNumber, Is(1))
                 that(TheirHand, sizeIs(roundNumber))
             }
 
@@ -220,18 +225,10 @@ sealed class AppTestContract(private val d: TestConfiguration) {
                 that(TheGamePhase, Is(TrickTaking))
             }
 
-            // round X trick 1
-            freddy and sally both Play.theFirstCardInTheirHand
-            freddy and sally both Ensure {
-                that(TheCurrentTrick, sizeIs(2))
-                that(TheGamePhase, Is(TrickComplete))
-            }
-
-            // round X trick 2-X
-            (2..roundNumber).forEach { trickNumber ->
+            // round X trick 1-X
+            (1..roundNumber).forEach { trickNumber ->
                 gary(SaysTheNextTrickCanStart)
                 freddy and sally both Ensure {
-                    that(TheRoundNumber, Is(roundNumber))
                     that(TheTrickNumber, Is(trickNumber))
                     that(TheirHand, sizeIs(roundNumber - trickNumber + 1))
                 }

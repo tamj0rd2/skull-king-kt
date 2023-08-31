@@ -16,13 +16,16 @@ import org.openqa.selenium.chrome.ChromeDriver
 import testsupport.ApplicationDriver
 
 class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
-    override fun enterPlayerId(playerId: String) = driver.findElement(By.name("playerId")).sendKeys(playerId)
+    private lateinit var playerId: String
+
+    override fun enterPlayerId(playerId: String) {
+        driver.findElement(By.name("playerId")).sendKeys(playerId)
+        this.playerId = playerId
+    }
 
     override fun joinDefaultRoom() = driver.findElement(By.id("joinGame")).submit().apply {
         val errorElements = driver.findElements(By.id("errorMessage"))
         if (errorElements.isNotEmpty()) {
-            val playerId = driver.findElement(By.name("playerId")).text.trim()
-
             when(val errorMessage = errorElements.single().text) {
                 GameException.PlayerWithSameNameAlreadyJoined::class.simpleName!! -> throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
                 else -> error("unknown error message: $errorMessage")
@@ -35,7 +38,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         driver.findElement(By.id("placeBet")).click()
     }
 
-    override fun playCard(playerId: String, cardId: CardId) {
+    override fun playCard(cardId: CardId) {
         driver.findElement(By.id("hand"))
             .findElements(By.tagName("li"))
             .find { it.toCardId() == cardId }
@@ -63,8 +66,12 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     override val trick: Trick
         get() = driver.findElement(By.id("trick"))
             .findElements(By.tagName("li"))
-            .map {
-                it.text.split(":").let { (name, cardId) -> PlayedCard(name, Card(cardId)) }
+            .mapNotNull {
+                it.text
+                    .apply { if (isEmpty()) return@mapNotNull null }
+                    .split(":")
+                    .apply { if (size < 2) error("cannot parse trick list item: ${it.getAttribute("outerHTML")}") }
+                    .let { (name, cardId) -> PlayedCard(name, Card(cardId)) }
             }
 
     override val gameState: GameState
@@ -78,16 +85,15 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
             }
         }
 
-    override val gamePhase: GamePhase
-        get() {
-            val gamePhase = driver.findElement(By.id("gamePhase")).text.lowercase()
-            return when {
-                gamePhase.contains("place your bid") -> GamePhase.Bidding
-                gamePhase.contains("it's trick taking time") -> GamePhase.TrickTaking
-                gamePhase.contains("trick complete") -> GamePhase.TrickComplete
-                else -> error("could not determine game phase: $gamePhase")
-            }
+    override val gamePhase: GamePhase get() = withDebugging {
+        val gamePhase = driver.findElement(By.id("gamePhase")).text.lowercase()
+        when {
+            gamePhase.contains("place your bid") -> GamePhase.Bidding
+            gamePhase.contains("it's trick taking time") -> GamePhase.TrickTaking
+            gamePhase.contains("trick complete") -> GamePhase.TrickComplete
+            else -> error("could not parse game phase from: '$gamePhase'")
         }
+    }
 
     override val bets: Map<PlayerId, Bid>
         get() = driver.findElement(By.id("bets"))
@@ -97,6 +103,18 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 if (bet == "has bet") return@associate name to Bid.IsHidden
                 name to Bid.Placed(bet.toInt())
             }
+
+    private fun <T> withDebugging(block: () -> T): T {
+        try {
+            return block()
+        } catch (e: Exception) {
+            println("===$playerId's view===")
+            driver.findElement(By.tagName("body")).getAttribute("outerHTML").let(::println)
+            println("====================")
+            throw e
+        }
+    }
 }
 
 private fun WebElement.toCardId(): CardId = text.removeSuffix("Play")
+

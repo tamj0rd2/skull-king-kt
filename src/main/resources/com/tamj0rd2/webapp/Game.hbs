@@ -24,8 +24,10 @@
         {{/each}}
     </ul>
 
-    <h3>Hand</h3>
-    <ul id="hand"></ul>
+    <section id="handArea" class="u-hide">
+        <h3>Hand</h3>
+        <ul id="hand"></ul>
+    </section>
 
     <form>
         <label>
@@ -35,15 +37,19 @@
         <button id="placeBet" type="button" onclick="onBetSubmit()">Place Bet</button>
     </form>
 
-    <h3>Bets</h3>
-    <ul id="bets">
-        {{#each players}}
-            <li data-playerBet="{{this}}">{{this}}<span></span></li>
-        {{/each}}
-    </ul>
+    <section id="betsArea" class="u-hide">
+        <h3>Bets</h3>
+        <ul id="bets">
+            {{#each players}}
+                <li data-playerBet="{{this}}">{{this}}<span></span></li>
+            {{/each}}
+        </ul>
+    </section>
 
-    <h3>Cards in trick</h3>
-    <ul id="trick"></ul>
+    <section id="trickArea" class="u-hide">
+        <h3>Cards in trick</h3>
+        <ul id="trick"></ul>
+    </section>
 </div>
 <script src="/game.js"></script>
 <script>

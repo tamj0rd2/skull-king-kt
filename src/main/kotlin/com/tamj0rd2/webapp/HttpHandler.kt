@@ -43,6 +43,7 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
     val logger = LoggerFactory.getLogger("httpHandler")
     val (renderer, resourceLoader) = buildResourceLoaders(hotReload)
     val gameMasterCommandLens = Body.auto<GameMasterCommand>().toLens()
+    val gameView = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
 
     val indexView = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
     return routes(
@@ -53,20 +54,23 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
         "/play" bind Method.POST to {
             val playerId = it.form("playerId") ?: error("playerId not posted!")
 
+            if (playerId == "feTesting") {
+                return@to Response(Status.OK).with(gameView of Game("", listOf(playerId), true, playerId))
+            }
+
             try {
                 app.game.addPlayer(playerId)
             } catch (e: GameException.PlayerWithSameNameAlreadyJoined) {
                 return@to Response(Status.OK).with(indexView of Index.withError(e::class.simpleName!!))
             }
 
-            val view = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
             val model = Game(
                 wsHost = "ws://localhost:$port",
                 players = app.game.players,
                 waitingForMorePlayers = app.game.state == GameState.WaitingForMorePlayers,
                 playerId = playerId,
             )
-            Response(Status.OK).with(view of model)
+            Response(Status.OK).with(gameView of model)
         },
         "/startGame" bind Method.POST to { app.game.start().respondOK() },
         "/do-game-master-command" bind Method.POST to { req ->

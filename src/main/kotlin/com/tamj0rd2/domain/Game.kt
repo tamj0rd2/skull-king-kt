@@ -42,7 +42,6 @@ class Game {
         if (waitingForMorePlayers) throw GameException.NotEnoughPlayers(players.size, roomSizeToStartGame)
 
         _state = GameState.InProgress
-        _phase = GamePhase.Bidding
         players.forEach { hands[it] = mutableListOf() }
         gameEventSubscribers.broadcast(GameEvent.GameStarted)
         startNextRound()
@@ -108,14 +107,15 @@ class Game {
 
     fun startNextRound() {
         _roundNumber += 1
-        dealCards()
         _trickNumber = 0
+        _currentTrick.clear()
         _bids.initFor(players)
+        _phase = GamePhase.Bidding
+        dealCards()
 
         gameEventSubscribers.forEach {
             it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key), roundNumber))
         }
-        startNextTrick()
     }
 
     fun startNextTrick() {

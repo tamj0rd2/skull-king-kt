@@ -17,7 +17,7 @@ object Plays {
 }
 
 private fun playsCard(cardId: CardId) = Interaction { actor ->
-    actor.use<ParticipateInGames>().playCard(actor.name, cardId)
+    actor.use<ParticipateInGames>().playCard(cardId)
 }
 
 fun Bids(bet: Int) = Interaction { actor ->
