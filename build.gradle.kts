@@ -33,7 +33,11 @@ dependencies {
 }
 
 tasks.test {
-    failFast = true
+    systemProperty("junit.jupiter.execution.parallel.enabled", "true")
+    systemProperty("junit.jupiter.execution.parallel.mode.default", "same_thread")
+    systemProperty("junit.jupiter.execution.parallel.mode.classes.default", "concurrent")
+    systemProperty("junit.platform.output.capture.stdout", "true")
+    systemProperty("junit.platform.output.capture.stderr", "true")
     useJUnitPlatform()
 }
 

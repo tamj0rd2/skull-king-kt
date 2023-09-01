@@ -1,6 +1,5 @@
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
-import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.describe
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
@@ -13,10 +12,10 @@ import com.tamj0rd2.domain.GamePhase.*
 import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
-import org.checkerframework.framework.qual.IgnoreInWholeProgramInference
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.TestMethodOrder
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import testsupport.Activity
 import testsupport.Actor
@@ -43,14 +42,10 @@ import testsupport.TheRoundNumber
 import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.TheySeeBids
-import testsupport.Wip
-import java.lang.Exception
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import com.natpryce.hamkrest.equalTo as Is
-import com.natpryce.hamkrest.equalTo as IsNow
 
 interface AbilityFactory {
     fun participateInGames(): ParticipateInGames
@@ -67,25 +62,16 @@ interface TestConfiguration : AbilityFactory {
 // scoring
 // using actual cards lol
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 sealed class AppTestContract(private val d: TestConfiguration) {
-    private lateinit var freddy: Actor
-    private lateinit var sally: Actor
-    private lateinit var gary: Actor
+    private val freddy by lazy { Actor("Freddy First").whoCan(d.participateInGames()) }
+    private val sally by lazy { Actor("Sally Second").whoCan(d.participateInGames()) }
+    private val gary by lazy { Actor("Gary GameMaster").whoCan(d.manageGames()) }
 
-    @BeforeTest
-    fun setup() {
-        d.setup()
-        freddy = Actor("Freddy First").whoCan(d.participateInGames())
-        sally = Actor("Sally Second").whoCan(d.participateInGames())
-        gary = Actor("Gary GameMaster").whoCan(d.manageGames())
-    }
+    @BeforeTest fun setup() = d.setup()
 
-    @AfterTest
-    fun teardown() = d.teardown()
+    @AfterTest fun teardown() = d.teardown()
 
     @Test
-    @Order(0)
     fun `sitting at an empty table and waiting for more players to join`() {
         freddy(
             SitsAtTheTable,
@@ -97,7 +83,6 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     }
 
     @Test
-    @Order(1)
     fun `a player can't join twice`() {
         freddy(SitsAtTheTable)
         val freddyOnASecondDevice = Actor(freddy.name).whoCan(d.participateInGames())
@@ -105,7 +90,6 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     }
 
     @Test
-    @Order(2)
     fun `waiting for sally to bid`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -117,7 +101,6 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     }
 
     @Test
-    @Order(3)
     fun `playing a card and waiting for the next player to do the same`() {
         freddy and sally both SitAtTheTable
         gary(
@@ -140,7 +123,6 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     }
 
     @Test
-    @Order(100)
     fun `playing a game from start to finish`() {
         freddy and sally both SitAtTheTable
         freddy and sally both Ensure {

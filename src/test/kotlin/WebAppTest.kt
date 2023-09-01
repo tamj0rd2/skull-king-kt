@@ -1,12 +1,14 @@
 import org.eclipse.jetty.client.HttpClient
-import org.openqa.selenium.By
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
-import testsupport.ParticipateInGames
 import testsupport.ManageGames
+import testsupport.ParticipateInGames
 import testsupport.SkipWip
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebDriver
+import java.net.ServerSocket
 
 // this needs to manually be kept in line with the version in gradle.build.kts
 private const val chromeVersion = 114
@@ -18,8 +20,12 @@ private val chromeOptions = ChromeOptions()
     .setBinary("${System.getProperty("user.dir")}/.chrome/chrome-$chromeVersion.app/Contents/MacOS/Google Chrome for Testing")
 
 @SkipWip
+@Execution(ExecutionMode.CONCURRENT)
 class WebAppTest : AppTestContract(object : TestConfiguration {
-    private val port = 9001
+    private val port = ServerSocket(0).run {
+        close()
+        localPort
+    }
     private val server = WebServer.make(port, hotReload = false)
     private val baseUrl = "http://localhost:$port"
     private val httpClient = HttpClient()
@@ -36,7 +42,6 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
 
     override fun teardown() {
         chromeDrivers.forEach {
-            //it.findElement(By.tagName("body")).getAttribute("outerHTML").let(::println)
             it.quit()
         }
         httpClient.stop()
