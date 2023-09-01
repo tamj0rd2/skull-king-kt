@@ -9,7 +9,7 @@ import com.tamj0rd2.domain.Bid.*
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameException
-import com.tamj0rd2.domain.GamePhase.*
+import com.tamj0rd2.domain.RoundPhase.*
 import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
@@ -33,7 +33,7 @@ import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
 import testsupport.TheCurrentTrick
 import testsupport.TheBiddingError
-import testsupport.TheGamePhase
+import testsupport.TheRoundPhase
 import testsupport.TheGameState
 import testsupport.ThePlayersAtTheTable
 import testsupport.TheRoundNumber
@@ -81,27 +81,12 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     }
 
     @Test
-    fun `cannot bid before the game has started`() {
-        freddy and sally both SitAtTheTable
-        freddy(Bids(1))
-        freddy(Ensures(TheBiddingError, Is(GameErrorCode.NotStarted)))
-        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
-    }
-
-    @Test
-    fun `a player can't join twice`() {
-        freddy(SitsAtTheTable)
-        val freddyOnASecondDevice = Actor(freddy.name).whoCan(d.participateInGames())
-        assertThrows<GameException.PlayerWithSameNameAlreadyJoined> { freddyOnASecondDevice(SitsAtTheTable) }
-    }
-
-    @Test
     fun `waiting for sally to bid`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
         freddy(Bids(1))
         freddy and sally both Ensure {
-            that(TheGamePhase, Is(Bidding))
+            that(TheRoundPhase, Is(Bidding))
             that(TheySeeBids, where(freddy.bidIsHidden(), sally.hasNotBid()))
         }
     }
@@ -124,7 +109,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
 
         freddy and sally both Ensure {
             that(TheCurrentTrick, onlyContains(Card("A").playedBy(freddy)))
-            that(TheGamePhase, Is(TrickTaking))
+            that(TheRoundPhase, Is(TrickTaking))
         }
     }
 
@@ -141,14 +126,14 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheRoundNumber, Is(1))
             that(TheirHand, sizeIs(1))
-            that(TheGamePhase, Is(Bidding))
+            that(TheRoundPhase, Is(Bidding))
         }
 
         // round 1 bidding
         freddy and sally both Bid(1)
         freddy and sally both Ensure {
             that(TheySeeBids, where(freddy bid 1, sally bid 1))
-            that(TheGamePhase, Is(TrickTaking))
+            that(TheRoundPhase, Is(TrickTaking))
         }
 
         // round 1 trick taking
@@ -158,7 +143,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         sally(Plays.card("2"))
         freddy and sally both Ensure {
             that(TheCurrentTrick, onlyContains(Card("1").playedBy(freddy), Card("2").playedBy(sally)))
-            that(TheGamePhase, Is(TrickComplete))
+            that(TheRoundPhase, Is(TrickComplete))
         }
 
         // round 2
@@ -166,14 +151,14 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheRoundNumber, Is(2))
             that(TheirHand, sizeIs(2))
-            that(TheGamePhase, Is(Bidding))
+            that(TheRoundPhase, Is(Bidding))
         }
 
         // round 2 bidding
         freddy and sally both Bid(2)
         freddy and sally both Ensure {
             that(TheySeeBids, where(freddy bid 2, sally bid 2))
-            that(TheGamePhase, Is(TrickTaking))
+            that(TheRoundPhase, Is(TrickTaking))
         }
 
         // round 2 trick 1
@@ -183,7 +168,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         sally(Plays.card("3"))
         freddy and sally both Ensure {
             that(TheCurrentTrick, onlyContains(Card("1").playedBy(freddy), Card("3").playedBy(sally)))
-            that(TheGamePhase, Is(TrickComplete))
+            that(TheRoundPhase, Is(TrickComplete))
             that(TheirHand, sizeIs(1))
         }
 
@@ -194,12 +179,13 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         sally(Plays.card("4"))
         freddy and sally both Ensure {
             that(TheCurrentTrick, onlyContains(Card("2").playedBy(freddy), Card("4").playedBy(sally)))
-            that(TheGamePhase, Is(TrickComplete))
+            that(TheRoundPhase, Is(TrickComplete))
             that(TheirHand, isEmpty)
         }
 
         // rounds 3 - 10
         (3..10).forEach { roundNumber ->
+            // round X
             gary(SaysTheNextRoundCanStart)
             freddy and sally both Ensure {
                 that(TheRoundNumber, Is(roundNumber))
@@ -210,7 +196,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             freddy and sally both Bid(roundNumber)
             freddy and sally both Ensure {
                 that(TheySeeBids, where(freddy bid roundNumber, sally bid roundNumber))
-                that(TheGamePhase, Is(TrickTaking))
+                that(TheRoundPhase, Is(TrickTaking))
             }
 
             // round X trick 1-X
@@ -224,7 +210,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
                 freddy and sally both Play.theFirstCardInTheirHand
                 freddy and sally both Ensure {
                     that(TheCurrentTrick, sizeIs(2))
-                    that(TheGamePhase, Is(TrickComplete))
+                    that(TheRoundPhase, Is(TrickComplete))
                     that(TheirHand, sizeIs(roundNumber - trickNumber))
                 }
             }
@@ -236,6 +222,21 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             that(TheirHand, isEmpty)
             that(TheGameState, Is(Complete))
         }
+    }
+
+    @Test
+    fun `cannot bid before the game has started`() {
+        freddy and sally both SitAtTheTable
+        freddy(Bids(1))
+        freddy(Ensures(TheBiddingError, Is(GameErrorCode.NotStarted)))
+        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
+    }
+
+    @Test
+    fun `a player can't join twice`() {
+        freddy(SitsAtTheTable)
+        val freddyOnASecondDevice = Actor(freddy.name).whoCan(d.participateInGames())
+        assertThrows<GameException.PlayerWithSameNameAlreadyJoined> { freddyOnASecondDevice(SitsAtTheTable) }
     }
 }
 

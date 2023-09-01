@@ -5,7 +5,7 @@ import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameException
-import com.tamj0rd2.domain.GamePhase
+import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
 import com.tamj0rd2.domain.PlayedCard
@@ -104,13 +104,13 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
             }
         }
 
-    override val gamePhase: GamePhase
+    override val roundPhase: RoundPhase
         get() = debugException {
             val gamePhase = driver.findElement(By.id("gamePhase")).text.lowercase()
             when {
-                gamePhase.contains("place your bid") -> GamePhase.Bidding
-                gamePhase.contains("it's trick taking time") -> GamePhase.TrickTaking
-                gamePhase.contains("trick complete") -> GamePhase.TrickComplete
+                gamePhase.contains("place your bid") -> RoundPhase.Bidding
+                gamePhase.contains("it's trick taking time") -> RoundPhase.TrickTaking
+                gamePhase.contains("trick complete") -> RoundPhase.TrickComplete
                 else -> error("could not parse game phase from: '$gamePhase'")
             }
         }

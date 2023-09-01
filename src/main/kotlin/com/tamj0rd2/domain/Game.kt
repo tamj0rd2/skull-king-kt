@@ -7,8 +7,8 @@ class Game {
     private var _roundNumber = 0
     val roundNumber: Int get() = _roundNumber
 
-    private var _phase: GamePhase? = null
-    val phase: GamePhase get() = _phase ?: throw GameException.NotStarted()
+    private var _phase: RoundPhase? = null
+    val phase: RoundPhase get() = _phase ?: throw GameException.NotStarted()
 
     private var _state = GameState.WaitingForMorePlayers
     val state: GameState get() = _state
@@ -71,7 +71,7 @@ class Game {
         this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId))
 
         if (_bids.areComplete) {
-            this._phase = GamePhase.TrickTaking
+            this._phase = RoundPhase.TrickTaking
             this.gameEventSubscribers.broadcast(GameEvent.BettingCompleted(_bids.asCompleted()))
         }
     }
@@ -88,7 +88,7 @@ class Game {
         gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, cardId))
 
         if (_currentTrick.size == players.size) {
-            _phase = GamePhase.TrickComplete
+            _phase = RoundPhase.TrickComplete
             gameEventSubscribers.broadcast(GameEvent.TrickCompleted)
 
             if (roundNumber == 10) {
@@ -112,7 +112,7 @@ class Game {
         _trickNumber = 0
         _currentTrick.clear()
         _bids.initFor(players)
-        _phase = GamePhase.Bidding
+        _phase = RoundPhase.Bidding
         dealCards()
 
         gameEventSubscribers.forEach {
@@ -143,7 +143,7 @@ enum class GameState {
     Complete,
 }
 
-enum class GamePhase {
+enum class RoundPhase {
     Bidding,
     TrickTaking,
     TrickComplete,

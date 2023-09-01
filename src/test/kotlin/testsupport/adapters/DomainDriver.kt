@@ -6,7 +6,7 @@ import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameException
-import com.tamj0rd2.domain.GamePhase
+import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.Trick
@@ -37,7 +37,7 @@ class DomainDriver(private val app: App) : ApplicationDriver, GameMasterDriver {
     override val hand get() = app.game.getCardsInHand(playerId)
     override val trick: Trick get() = app.game.currentTrick
     override val gameState: GameState get() = app.game.state
-    override val gamePhase: GamePhase get() = app.game.phase
+    override val roundPhase: RoundPhase get() = app.game.phase
     override val bets: Map<PlayerId, Bid> get() = app.game.bets
     override val trickNumber: Int get() = app.game.trickNumber
     override val roundNumber: Int get() = app.game.roundNumber

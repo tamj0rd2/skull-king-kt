@@ -4,7 +4,7 @@ import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GameErrorCode
-import com.tamj0rd2.domain.GamePhase
+import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
 import com.tamj0rd2.domain.PlayerId
@@ -21,7 +21,7 @@ interface ApplicationDriver {
     val trickNumber: Int
     val roundNumber: Int
     val trick: Trick
-    val gamePhase: GamePhase
+    val roundPhase: RoundPhase
     val gameState: GameState
     val playersInRoom: List<PlayerId>
     val hand: Hand
