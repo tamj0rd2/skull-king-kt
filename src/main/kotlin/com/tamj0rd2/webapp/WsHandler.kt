@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.CardId
+import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameEvent
+import com.tamj0rd2.domain.GameException
 import org.http4k.core.Request
 import org.http4k.format.Jackson.asJsonObject
 import org.http4k.format.Jackson.auto
@@ -21,12 +23,13 @@ fun wsHandler(app: App): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
     val gameEventLens = WsMessage.auto<GameEvent>().toLens()
     val clientMessageLens = WsMessage.auto<ClientMessage>().toLens()
-    val logger = LoggerFactory.getLogger("wsHandler")
+    val errorToClientLens = WsMessage.auto<ErrorToClient>().toLens()
 
     return websockets(
         "/{playerId}" bind { req: Request ->
             WsResponse { ws: Websocket ->
                 val playerId = playerIdPath(req)
+                val logger = LoggerFactory.getLogger("wsHandler pid='$playerId'")
 
                 app.game.subscribeToGameEvents(playerId) {
                     logger.info("sending game event to $playerId: ${it.asJsonObject()}")
@@ -36,11 +39,16 @@ fun wsHandler(app: App): RoutingWsHandler {
                 ws.onMessage {
                     logger.info("received client message from $playerId: ${it.bodyString()}")
 
-                    when(val message = clientMessageLens(it)) {
-                        is ClientMessage.BetPlaced -> app.game.placeBet(playerId, message.bet)
-                        is ClientMessage.UnhandledMessageFromServer -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
-                        is ClientMessage.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
-                        is ClientMessage.CardPlayed -> app.game.playCard(playerId, message.cardId)
+                    try {
+                        when(val message = clientMessageLens(it)) {
+                            is ClientMessage.BetPlaced -> app.game.placeBet(playerId, message.bet)
+                            is ClientMessage.UnhandledMessageFromServer -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
+                            is ClientMessage.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
+                            is ClientMessage.CardPlayed -> app.game.playCard(playerId, message.cardId)
+                        }
+                    } catch (e: GameException.NotStarted) {
+                        logger.error("SERVER ERROR: $e")
+                        ws.send(errorToClientLens(ErrorToClient(e.errorCode)))
                     }
                 }
             }
@@ -61,3 +69,6 @@ sealed class ClientMessage {
 
     data class Error(val stackTrace: String) : ClientMessage()
 }
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+data class ErrorToClient(val errorCode: GameErrorCode)

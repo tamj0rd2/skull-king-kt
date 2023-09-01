@@ -24,7 +24,7 @@
         {{/each}}
     </ul>
 
-    <section id="handArea" class="u-hide">
+    <section id="handArea">
         <h3>Hand</h3>
         <ul id="hand"></ul>
     </section>
@@ -35,9 +35,10 @@
             <input type="number" name="bet" min="0" max="10">
         </label>
         <button id="placeBet" type="button" onclick="onBetSubmit()">Place Bet</button>
+        <p id="biddingError"></p>
     </form>
 
-    <section id="betsArea" class="u-hide">
+    <section id="betsArea">
         <h3>Bets</h3>
         <ul id="bets">
             {{#each players}}
@@ -46,7 +47,7 @@
         </ul>
     </section>
 
-    <section id="trickArea" class="u-hide">
+    <section id="trickArea">
         <h3>Cards in trick</h3>
         <ul id="trick"></ul>
     </section>

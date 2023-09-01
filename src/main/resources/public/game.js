@@ -25,6 +25,7 @@ function connectToWs(wsAddress) {
                     case "GameEvent$TrickCompleted": return handlers.trickCompleted(data);
                     case "GameEvent$TrickStarted": return handlers.trickStarted(data);
                     case "GameEvent$GameCompleted": return handlers.gameCompleted(data);
+                    case "ErrorToClient": return handlers.errorFromServer(data);
                     default: {
                         socket.send(JSON.stringify({
                             type: "ClientMessage$UnhandledMessageFromServer",
@@ -58,7 +59,7 @@ function connectToWs(wsAddress) {
             }
 
             return {
-                playerJoined: function(gameEvent) {
+                playerJoined(gameEvent) {
                     const players = document.getElementById("players")
                     const li = document.createElement("li")
                     li.innerText = gameEvent.playerId
@@ -76,14 +77,11 @@ function connectToWs(wsAddress) {
                         gameStateEl.innerText = ""
                     }
                 },
-                gameStarted: function() {
+                gameStarted() {
                     const gameStateEl = document.getElementById("gameState")
                     gameStateEl.innerText = "The game has started :D"
-
-                    document.getElementById("handArea").classList.remove("u-hide")
-                    document.getElementById("betsArea").classList.remove("u-hide")
                 },
-                roundStarted: function(gameEvent) {
+                roundStarted(gameEvent) {
                     const roundNumberEl = document.getElementById("roundNumber")
                     roundNumberEl.innerText = gameEvent.roundNumber
                     updateGamePhase("Bidding")
@@ -115,10 +113,10 @@ function connectToWs(wsAddress) {
                         handEl.appendChild(li)
                     })
                 },
-                betPlaced: function(gameEvent) {
+                betPlaced(gameEvent) {
                     document.querySelector(`[data-playerBet="${gameEvent.playerId}"] span`).innerText = ":" + "has bet"
                 },
-                bettingCompleted: function(gameEvent) {
+                bettingCompleted(gameEvent) {
                     updateGamePhase("TrickTaking")
 
                     document.querySelectorAll(`[data-playerBet]`).forEach(el => {
@@ -127,28 +125,36 @@ function connectToWs(wsAddress) {
                         el.getElementsByTagName("span")[0].innerText = ":" + bet
                     })
                 },
-                cardPlayed: function(gameEvent) {
+                cardPlayed(gameEvent) {
                     const trick = document.getElementById("trick")
                     const li = document.createElement("li")
                     li.innerText = `${gameEvent.playerId}:${gameEvent.cardId}`
                     trick.appendChild(li)
                 },
-                trickStarted: function(gameEvent) {
+                trickStarted(gameEvent) {
                     const trickNumberEl = document.getElementById("trickNumber")
                     trickNumberEl.innerText = gameEvent.trickNumber
 
                     const trick = document.getElementById("trick")
                     trick.textContent = ""
-
-                    // TODO: this should be re-hidden when the trick is completed
-                    document.getElementById("trickArea").classList.remove("u-hide")
                 },
-                trickCompleted: function(gameEvent) {
+                trickCompleted(gameEvent) {
                     updateGamePhase("TrickComplete")
                 },
-                gameCompleted: function (gameEvent) {
+                gameCompleted(gameEvent) {
                     const gameStateEl = document.getElementById("gameState")
                     gameStateEl.innerText = "The game is over!"
+                },
+                errorFromServer({errorCode}) {
+                    switch (errorCode.type) {
+                        case "GameErrorCode$NotStarted": {
+                            const biddingError = document.getElementById("biddingError")
+                            biddingError.innerText = "Cannot perform this action because the game has not started yet"
+                            biddingError.setAttribute("data-errorCode", errorCode.type)
+                            return
+                        }
+                        default: throw new Error("Unknown error code: " + errorCode.type)
+                    }
                 },
             }
         }

@@ -7,15 +7,12 @@ import com.natpryce.hamkrest.isEmpty
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Bid.*
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GamePhase.*
 import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
-import org.junit.jupiter.api.MethodOrderer
-import org.junit.jupiter.api.Order
-import org.junit.jupiter.api.TestMethodOrder
-import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import testsupport.Activity
 import testsupport.Actor
@@ -35,6 +32,7 @@ import testsupport.SaysTheNextTrickCanStart
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
 import testsupport.TheCurrentTrick
+import testsupport.TheBiddingError
 import testsupport.TheGamePhase
 import testsupport.TheGameState
 import testsupport.ThePlayersAtTheTable
@@ -80,6 +78,14 @@ sealed class AppTestContract(private val d: TestConfiguration) {
                 that(TheGameState, Is(WaitingForMorePlayers))
             },
         )
+    }
+
+    @Test
+    fun `cannot bid before the game has started`() {
+        freddy and sally both SitAtTheTable
+        freddy(Bids(1))
+        freddy(Ensures(TheBiddingError, Is(GameErrorCode.NotStarted)))
+        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
     }
 
     @Test

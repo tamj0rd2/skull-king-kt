@@ -65,6 +65,8 @@ class Game {
     }
 
     fun placeBet(playerId: PlayerId, bid: Int) {
+        if (state != GameState.InProgress) throw GameException.NotStarted()
+
         _bids.place(playerId, bid)
         this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId))
 

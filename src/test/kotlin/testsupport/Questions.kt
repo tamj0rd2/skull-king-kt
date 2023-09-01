@@ -49,6 +49,10 @@ val TheCurrentTrick = Question.about("the current trick") { actor ->
     actor.use<ParticipateInGames>().trick
 }
 
+val TheBiddingError = Question.about("the bidding error") { actor ->
+    actor.use<ParticipateInGames>().biddingError
+}
+
 val Ensures = Ensure
 object Ensure {
     interface That {
