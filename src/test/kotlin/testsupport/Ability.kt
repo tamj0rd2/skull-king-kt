@@ -12,8 +12,7 @@ import com.tamj0rd2.domain.Trick
 interface Ability
 
 interface ApplicationDriver {
-    fun enterPlayerId(playerId: String)
-    fun joinDefaultRoom()
+    fun joinGame(playerId: PlayerId)
     fun placeBet(bet: Int)
     fun playCard(cardId: CardId)
 

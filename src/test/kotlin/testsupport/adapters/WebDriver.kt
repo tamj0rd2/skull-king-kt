@@ -18,17 +18,17 @@ import testsupport.ApplicationDriver
 class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     private lateinit var playerId: String
 
-    override fun enterPlayerId(playerId: String) {
+    override fun joinGame(playerId: PlayerId) {
         driver.findElement(By.name("playerId")).sendKeys(playerId)
         this.playerId = playerId
-    }
 
-    override fun joinDefaultRoom() = driver.findElement(By.id("joinGame")).submit().apply {
-        val errorElements = driver.findElements(By.id("errorMessage"))
-        if (errorElements.isNotEmpty()) {
-            when(val errorMessage = errorElements.single().text) {
-                GameException.PlayerWithSameNameAlreadyJoined::class.simpleName!! -> throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
-                else -> error("unknown error message: $errorMessage")
+        driver.findElement(By.id("joinGame")).submit().apply {
+            val errorElements = driver.findElements(By.id("errorMessage"))
+            if (errorElements.isNotEmpty()) {
+                when(val errorMessage = errorElements.single().text) {
+                    GameException.PlayerWithSameNameAlreadyJoined::class.simpleName!! -> throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
+                    else -> error("unknown error message: $errorMessage")
+                }
             }
         }
     }

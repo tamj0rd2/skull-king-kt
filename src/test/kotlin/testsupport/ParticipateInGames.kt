@@ -11,9 +11,6 @@ object Plays {
         val firstCard = TheirHand.answeredBy(actor).first()
         actor(card(firstCard.id))
     }
-
-    val theFirstCardInHisHand = theFirstCardInTheirHand
-    val theFirstCardInHerHand = theFirstCardInTheirHand
 }
 
 private fun playsCard(cardId: CardId) = Interaction { actor ->
@@ -25,13 +22,8 @@ fun Bids(bet: Int) = Interaction { actor ->
 }
 fun Bid(bet: Int) = Bids(bet)
 
-private val EntersTheirName = Interaction { actor ->
-    actor.use<ParticipateInGames>().enterPlayerId(actor.name)
-}
 
-private val JoinsARoom = Interaction { actor ->
-    actor.use<ParticipateInGames>().joinDefaultRoom()
+val SitsAtTheTable = Interaction { actor ->
+    actor.use<ParticipateInGames>().joinGame(actor.name)
 }
-
-val SitsAtTheTable = Task(EntersTheirName, JoinsARoom)
 val SitAtTheTable = SitsAtTheTable
