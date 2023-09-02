@@ -23,6 +23,7 @@ dependencies {
     implementation("org.http4k:http4k-format-jackson:$http4kVersion")
     implementation("org.http4k:http4k-server-undertow:$http4kVersion")
     implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
 
     testImplementation(kotlin("test"))
     testImplementation("org.seleniumhq.selenium:selenium-devtools-$chromeVersion:$seleniumVersion")

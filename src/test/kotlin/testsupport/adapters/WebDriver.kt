@@ -5,11 +5,11 @@ import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameException
-import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.Trick
 import org.openqa.selenium.By
 import org.openqa.selenium.WebElement
@@ -46,7 +46,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         driver.findElement(By.id("hand"))
             .findElements(By.tagName("li"))
             .find { it.toCardId() == cardId }
-            .let { it ?: throw GameException.CardNotInHand(playerId, cardId) }
+            .let { it ?: error("$playerId does not have card $cardId") }
             .findElement(By.tagName("button"))
             .click()
     }

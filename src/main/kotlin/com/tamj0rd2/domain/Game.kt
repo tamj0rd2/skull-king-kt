@@ -39,7 +39,7 @@ class Game {
     }
 
     fun start() {
-        if (waitingForMorePlayers) throw GameException.NotEnoughPlayers(players.size, roomSizeToStartGame)
+        require(!waitingForMorePlayers) { "not enough players to start the game - ${players.size}/$roomSizeToStartGame" }
 
         _state = GameState.InProgress
         players.forEach { hands[it] = mutableListOf() }
@@ -60,8 +60,12 @@ class Game {
         }
     }
 
-    fun getCardsInHand(playerId: PlayerId): List<Card> {
-        return hands[playerId] ?: throw GameException.NoHandFoundFor(playerId)
+    fun getCardsInHand(playerId: PlayerId): List<Card> = getHandFor(playerId)
+
+    private fun getHandFor(playerId: PlayerId): MutableList<Card> {
+        val hand = hands[playerId]
+        requireNotNull(hand) { "player $playerId somehow doesn't have a hand" }
+        return hand
     }
 
     fun placeBet(playerId: PlayerId, bid: Int) {
@@ -80,10 +84,12 @@ class Game {
         this.gameEventSubscribers[playerId] = subscriber
     }
 
-    fun playCard(playerId: String, cardId: CardId) {
-        val cards = getCardsInHand(playerId)
-        val card = cards.find { it.id == cardId } ?: throw GameException.CardNotInHand(playerId, cardId)
-        hands[playerId]?.remove(card) ?: error("the player's hand somehow doesn't exist. this should never happen")
+    fun playCard(playerId: PlayerId, cardId: CardId) {
+        val hand = getHandFor(playerId)
+        val card = hand.find { it.id == cardId }
+        requireNotNull(card) { "card $cardId not in $playerId's hand" }
+
+        hand.remove(card)
         _currentTrick += PlayedCard(playerId, card)
         gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, cardId))
 
@@ -179,8 +185,9 @@ private class Bids {
 
     fun asCompleted(): Map<PlayerId, Int> {
         return bids.mapValues {
+            require(it.value !is Bid.None)
             when (val bid = it.value) {
-                is Bid.None -> throw GameException.NotAllPlayersHaveBid()
+                is Bid.None -> error("not all players have bid")
                 is Bid.IsHidden -> error("this should be impossible. this is just for display")
                 is Bid.Placed -> bid.bid
             }
