@@ -11,25 +11,26 @@ sealed class GameException(override val message: String) : Exception(message) {
             else -> throw IllegalStateException("could not create an error code for $this")
         }
 
-    class NotEnoughPlayers(playerCount: Int, requiredCount: Int) : GameException("$playerCount/$requiredCount players isn't enough to start the game")
+    class NotEnoughPlayers(playerCount: Int, requiredCount: Int) :
+        GameException("$playerCount/$requiredCount players isn't enough to start the game")
+
     class NoHandFoundFor(playerId: PlayerId) : GameException("no hand found for player $playerId")
     class CardNotInHand(playerId: PlayerId, cardId: CardId) : GameException("card $cardId not in $playerId's hand")
     class NotAllPlayersHaveBid : GameException("not all players have bid")
     class NotStarted : GameException("game not started")
-    class PlayerWithSameNameAlreadyJoined(playerId: PlayerId) : GameException("a player with the name $playerId is already in the game")
+    class PlayerWithSameNameAlreadyJoined(playerId: PlayerId) :
+        GameException("a player with the name $playerId is already in the game")
 }
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-sealed class GameErrorCode {
-    override fun toString() = this::class.simpleName ?: error("this should never fail")
-    object NotStarted : GameErrorCode()
+enum class GameErrorCode {
+    NotStarted;
+
     companion object {
+        private val entries = values().associateBy { it.name }
+
         fun from(type: String): GameErrorCode {
-            when (type) {
-                "GameErrorCode\$NotStarted" -> return NotStarted
-                else -> throw IllegalArgumentException("could not create a GameErrorCode from '$type'")
-            }
+            return this.entries[type.substringAfter("GameErrorCode\$")]
+                ?: throw IllegalArgumentException("could not create a GameErrorCode from '$type'")
         }
     }
 }

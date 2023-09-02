@@ -52,7 +52,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     }
 
     override val biddingError: GameErrorCode?
-        get() = debugAlways {
+        get() = debugException {
             driver.findElement(By.id("biddingError"))
                 .getAttribute("data-errorCode")
                 .let { if (it.isNullOrEmpty()) null else GameErrorCode.from(it) }

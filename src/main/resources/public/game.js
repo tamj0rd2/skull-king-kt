@@ -146,14 +146,14 @@ function connectToWs(wsAddress) {
                     gameStateEl.innerText = "The game is over!"
                 },
                 errorFromServer({errorCode}) {
-                    switch (errorCode.type) {
-                        case "GameErrorCode$NotStarted": {
+                    switch (errorCode) {
+                        case "NotStarted": {
                             const biddingError = document.getElementById("biddingError")
                             biddingError.innerText = "Cannot perform this action because the game has not started yet"
-                            biddingError.setAttribute("data-errorCode", errorCode.type)
+                            biddingError.setAttribute("data-errorCode", errorCode)
                             return
                         }
-                        default: throw new Error("Unknown error code: " + errorCode.type)
+                        default: throw new Error("Unknown error code: " + errorCode)
                     }
                 },
             }
