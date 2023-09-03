@@ -9,12 +9,10 @@ import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Bid.*
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GameException
-import com.tamj0rd2.domain.GameException.CannotBid
 import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase.*
-import org.junit.jupiter.api.assertThrows
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.Bid
@@ -66,9 +64,11 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     private val sally by lazy { Actor("Sally Second").whoCan(d.participateInGames()) }
     private val gary by lazy { Actor("Gary GameMaster").whoCan(d.manageGames()) }
 
-    @BeforeTest fun setup() = d.setup()
+    @BeforeTest
+    fun setup() = d.setup()
 
-    @AfterTest fun teardown() = d.teardown()
+    @AfterTest
+    fun teardown() = d.teardown()
 
     @Test
     fun `sitting at an empty table and waiting for more players to join`() {
@@ -96,8 +96,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     fun `playing a card and waiting for the next player to do the same`() {
         freddy and sally both SitAtTheTable
         gary(
-            RigsTheDeck.SoThat(freddy).willEndUpWith(Card("A")),
-            SaysTheGameCanStart
+            RigsTheDeck.SoThat(freddy).willEndUpWith(Card("A")), SaysTheGameCanStart
         )
         freddy and sally both Bid(1)
 
@@ -112,6 +111,20 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             that(TheCurrentTrick, onlyContains(Card("A").playedBy(freddy)))
             that(TheRoundPhase, Is(TrickTaking))
         }
+    }
+
+    @Test
+    fun `cannot bid before the game has started`() {
+        freddy and sally both SitAtTheTable
+        freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
+        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
+    }
+
+    @Test
+    fun `a player can't join twice`() {
+        freddy(SitsAtTheTable)
+        val freddyOnASecondDevice = Actor(freddy.name).whoCan(d.participateInGames())
+        freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure<GameException.PlayerWithSameNameAlreadyJoined>())
     }
 
     @Test
@@ -224,20 +237,6 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             that(TheGameState, Is(Complete))
         }
     }
-
-    @Test
-    fun `cannot bid before the game has started`() {
-        freddy and sally both SitAtTheTable
-        freddy(Bids(1).expectingFailure<CannotBid>())
-        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
-    }
-
-    @Test
-    fun `a player can't join twice`() {
-        freddy(SitsAtTheTable)
-        val freddyOnASecondDevice = Actor(freddy.name).whoCan(d.participateInGames())
-        assertThrows<GameException.PlayerWithSameNameAlreadyJoined> { freddyOnASecondDevice(SitsAtTheTable) }
-    }
 }
 
 private fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.name)
@@ -254,16 +253,15 @@ private fun areOnly(vararg expected: Actor): Matcher<Collection<PlayerId>> =
 
 private fun <T> onlyContains(vararg expected: T): Matcher<Collection<T>> = areOnly(*expected)
 
-private fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> =
-    object : Matcher<Collection<T>?> {
-        override fun invoke(actual: Collection<T>?): MatchResult {
-            if (actual?.toSet() != expected.toSet()) return MatchResult.Mismatch("was: ${describe(actual)}")
-            return MatchResult.Match
-        }
-
-        override val description: String get() = "contains exactly the same items as ${describe(expected.toList())}"
-        override val negatedDescription: String get() = "does not $description"
+private fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> = object : Matcher<Collection<T>?> {
+    override fun invoke(actual: Collection<T>?): MatchResult {
+        if (actual?.toSet() != expected.toSet()) return MatchResult.Mismatch("was: ${describe(actual)}")
+        return MatchResult.Match
     }
+
+    override val description: String get() = "contains exactly the same items as ${describe(expected.toList())}"
+    override val negatedDescription: String get() = "does not $description"
+}
 
 fun <T> sizeIs(expected: Int): Matcher<Collection<T>> = has(Collection<T>::size, equalTo(expected))
 
