@@ -3,7 +3,6 @@ package testsupport.adapters
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardId
-import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
@@ -12,6 +11,7 @@ import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.Trick
 import org.openqa.selenium.By
+import org.openqa.selenium.NoSuchElementException
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
 import testsupport.ApplicationDriver
@@ -19,7 +19,7 @@ import testsupport.ApplicationDriver
 class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     private lateinit var playerId: String
 
-    override fun joinGame(playerId: PlayerId) {
+    override fun joinGame(playerId: PlayerId) = debugException {
         driver.findElement(By.name("playerId")).sendKeys(playerId)
         this.playerId = playerId
 
@@ -37,12 +37,16 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    override fun placeBet(bet: Int) {
-        driver.findElement(By.name("bet")).sendKeys(bet.toString())
-        driver.findElement(By.id("placeBet")).click()
+    override fun placeBet(bet: Int) = debugException {
+        try {
+            driver.findElement(By.name("bet")).sendKeys(bet.toString())
+            driver.findElement(By.id("placeBet")).click()
+        } catch (e: NoSuchElementException) {
+            throw GameException.CannotBid(e.message)
+        }
     }
 
-    override fun playCard(cardId: CardId) {
+    override fun playCard(cardId: CardId) = debugException {
         driver.findElement(By.id("hand"))
             .findElements(By.tagName("li"))
             .find { it.toCardId() == cardId }
@@ -50,13 +54,6 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
             .findElement(By.tagName("button"))
             .click()
     }
-
-    override val biddingError: GameErrorCode?
-        get() = debugException {
-            driver.findElement(By.id("biddingError"))
-                .getAttribute("data-errorCode")
-                .let { if (it.isNullOrEmpty()) null else GameErrorCode.from(it) }
-        }
 
     override val trickNumber: Int get() = debugException {
         driver.findElement(By.id("trickNumber")).text.toInt()

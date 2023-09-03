@@ -8,7 +8,7 @@ class Game {
     val roundNumber: Int get() = _roundNumber
 
     private var _phase: RoundPhase? = null
-    val phase: RoundPhase get() = _phase ?: throw GameException.NotStarted()
+    val phase: RoundPhase get() = _phase ?: error("game not started")
 
     private var _state = GameState.WaitingForMorePlayers
     val state: GameState get() = _state
@@ -69,7 +69,7 @@ class Game {
     }
 
     fun placeBet(playerId: PlayerId, bid: Int) {
-        if (state != GameState.InProgress) throw GameException.NotStarted()
+        if (state != GameState.InProgress) throw GameException.CannotBid("game not in progress")
 
         _bids.place(playerId, bid)
         this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId))

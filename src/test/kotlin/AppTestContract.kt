@@ -1,3 +1,4 @@
+
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.describe
@@ -7,12 +8,12 @@ import com.natpryce.hamkrest.isEmpty
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Bid.*
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameException
-import com.tamj0rd2.domain.RoundPhase.*
+import com.tamj0rd2.domain.GameException.CannotBid
 import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.RoundPhase.*
 import org.junit.jupiter.api.assertThrows
 import testsupport.Activity
 import testsupport.Actor
@@ -32,14 +33,14 @@ import testsupport.SaysTheNextTrickCanStart
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
 import testsupport.TheCurrentTrick
-import testsupport.TheBiddingError
-import testsupport.TheRoundPhase
 import testsupport.TheGameState
 import testsupport.ThePlayersAtTheTable
 import testsupport.TheRoundNumber
+import testsupport.TheRoundPhase
 import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.TheySeeBids
+import testsupport.expectingFailure
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -227,8 +228,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     @Test
     fun `cannot bid before the game has started`() {
         freddy and sally both SitAtTheTable
-        freddy(Bids(1))
-        freddy(Ensures(TheBiddingError, Is(GameErrorCode.NotStarted)))
+        freddy(Bids(1).expectingFailure<CannotBid>())
         freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
     }
 

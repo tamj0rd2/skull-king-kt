@@ -4,11 +4,9 @@ import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardId
-import com.tamj0rd2.domain.GameErrorCode
-import com.tamj0rd2.domain.GameException
-import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.Trick
 import testsupport.ApplicationDriver
 import testsupport.GameMasterDriver
@@ -25,13 +23,10 @@ class DomainDriver(private val app: App) : ApplicationDriver, GameMasterDriver {
     override fun rigDeck(playerId: PlayerId, cards: List<Card>) = app.game.rigDeck(playerId, cards)
     override fun startNextRound() = app.game.startNextRound()
     override fun startNextTrick() = app.game.startNextTrick()
-    override fun placeBet(bet: Int) = try {
+    override fun placeBet(bet: Int) {
         app.game.placeBet(playerId, bet)
-    } catch (e: GameException) {
-        biddingError = e.errorCode
     }
     override fun playCard(cardId: CardId) = app.game.playCard(playerId, cardId)
-    override var biddingError: GameErrorCode? = null
 
     override val playersInRoom get() = app.game.players
     override val hand get() = app.game.getCardsInHand(playerId)

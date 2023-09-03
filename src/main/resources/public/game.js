@@ -1,10 +1,13 @@
 function connectToWs(wsAddress) {
     const socket = new WebSocket(wsAddress);
+
     configureWs()
     configureElementCallbacks()
 
     function configureWs() {
         const handlers = newGameEventHandlers()
+        const body = document.querySelector("body")
+        const biddingForm = document.createElement("bidding-form")
 
         socket.addEventListener("close", (event) => {
             console.error("disconnected from ws")
@@ -25,7 +28,6 @@ function connectToWs(wsAddress) {
                     case "GameEvent$TrickCompleted": return handlers.trickCompleted(data);
                     case "GameEvent$TrickStarted": return handlers.trickStarted(data);
                     case "GameEvent$GameCompleted": return handlers.gameCompleted(data);
-                    case "ErrorToClient": return handlers.errorFromServer(data);
                     default: {
                         socket.send(JSON.stringify({
                             type: "ClientMessage$UnhandledMessageFromServer",
@@ -80,6 +82,7 @@ function connectToWs(wsAddress) {
                 gameStarted() {
                     const gameStateEl = document.getElementById("gameState")
                     gameStateEl.innerText = "The game has started :D"
+                    body.appendChild(biddingForm)
                 },
                 roundStarted(gameEvent) {
                     const roundNumberEl = document.getElementById("roundNumber")
@@ -145,17 +148,6 @@ function connectToWs(wsAddress) {
                     const gameStateEl = document.getElementById("gameState")
                     gameStateEl.innerText = "The game is over!"
                 },
-                errorFromServer({errorCode}) {
-                    switch (errorCode) {
-                        case "NotStarted": {
-                            const biddingError = document.getElementById("biddingError")
-                            biddingError.innerText = "Cannot perform this action because the game has not started yet"
-                            biddingError.setAttribute("data-errorCode", errorCode)
-                            return
-                        }
-                        default: throw new Error("Unknown error code: " + errorCode)
-                    }
-                },
             }
         }
     }
@@ -169,4 +161,32 @@ function connectToWs(wsAddress) {
             }))
         }
     }
+
+    class BiddingForm extends HTMLElement {
+        constructor() {
+            super()
+        }
+
+        connectedCallback() {
+            this.innerHTML = `
+                <label>Bid <input type="number" name="bet" min="0" max="10"></label>
+                <button id="placeBet" type="button" onclick="onBetSubmit()">Place Bet</button>
+                <p id="biddingError"></p>
+            `
+        }
+
+        disconnectedCallback() {
+            console.log("Removed bidding form from page")
+        }
+
+        adoptedCallback() {
+            console.log("Bidding form moved to new page")
+        }
+
+        attributeChangedCallback(name, oldValue, newValue) {
+            console.log("Bidding form attribute changed", name, oldValue, newValue)
+        }
+    }
+
+    customElements.define("bidding-form", BiddingForm)
 }
