@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 sealed class GameEvent {
     data class PlayerJoined(val playerId: PlayerId, val waitingForMorePlayers: Boolean) : GameEvent()
 
-    object GameStarted : GameEvent()
+    data class GameStarted(val players: List<PlayerId>) : GameEvent()
 
     data class RoundStarted(val cardsDealt: List<Card>, val roundNumber: Int) : GameEvent()
 

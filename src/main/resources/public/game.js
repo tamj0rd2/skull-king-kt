@@ -7,7 +7,8 @@ function connectToWs(wsAddress) {
     function configureWs() {
         const handlers = newGameEventHandlers()
         const body = document.querySelector("body")
-        const biddingForm = document.createElement("bidding-form")
+        const biddingForm = document.createElement("sk-biddingform")
+        const bidsEl = document.createElement("sk-bids")
 
         socket.addEventListener("close", (event) => {
             console.error("disconnected from ws")
@@ -20,7 +21,7 @@ function connectToWs(wsAddress) {
                 const data = JSON.parse(event.data)
                 switch (data.type) {
                     case "GameEvent$PlayerJoined": return handlers.playerJoined(data);
-                    case "GameEvent$GameStarted": return handlers.gameStarted();
+                    case "GameEvent$GameStarted": return handlers.gameStarted(data);
                     case "GameEvent$RoundStarted": return handlers.roundStarted(data);
                     case "GameEvent$BetPlaced": return handlers.betPlaced(data);
                     case "GameEvent$BettingCompleted": return handlers.bettingCompleted(data);
@@ -67,22 +68,19 @@ function connectToWs(wsAddress) {
                     li.innerText = gameEvent.playerId
                     players.appendChild(li)
 
-                    const betsEl = document.getElementById("bets")
-                    const li2 = document.createElement("li")
-                    li2.innerText = gameEvent.playerId
-                    li2.setAttribute("data-playerBet", gameEvent.playerId)
-                    li2.appendChild(document.createElement("span"))
-                    betsEl.appendChild(li2)
-
+                    // TODO: I don't think I need this anymore? Or I should have a message saying waiting to start
                     if (!gameEvent.waitingForMorePlayers) {
                         const gameStateEl = document.getElementById("gameState")
                         gameStateEl.innerText = ""
                     }
                 },
-                gameStarted() {
+                gameStarted(gameEvent) {
                     const gameStateEl = document.getElementById("gameState")
                     gameStateEl.innerText = "The game has started :D"
                     body.appendChild(biddingForm)
+
+                    body.appendChild(bidsEl)
+                    bidsEl.gameStarted(gameEvent.players)
                 },
                 roundStarted(gameEvent) {
                     const roundNumberEl = document.getElementById("roundNumber")
@@ -116,17 +114,12 @@ function connectToWs(wsAddress) {
                         handEl.appendChild(li)
                     })
                 },
-                betPlaced(gameEvent) {
-                    document.querySelector(`[data-playerBet="${gameEvent.playerId}"] span`).innerText = ":" + "has bet"
+                betPlaced({ playerId }) {
+                    bidsEl.handleBidPlaced(playerId)
                 },
-                bettingCompleted(gameEvent) {
+                bettingCompleted({ bets }) {
                     updateGamePhase("TrickTaking")
-
-                    document.querySelectorAll(`[data-playerBet]`).forEach(el => {
-                        const playerId = el.getAttribute("data-playerBet")
-                        const bet = gameEvent.bets[playerId]
-                        el.getElementsByTagName("span")[0].innerText = ":" + bet
-                    })
+                    bidsEl.handleBiddingCompleted(bets)
                 },
                 cardPlayed(gameEvent) {
                     const trick = document.getElementById("trick")
@@ -173,20 +166,55 @@ function connectToWs(wsAddress) {
                 <button id="placeBet" type="button" onclick="onBetSubmit()">Place Bet</button>
                 <p id="biddingError"></p>
             `
-        }
 
-        disconnectedCallback() {
-            console.log("Removed bidding form from page")
-        }
-
-        adoptedCallback() {
-            console.log("Bidding form moved to new page")
-        }
-
-        attributeChangedCallback(name, oldValue, newValue) {
-            console.log("Bidding form attribute changed", name, oldValue, newValue)
+            const bidInput = this.querySelector(`input[name="bet"]`)
+            this.querySelector("#placeBet").onclick = function(){
+                socket.send(JSON.stringify({
+                    type: "ClientMessage$BetPlaced",
+                    bet: bidInput.value,
+                }))
+            }
         }
     }
 
-    customElements.define("bidding-form", BiddingForm)
+    class Bids extends HTMLElement {
+        constructor() {
+            super();
+        }
+
+        connectedCallback() {
+            this.innerHTML = `
+                <section id="betsArea">
+                    <h3>Bets</h3>
+                    <ul id="bets"></ul>
+                </section>
+            `
+        }
+
+        gameStarted(playerIds) {
+            const betsEl = this.querySelector("#bets")
+            playerIds.forEach(playerId => {
+                const li = document.createElement("li")
+                li.textContent = playerId
+                li.setAttribute("data-playerBet", playerId)
+                li.appendChild(document.createElement("span"))
+                betsEl.appendChild(li)
+            })
+        }
+
+        handleBidPlaced(playerId) {
+            this.querySelector(`[data-playerBet="${playerId}"] span`).innerText = ":" + "has bet"
+        }
+
+        handleBiddingCompleted(bets) {
+            this.querySelectorAll(`[data-playerBet]`).forEach(el => {
+                const playerId = el.getAttribute("data-playerBet")
+                const bet = bets[playerId]
+                el.querySelector("span").innerText = ":" + bet
+            })
+        }
+    }
+
+    customElements.define("sk-biddingform", BiddingForm)
+    customElements.define("sk-bids", Bids)
 }

@@ -43,7 +43,7 @@ class Game {
 
         _state = GameState.InProgress
         players.forEach { hands[it] = mutableListOf() }
-        gameEventSubscribers.broadcast(GameEvent.GameStarted)
+        gameEventSubscribers.broadcast(GameEvent.GameStarted(players))
         startNextRound()
     }
 
