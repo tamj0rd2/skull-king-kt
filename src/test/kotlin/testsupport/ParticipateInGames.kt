@@ -17,10 +17,10 @@ private fun playsCard(cardId: CardId) = Interaction { actor ->
     actor.use<ParticipateInGames>().playCard(cardId)
 }
 
-fun Bids(bet: Int) = Interaction { actor ->
-    actor.use<ParticipateInGames>().placeBet(bet)
+fun Bids(bid: Int) = Interaction { actor ->
+    actor.use<ParticipateInGames>().bid(bid)
 }
-fun Bid(bet: Int) = Bids(bet)
+fun Bid(bid: Int) = Bids(bid)
 
 
 val SitsAtTheTable = Interaction { actor ->

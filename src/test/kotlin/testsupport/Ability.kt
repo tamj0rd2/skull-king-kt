@@ -13,7 +13,7 @@ interface Ability
 
 interface ApplicationDriver {
     fun joinGame(playerId: PlayerId)
-    fun placeBet(bet: Int)
+    fun bid(bid: Int)
     fun playCard(cardId: CardId)
 
     val trickNumber: Int
@@ -23,7 +23,7 @@ interface ApplicationDriver {
     val gameState: GameState
     val playersInRoom: List<PlayerId>
     val hand: Hand
-    val bets: Map<PlayerId, Bid>
+    val bids: Map<PlayerId, Bid>
 }
 
 interface GameMasterDriver {

@@ -2,7 +2,6 @@ function connectToWs(wsAddress) {
     const socket = new WebSocket(wsAddress);
 
     configureWs()
-    configureElementCallbacks()
 
     function configureWs() {
         const handlers = newGameEventHandlers()
@@ -20,15 +19,24 @@ function connectToWs(wsAddress) {
             try {
                 const data = JSON.parse(event.data)
                 switch (data.type) {
-                    case "GameEvent$PlayerJoined": return handlers.playerJoined(data);
-                    case "GameEvent$GameStarted": return handlers.gameStarted(data);
-                    case "GameEvent$RoundStarted": return handlers.roundStarted(data);
-                    case "GameEvent$BetPlaced": return handlers.betPlaced(data);
-                    case "GameEvent$BettingCompleted": return handlers.bettingCompleted(data);
-                    case "GameEvent$CardPlayed": return handlers.cardPlayed(data);
-                    case "GameEvent$TrickCompleted": return handlers.trickCompleted(data);
-                    case "GameEvent$TrickStarted": return handlers.trickStarted(data);
-                    case "GameEvent$GameCompleted": return handlers.gameCompleted(data);
+                    case "GameEvent$PlayerJoined":
+                        return handlers.playerJoined(data);
+                    case "GameEvent$GameStarted":
+                        return handlers.gameStarted(data);
+                    case "GameEvent$RoundStarted":
+                        return handlers.roundStarted(data);
+                    case "GameEvent$BidPlaced":
+                        return handlers.bidPlaced(data);
+                    case "GameEvent$BiddingCompleted":
+                        return handlers.biddingCompleted(data);
+                    case "GameEvent$CardPlayed":
+                        return handlers.cardPlayed(data);
+                    case "GameEvent$TrickCompleted":
+                        return handlers.trickCompleted(data);
+                    case "GameEvent$TrickStarted":
+                        return handlers.trickStarted(data);
+                    case "GameEvent$GameCompleted":
+                        return handlers.gameCompleted(data);
                     default: {
                         socket.send(JSON.stringify({
                             type: "ClientMessage$UnhandledMessageFromServer",
@@ -90,8 +98,7 @@ function connectToWs(wsAddress) {
                     const trickNumberEl = document.getElementById("trickNumber")
                     trickNumberEl.innerText = ""
 
-                    const betEl = document.getElementsByName("bet")[0]
-                    betEl.value = ""
+                    biddingForm.handleRoundStarted()
 
                     const trick = document.getElementById("trick")
                     trick.textContent = ""
@@ -114,12 +121,12 @@ function connectToWs(wsAddress) {
                         handEl.appendChild(li)
                     })
                 },
-                betPlaced({ playerId }) {
+                bidPlaced({playerId}) {
                     bidsEl.handleBidPlaced(playerId)
                 },
-                bettingCompleted({ bets }) {
+                biddingCompleted({bids}) {
                     updateGamePhase("TrickTaking")
-                    bidsEl.handleBiddingCompleted(bets)
+                    bidsEl.handleBiddingCompleted(bids)
                 },
                 cardPlayed(gameEvent) {
                     const trick = document.getElementById("trick")
@@ -145,16 +152,6 @@ function connectToWs(wsAddress) {
         }
     }
 
-    function configureElementCallbacks() {
-        window.onBetSubmit = function(){
-            const bet = document.getElementsByName("bet")[0].value
-            socket.send(JSON.stringify({
-                type: "ClientMessage$BetPlaced",
-                bet: bet,
-            }))
-        }
-    }
-
     class BiddingForm extends HTMLElement {
         constructor() {
             super()
@@ -162,18 +159,22 @@ function connectToWs(wsAddress) {
 
         connectedCallback() {
             this.innerHTML = `
-                <label>Bid <input type="number" name="bet" min="0" max="10"></label>
-                <button id="placeBet" type="button" onclick="onBetSubmit()">Place Bet</button>
+                <label>Bid <input type="number" name="bid" min="0" max="10"></label>
+                <button id="placeBid" type="button" onclick="onBidSubmit()">Place Bid</button>
                 <p id="biddingError"></p>
             `
 
-            const bidInput = this.querySelector(`input[name="bet"]`)
-            this.querySelector("#placeBet").onclick = function(){
+            const bidInput = this.querySelector(`input[name="bid"]`)
+            this.querySelector("#placeBid").onclick = function () {
                 socket.send(JSON.stringify({
-                    type: "ClientMessage$BetPlaced",
-                    bet: bidInput.value,
+                    type: "ClientMessage$BidPlaced",
+                    bid: bidInput.value,
                 }))
             }
+        }
+
+        handleRoundStarted() {
+            this.querySelector(`input[name="bid"]`).value = ""
         }
     }
 
@@ -184,33 +185,33 @@ function connectToWs(wsAddress) {
 
         connectedCallback() {
             this.innerHTML = `
-                <section id="betsArea">
-                    <h3>Bets</h3>
-                    <ul id="bets"></ul>
+                <section id="bidsArea">
+                    <h3>Bids</h3>
+                    <ul id="bids"></ul>
                 </section>
             `
         }
 
         gameStarted(playerIds) {
-            const betsEl = this.querySelector("#bets")
+            const bids = this.querySelector("#bids")
             playerIds.forEach(playerId => {
                 const li = document.createElement("li")
                 li.textContent = playerId
-                li.setAttribute("data-playerBet", playerId)
+                li.setAttribute("data-playerBid", playerId)
                 li.appendChild(document.createElement("span"))
-                betsEl.appendChild(li)
+                bids.appendChild(li)
             })
         }
 
         handleBidPlaced(playerId) {
-            this.querySelector(`[data-playerBet="${playerId}"] span`).innerText = ":" + "has bet"
+            this.querySelector(`[data-playerBid="${playerId}"] span`).innerText = ":" + "has bid"
         }
 
-        handleBiddingCompleted(bets) {
-            this.querySelectorAll(`[data-playerBet]`).forEach(el => {
-                const playerId = el.getAttribute("data-playerBet")
-                const bet = bets[playerId]
-                el.querySelector("span").innerText = ":" + bet
+        handleBiddingCompleted(bids) {
+            this.querySelectorAll(`[data-playerBid]`).forEach(el => {
+                const playerId = el.getAttribute("data-playerBid")
+                const bid = bids[playerId]
+                el.querySelector("span").innerText = ":" + bid
             })
         }
     }

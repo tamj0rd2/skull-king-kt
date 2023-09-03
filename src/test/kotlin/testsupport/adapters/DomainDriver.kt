@@ -23,8 +23,8 @@ class DomainDriver(private val app: App) : ApplicationDriver, GameMasterDriver {
     override fun rigDeck(playerId: PlayerId, cards: List<Card>) = app.game.rigDeck(playerId, cards)
     override fun startNextRound() = app.game.startNextRound()
     override fun startNextTrick() = app.game.startNextTrick()
-    override fun placeBet(bet: Int) {
-        app.game.placeBet(playerId, bet)
+    override fun bid(bid: Int) {
+        app.game.bid(playerId, bid)
     }
     override fun playCard(cardId: CardId) = app.game.playCard(playerId, cardId)
 
@@ -33,7 +33,7 @@ class DomainDriver(private val app: App) : ApplicationDriver, GameMasterDriver {
     override val trick: Trick get() = app.game.currentTrick
     override val gameState: GameState get() = app.game.state
     override val roundPhase: RoundPhase get() = app.game.phase
-    override val bets: Map<PlayerId, Bid> get() = app.game.bets
+    override val bids: Map<PlayerId, Bid> get() = app.game.bids
     override val trickNumber: Int get() = app.game.trickNumber
     override val roundNumber: Int get() = app.game.roundNumber
 }

@@ -20,7 +20,7 @@ class Game {
     private var riggedHands: MutableMap<PlayerId, Hand>? = null
 
     private val _bids = Bids()
-    val bets: Map<PlayerId, Bid> get() = _bids.forDisplay()
+    val bids: Map<PlayerId, Bid> get() = _bids.forDisplay()
 
     private val gameEventSubscribers = mutableMapOf<PlayerId, GameEventSubscriber>()
     private val roomSizeToStartGame = 2
@@ -68,15 +68,15 @@ class Game {
         return hand
     }
 
-    fun placeBet(playerId: PlayerId, bid: Int) {
+    fun bid(playerId: PlayerId, bid: Int) {
         if (state != GameState.InProgress) throw GameException.CannotBid("game not in progress")
 
         _bids.place(playerId, bid)
-        this.gameEventSubscribers.broadcast(GameEvent.BetPlaced(playerId))
+        this.gameEventSubscribers.broadcast(GameEvent.BidPlaced(playerId))
 
         if (_bids.areComplete) {
             this._phase = RoundPhase.TrickTaking
-            this.gameEventSubscribers.broadcast(GameEvent.BettingCompleted(_bids.asCompleted()))
+            this.gameEventSubscribers.broadcast(GameEvent.BiddingCompleted(_bids.asCompleted()))
         }
     }
 

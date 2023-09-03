@@ -12,9 +12,9 @@ sealed class GameEvent {
 
     data class RoundStarted(val cardsDealt: List<Card>, val roundNumber: Int) : GameEvent()
 
-    data class BetPlaced(val playerId: PlayerId) : GameEvent()
+    data class BidPlaced(val playerId: PlayerId) : GameEvent()
 
-    data class BettingCompleted(val bets: Map<PlayerId, Int>) : GameEvent()
+    data class BiddingCompleted(val bids: Map<PlayerId, Int>) : GameEvent()
 
     data class CardPlayed(val playerId: String, val cardId: CardId) : GameEvent()
 

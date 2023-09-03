@@ -265,8 +265,8 @@ private fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> = object : M
 
 fun <T> sizeIs(expected: Int): Matcher<Collection<T>> = has(Collection<T>::size, equalTo(expected))
 
-fun where(vararg bets: Pair<Actor, Bid>): Matcher<Map<PlayerId, Bid>> =
-    equalTo(bets.associate { it.first.name to it.second })
+fun where(vararg bids: Pair<Actor, Bid>): Matcher<Map<PlayerId, Bid>> =
+    equalTo(bids.associate { it.first.name to it.second })
 
 infix fun Actor.bid(bid: Int): Pair<Actor, Bid> = Pair(this, Placed(bid))
 fun Actor.bidIsHidden(): Pair<Actor, Bid> = Pair(this, IsHidden)

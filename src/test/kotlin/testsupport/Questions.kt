@@ -41,8 +41,8 @@ val HerHand = TheirHand
 
 
 
-val TheySeeBids = Question.about("the bets that have been made") { actor ->
-    actor.use<ParticipateInGames>().bets
+val TheySeeBids = Question.about("the bids that have been made") { actor ->
+    actor.use<ParticipateInGames>().bids
 }
 
 val TheCurrentTrick = Question.about("the current trick") { actor ->

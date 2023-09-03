@@ -16,6 +16,7 @@ import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
 import testsupport.ApplicationDriver
 
+private const val debug = false
 class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     private lateinit var playerId: String
 
@@ -37,10 +38,10 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    override fun placeBet(bet: Int) = debugException {
+    override fun bid(bid: Int) = debugException {
         try {
-            driver.findElement(By.name("bet")).sendKeys(bet.toString())
-            driver.findElement(By.id("placeBet")).click()
+            driver.findElement(By.name("bid")).sendKeys(bid.toString())
+            driver.findElement(By.id("placeBid")).click()
         } catch (e: NoSuchElementException) {
             throw GameException.CannotBid(e.message)
         }
@@ -112,15 +113,15 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
             }
         }
 
-    override val bets: Map<PlayerId, Bid>
+    override val bids: Map<PlayerId, Bid>
         get() = debugException {
-            driver.findElement(By.id("bets"))
+            driver.findElement(By.id("bids"))
                 .findElements(By.tagName("li"))
                 .associate {
-                    val (name, bet) = it.text.split(":")
+                    val (name, bid) = it.text.split(":")
                         .apply { if (size < 2) return@associate this[0] to Bid.None }
-                    if (bet == "has bet") return@associate name to Bid.IsHidden
-                    name to Bid.Placed(bet.toInt())
+                    if (bid == "has bid") return@associate name to Bid.IsHidden
+                    name to Bid.Placed(bid.toInt())
                 }
         }
 
@@ -128,7 +129,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         try {
             return block()
         } catch (e: Exception) {
-            printBody()
+            if (debug) printBody()
             throw e
         }
     }

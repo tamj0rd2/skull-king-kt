@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GameEvent
-import com.tamj0rd2.domain.GameException
 import org.http4k.core.Request
 import org.http4k.format.Jackson.asJsonObject
 import org.http4k.format.Jackson.auto
@@ -38,7 +37,7 @@ fun wsHandler(app: App): RoutingWsHandler {
                     logger.info("received client message from $playerId: ${it.bodyString()}")
 
                     when(val message = clientMessageLens(it)) {
-                        is ClientMessage.BetPlaced -> app.game.placeBet(playerId, message.bet)
+                        is ClientMessage.BidPlaced -> app.game.bid(playerId, message.bid)
                         is ClientMessage.UnhandledMessageFromServer -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
                         is ClientMessage.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
                         is ClientMessage.CardPlayed -> app.game.playCard(playerId, message.cardId)
@@ -54,7 +53,7 @@ fun wsHandler(app: App): RoutingWsHandler {
 // For this parsing to work, the FE needs to specifically reference ClientMessage$SubTypeName.
 // the prefix wouldn't be necessary if I didn't nest the Subtypes here, but I wanted better organisation :D
 sealed class ClientMessage {
-    data class BetPlaced(val bet: Int) : ClientMessage()
+    data class BidPlaced(val bid: Int) : ClientMessage()
 
     data class CardPlayed(val cardId: CardId) : ClientMessage()
 
