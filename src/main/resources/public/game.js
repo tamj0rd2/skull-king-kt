@@ -4,10 +4,22 @@ function connectToWs(wsAddress) {
     configureWs()
 
     function configureWs() {
-        const handlers = newGameEventHandlers()
         const body = document.querySelector("body")
         const biddingForm = document.createElement("sk-biddingform")
         const bidsEl = document.createElement("sk-bids")
+
+        function updateGamePhase(gamePhase) {
+            const gamePhaseEl = document.getElementById("gamePhase")
+            const gamePhaseMapping = {
+                "Bidding": "Place your bid!",
+                "TrickTaking": "It's trick taking time!",
+                "TrickComplete": "Trick completed :)"
+            }
+
+            const text = gamePhaseMapping[gamePhase]
+            if (!text) throw new Error("Unknown game phase: " + gamePhase)
+            gamePhaseEl.innerText = gamePhaseMapping[gamePhase]
+        }
 
         socket.addEventListener("close", (event) => {
             console.error("disconnected from ws")
@@ -20,23 +32,82 @@ function connectToWs(wsAddress) {
                 const data = JSON.parse(event.data)
                 switch (data.type) {
                     case "GameEvent$PlayerJoined":
-                        return handlers.playerJoined(data);
+                        const players = document.getElementById("players")
+                        const li = document.createElement("li")
+                        li.innerText = data.playerId
+                        players.appendChild(li)
+
+                        // TODO: I don't think I need this anymore? Or I should have a message saying waiting to start
+                        if (!data.waitingForMorePlayers) {
+                            const gameStateEl = document.getElementById("gameState")
+                            gameStateEl.innerText = ""
+                        }
+                        return
                     case "GameEvent$GameStarted":
-                        return handlers.gameStarted(data);
+                        const gameStateEl = document.getElementById("gameState")
+                        gameStateEl.innerText = "The game has started :D"
+                        body.appendChild(biddingForm)
+
+                        body.appendChild(bidsEl)
+                        const gameStateEl1 = document.getElementById("gameState")
+                        gameStateEl1.innerText = "The game has started :D"
+                        body.appendChild(biddingForm)
+
+                        body.appendChild(bidsEl)
+                        return bidsEl.gameStarted(data.players);
                     case "GameEvent$RoundStarted":
-                        return handlers.roundStarted(data);
+                        const roundNumberEl = document.getElementById("roundNumber")
+                        roundNumberEl.innerText = data.roundNumber
+                        updateGamePhase("Bidding")
+
+                        const trickNumberEl = document.getElementById("trickNumber")
+                        trickNumberEl.innerText = ""
+
+                        biddingForm.handleRoundStarted()
+
+                        const trick = document.getElementById("trick")
+                        trick.textContent = ""
+
+                        const handEl = document.getElementById("hand")
+                        return data.cardsDealt.forEach(card => {
+                            const li = document.createElement("li")
+                            li.innerText = card.id
+
+                            const button = document.createElement("button")
+                            button.innerText = "Play"
+                            button.onclick = function playCard() {
+                                li.remove()
+                                socket.send(JSON.stringify({
+                                    type: "ClientMessage$CardPlayed",
+                                    cardId: card.id,
+                                }))
+                            }
+                            li.appendChild(button)
+                            handEl.appendChild(li)
+                        });
                     case "GameEvent$BidPlaced":
-                        return handlers.bidPlaced(data);
+                        let {playerId} = data;
+                        return bidsEl.handleBidPlaced(playerId);
                     case "GameEvent$BiddingCompleted":
-                        return handlers.biddingCompleted(data);
+                        let {bids} = data;
+                        updateGamePhase("TrickTaking")
+                        return bidsEl.handleBiddingCompleted(bids);
                     case "GameEvent$CardPlayed":
-                        return handlers.cardPlayed(data);
+                        const trick1 = document.getElementById("trick")
+                        const li1 = document.createElement("li")
+                        li1.innerText = `${data.playerId}:${data.cardId}`
+                        return trick1.appendChild(li1);
                     case "GameEvent$TrickCompleted":
-                        return handlers.trickCompleted(data);
+                        return updateGamePhase("TrickComplete");
                     case "GameEvent$TrickStarted":
-                        return handlers.trickStarted(data);
+                        const trickNumberEl1 = document.getElementById("trickNumber")
+                        trickNumberEl1.innerText = data.trickNumber
+
+                        const trick2 = document.getElementById("trick")
+                        return trick2.textContent = "";
                     case "GameEvent$GameCompleted":
-                        return handlers.gameCompleted(data);
+                        const gameStateEl2 = document.getElementById("gameState")
+                        return gameStateEl2.innerText = "The game is over!";
                     default: {
                         socket.send(JSON.stringify({
                             type: "ClientMessage$UnhandledMessageFromServer",
@@ -53,103 +124,6 @@ function connectToWs(wsAddress) {
                 throw e
             }
         });
-
-        function newGameEventHandlers() {
-
-            function updateGamePhase(gamePhase) {
-                const gamePhaseEl = document.getElementById("gamePhase")
-                const gamePhaseMapping = {
-                    "Bidding": "Place your bid!",
-                    "TrickTaking": "It's trick taking time!",
-                    "TrickComplete": "Trick completed :)"
-                }
-
-                const text = gamePhaseMapping[gamePhase]
-                if (!text) throw new Error("Unknown game phase: " + gamePhase)
-                gamePhaseEl.innerText = gamePhaseMapping[gamePhase]
-            }
-
-            return {
-                playerJoined(gameEvent) {
-                    const players = document.getElementById("players")
-                    const li = document.createElement("li")
-                    li.innerText = gameEvent.playerId
-                    players.appendChild(li)
-
-                    // TODO: I don't think I need this anymore? Or I should have a message saying waiting to start
-                    if (!gameEvent.waitingForMorePlayers) {
-                        const gameStateEl = document.getElementById("gameState")
-                        gameStateEl.innerText = ""
-                    }
-                },
-                gameStarted(gameEvent) {
-                    const gameStateEl = document.getElementById("gameState")
-                    gameStateEl.innerText = "The game has started :D"
-                    body.appendChild(biddingForm)
-
-                    body.appendChild(bidsEl)
-                    bidsEl.gameStarted(gameEvent.players)
-                },
-                roundStarted(gameEvent) {
-                    const roundNumberEl = document.getElementById("roundNumber")
-                    roundNumberEl.innerText = gameEvent.roundNumber
-                    updateGamePhase("Bidding")
-
-                    const trickNumberEl = document.getElementById("trickNumber")
-                    trickNumberEl.innerText = ""
-
-                    biddingForm.handleRoundStarted()
-
-                    const trick = document.getElementById("trick")
-                    trick.textContent = ""
-
-                    const handEl = document.getElementById("hand")
-                    gameEvent.cardsDealt.forEach(card => {
-                        const li = document.createElement("li")
-                        li.innerText = card.id
-
-                        const button = document.createElement("button")
-                        button.innerText = "Play"
-                        button.onclick = function playCard() {
-                            li.remove()
-                            socket.send(JSON.stringify({
-                                type: "ClientMessage$CardPlayed",
-                                cardId: card.id,
-                            }))
-                        }
-                        li.appendChild(button)
-                        handEl.appendChild(li)
-                    })
-                },
-                bidPlaced({playerId}) {
-                    bidsEl.handleBidPlaced(playerId)
-                },
-                biddingCompleted({bids}) {
-                    updateGamePhase("TrickTaking")
-                    bidsEl.handleBiddingCompleted(bids)
-                },
-                cardPlayed(gameEvent) {
-                    const trick = document.getElementById("trick")
-                    const li = document.createElement("li")
-                    li.innerText = `${gameEvent.playerId}:${gameEvent.cardId}`
-                    trick.appendChild(li)
-                },
-                trickStarted(gameEvent) {
-                    const trickNumberEl = document.getElementById("trickNumber")
-                    trickNumberEl.innerText = gameEvent.trickNumber
-
-                    const trick = document.getElementById("trick")
-                    trick.textContent = ""
-                },
-                trickCompleted(gameEvent) {
-                    updateGamePhase("TrickComplete")
-                },
-                gameCompleted(gameEvent) {
-                    const gameStateEl = document.getElementById("gameState")
-                    gameStateEl.innerText = "The game is over!"
-                },
-            }
-        }
     }
 
     class BiddingForm extends HTMLElement {
