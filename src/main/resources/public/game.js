@@ -40,10 +40,6 @@ function connectToWs(wsAddress) {
         return () => socket.removeEventListener("message", listener)
     }
 
-    function listenToGameEvent(eventType, callback) {
-        return listenToGameEvents({[eventType]: callback})
-    }
-
     configureWs()
 
     function configureWs() {
@@ -167,8 +163,10 @@ function connectToWs(wsAddress) {
 
         connectedCallback() {
             this.disconnectedCallback()
-
-            this.disconnectFn = listenToGameEvent(EventTypes.RoundStarted, this.showForm)
+            this.disconnectFn = listenToGameEvents({
+                [EventTypes.RoundStarted]: this.showForm,
+                [EventTypes.BiddingCompleted]: this.hideForm,
+            })
         }
 
         showForm = () => {
@@ -186,6 +184,8 @@ function connectToWs(wsAddress) {
                 }))
             }
         }
+
+        hideForm = () => this.replaceChildren()
 
         disconnectedCallback() {
             if (this.disconnectFn) this.disconnectFn()
@@ -212,7 +212,7 @@ function connectToWs(wsAddress) {
             `
         }
 
-        initialiseForPlayers(players) {
+        initialiseForPlayers = (players) => {
             const bids = this.querySelector("#bids")
             players.forEach(playerId => {
                 const li = document.createElement("li")
@@ -223,11 +223,11 @@ function connectToWs(wsAddress) {
             })
         }
 
-        indicateThatPlayerHasBid(playerId) {
+        indicateThatPlayerHasBid = (playerId) => {
             this.querySelector(`[data-playerBid="${playerId}"] span`).innerText = ":" + "has bid"
         }
 
-        showActualBids(bids) {
+        showActualBids = (bids) => {
             this.querySelectorAll(`[data-playerBid]`).forEach(el => {
                 const playerId = el.getAttribute("data-playerBid")
                 const bid = bids[playerId]

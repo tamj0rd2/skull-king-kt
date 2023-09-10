@@ -70,6 +70,7 @@ class Game {
 
     fun bid(playerId: PlayerId, bid: Int) {
         if (state != GameState.InProgress) throw GameException.CannotBid("game not in progress")
+        if (phase != RoundPhase.Bidding) throw GameException.CannotBid("not in bidding phase")
 
         _bids.place(playerId, bid)
         this.gameEventSubscribers.broadcast(GameEvent.BidPlaced(playerId))

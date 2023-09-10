@@ -26,8 +26,8 @@ import testsupport.Play
 import testsupport.Plays
 import testsupport.RigsTheDeck
 import testsupport.SaysTheGameCanStart
-import testsupport.SaysTheNextRoundCanStart
-import testsupport.SaysTheNextTrickCanStart
+import testsupport.SaysTheRoundCanStart
+import testsupport.SaysTheTrickCanStart
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
 import testsupport.TheCurrentTrick
@@ -38,6 +38,7 @@ import testsupport.TheRoundPhase
 import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.TheySeeBids
+import testsupport.Wip
 import testsupport.expectingFailure
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -100,7 +101,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         )
         freddy and sally both Bid(1)
 
-        gary(SaysTheNextTrickCanStart)
+        gary(SaysTheTrickCanStart)
         freddy(
             Ensures(HisHand, sizeIs(1)),
             Plays.card("A"),
@@ -115,6 +116,39 @@ sealed class AppTestContract(private val d: TestConfiguration) {
 
     @Test
     fun `cannot bid before the game has started`() {
+        freddy and sally both SitAtTheTable
+        freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
+        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
+    }
+
+    @Test
+    fun `cannot bid while tricks are taking place`() {
+        freddy and sally both SitAtTheTable
+        gary(SaysTheGameCanStart)
+        freddy and sally both Bid(1)
+        gary(SaysTheTrickCanStart)
+        freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
+    }
+
+    @Test
+    @Wip
+    fun `cannot bid twice`() {
+        freddy and sally both SitAtTheTable
+        freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
+        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
+    }
+
+    @Test
+    @Wip
+    fun `cannot bid more than the current round number`() {
+        freddy and sally both SitAtTheTable
+        freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
+        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
+    }
+
+    @Test
+    @Wip
+    fun `cannot bid less than 0`() {
         freddy and sally both SitAtTheTable
         freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
         freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
@@ -151,7 +185,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         }
 
         // round 1 trick taking
-        gary(SaysTheNextTrickCanStart)
+        gary(SaysTheTrickCanStart)
         freddy and sally both Ensure(TheTrickNumber, Is(1))
         freddy(Plays.card("1"))
         sally(Plays.card("2"))
@@ -161,7 +195,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         }
 
         // round 2
-        gary(SaysTheNextRoundCanStart)
+        gary(SaysTheRoundCanStart)
         freddy and sally both Ensure {
             that(TheRoundNumber, Is(2))
             that(TheirHand, sizeIs(2))
@@ -176,7 +210,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         }
 
         // round 2 trick 1
-        gary(SaysTheNextTrickCanStart)
+        gary(SaysTheTrickCanStart)
         freddy and sally both Ensure(TheTrickNumber, Is(1))
         freddy(Plays.card("1"))
         sally(Plays.card("3"))
@@ -187,7 +221,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         }
 
         // round 2 trick 2
-        gary(SaysTheNextTrickCanStart)
+        gary(SaysTheTrickCanStart)
         freddy and sally both Ensure(TheTrickNumber, Is(2))
         freddy(Plays.card("2"))
         sally(Plays.card("4"))
@@ -200,7 +234,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         // rounds 3 - 10
         (3..10).forEach { roundNumber ->
             // round X
-            gary(SaysTheNextRoundCanStart)
+            gary(SaysTheRoundCanStart)
             freddy and sally both Ensure {
                 that(TheRoundNumber, Is(roundNumber))
                 that(TheirHand, sizeIs(roundNumber))
@@ -215,7 +249,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
 
             // round X trick 1-X
             (1..roundNumber).forEach { trickNumber ->
-                gary(SaysTheNextTrickCanStart)
+                gary(SaysTheTrickCanStart)
                 freddy and sally both Ensure {
                     that(TheTrickNumber, Is(trickNumber))
                     that(TheirHand, sizeIs(roundNumber - trickNumber + 1))
