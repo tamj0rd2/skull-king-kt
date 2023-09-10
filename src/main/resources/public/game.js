@@ -1,12 +1,57 @@
 function connectToWs(wsAddress) {
     const socket = new WebSocket(wsAddress);
 
+    const EventTypes = {
+        PlayerJoined: "GameEvent$PlayerJoined",
+        GameStarted: "GameEvent$GameStarted",
+        RoundStarted: "GameEvent$RoundStarted",
+        BidPlaced: "GameEvent$BidPlaced",
+        BiddingCompleted: "GameEvent$BiddingCompleted",
+        CardPlayed: "GameEvent$CardPlayed",
+        TrickCompleted: "GameEvent$TrickCompleted",
+        TrickStarted: "GameEvent$TrickStarted",
+        GameCompleted: "GameEvent$GameCompleted",
+    }
+    const knownEventTypes = Object.values(EventTypes)
+
+    function listenToGameEvents(gameEventsToCallbacks) {
+        const listener = (event) => {
+            try {
+                const data = JSON.parse(event.data)
+                const callback = gameEventsToCallbacks[data.type]
+                if (callback) return callback(data)
+
+                if (!knownEventTypes.includes(data.type)) {
+                    socket.send(JSON.stringify({
+                        type: "ClientMessage$UnhandledMessageFromServer",
+                        offender: data.type,
+                    }))
+                    console.error(`Unknown message from server: ${data.type}`)
+                }
+            } catch (e) {
+                socket.send(JSON.stringify({
+                    stackTrace: e.stack,
+                    type: "ClientMessage$Error",
+                }))
+                throw e
+            }
+        }
+        socket.addEventListener("message", listener)
+        return () => socket.removeEventListener("message", listener)
+    }
+
+    function listenToGameEvent(eventType, callback) {
+        return listenToGameEvents({[eventType]: callback})
+    }
+
     configureWs()
 
     function configureWs() {
         const body = document.querySelector("body")
         const biddingForm = document.createElement("sk-biddingform")
+        body.appendChild(biddingForm)
         const bidsEl = document.createElement("sk-bids")
+        body.appendChild(bidsEl)
 
         function updateGamePhase(gamePhase) {
             const gamePhaseEl = document.getElementById("gamePhase")
@@ -31,7 +76,7 @@ function connectToWs(wsAddress) {
             try {
                 const data = JSON.parse(event.data)
                 switch (data.type) {
-                    case "GameEvent$PlayerJoined":
+                    case EventTypes.PlayerJoined:
                         const players = document.getElementById("players")
                         const li = document.createElement("li")
                         li.innerText = data.playerId
@@ -43,27 +88,17 @@ function connectToWs(wsAddress) {
                             gameStateEl.innerText = ""
                         }
                         return
-                    case "GameEvent$GameStarted":
+                    case EventTypes.GameStarted:
                         const gameStateEl = document.getElementById("gameState")
                         gameStateEl.innerText = "The game has started :D"
-                        body.appendChild(biddingForm)
-
-                        body.appendChild(bidsEl)
-                        const gameStateEl1 = document.getElementById("gameState")
-                        gameStateEl1.innerText = "The game has started :D"
-                        body.appendChild(biddingForm)
-
-                        body.appendChild(bidsEl)
-                        return bidsEl.gameStarted(data.players);
-                    case "GameEvent$RoundStarted":
+                        return
+                    case EventTypes.RoundStarted:
                         const roundNumberEl = document.getElementById("roundNumber")
                         roundNumberEl.innerText = data.roundNumber
                         updateGamePhase("Bidding")
 
                         const trickNumberEl = document.getElementById("trickNumber")
                         trickNumberEl.innerText = ""
-
-                        biddingForm.handleRoundStarted()
 
                         const trick = document.getElementById("trick")
                         trick.textContent = ""
@@ -85,27 +120,26 @@ function connectToWs(wsAddress) {
                             li.appendChild(button)
                             handEl.appendChild(li)
                         });
-                    case "GameEvent$BidPlaced":
-                        let {playerId} = data;
-                        return bidsEl.handleBidPlaced(playerId);
-                    case "GameEvent$BiddingCompleted":
+                    case EventTypes.BidPlaced:
+                        return
+                    case EventTypes.BiddingCompleted:
                         let {bids} = data;
                         updateGamePhase("TrickTaking")
-                        return bidsEl.handleBiddingCompleted(bids);
-                    case "GameEvent$CardPlayed":
+                        return
+                    case EventTypes.CardPlayed:
                         const trick1 = document.getElementById("trick")
                         const li1 = document.createElement("li")
                         li1.innerText = `${data.playerId}:${data.cardId}`
                         return trick1.appendChild(li1);
-                    case "GameEvent$TrickCompleted":
+                    case EventTypes.TrickCompleted:
                         return updateGamePhase("TrickComplete");
-                    case "GameEvent$TrickStarted":
+                    case EventTypes.TrickStarted:
                         const trickNumberEl1 = document.getElementById("trickNumber")
                         trickNumberEl1.innerText = data.trickNumber
 
                         const trick2 = document.getElementById("trick")
                         return trick2.textContent = "";
-                    case "GameEvent$GameCompleted":
+                    case EventTypes.GameCompleted:
                         const gameStateEl2 = document.getElementById("gameState")
                         return gameStateEl2.innerText = "The game is over!";
                     default: {
@@ -132,6 +166,12 @@ function connectToWs(wsAddress) {
         }
 
         connectedCallback() {
+            this.disconnectedCallback()
+
+            this.disconnectFn = listenToGameEvent(EventTypes.RoundStarted, this.showForm)
+        }
+
+        showForm = () => {
             this.innerHTML = `
                 <label>Bid <input type="number" name="bid" min="0" max="10"></label>
                 <button id="placeBid" type="button" onclick="onBidSubmit()">Place Bid</button>
@@ -147,14 +187,20 @@ function connectToWs(wsAddress) {
             }
         }
 
-        handleRoundStarted() {
-            this.querySelector(`input[name="bid"]`).value = ""
+        disconnectedCallback() {
+            if (this.disconnectFn) this.disconnectFn()
+            this.disconnectFn = undefined
         }
     }
 
     class Bids extends HTMLElement {
         constructor() {
             super();
+            listenToGameEvents({
+                [EventTypes.GameStarted]: ({players}) => this.initialiseForPlayers(players),
+                [EventTypes.BidPlaced]: ({playerId}) => this.indicateThatPlayerHasBid(playerId),
+                [EventTypes.BiddingCompleted]: ({bids}) => this.showActualBids(bids),
+            })
         }
 
         connectedCallback() {
@@ -166,9 +212,9 @@ function connectToWs(wsAddress) {
             `
         }
 
-        gameStarted(playerIds) {
+        initialiseForPlayers(players) {
             const bids = this.querySelector("#bids")
-            playerIds.forEach(playerId => {
+            players.forEach(playerId => {
                 const li = document.createElement("li")
                 li.textContent = playerId
                 li.setAttribute("data-playerBid", playerId)
@@ -177,11 +223,11 @@ function connectToWs(wsAddress) {
             })
         }
 
-        handleBidPlaced(playerId) {
+        indicateThatPlayerHasBid(playerId) {
             this.querySelector(`[data-playerBid="${playerId}"] span`).innerText = ":" + "has bid"
         }
 
-        handleBiddingCompleted(bids) {
+        showActualBids(bids) {
             this.querySelectorAll(`[data-playerBid]`).forEach(el => {
                 const playerId = el.getAttribute("data-playerBid")
                 const bid = bids[playerId]
