@@ -41,6 +41,7 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
     }
 
     override fun teardown() {
+        if (!headless) Thread.sleep(5000)
         chromeDrivers.forEach {
             it.quit()
         }

@@ -28,6 +28,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
             val errorElements = driver.findElements(By.id("errorMessage"))
             if (errorElements.isNotEmpty()) {
                 when (val errorMessage = errorElements.single().text) {
+                    // TODO: gross... just have a data attribute with the code on the page, rather than this.
                     GameException.PlayerWithSameNameAlreadyJoined::class.simpleName!! -> throw GameException.PlayerWithSameNameAlreadyJoined(
                         playerId
                     )
@@ -41,7 +42,10 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     override fun bid(bid: Int) = debugException {
         try {
             driver.findElement(By.name("bid")).sendKeys(bid.toString())
-            driver.findElement(By.id("placeBid")).click()
+            driver.findElement(By.id("placeBid")).let {
+                if (!it.isEnabled) throw GameException.CannotBid("bid button is disabled")
+                it.click()
+            }
         } catch (e: NoSuchElementException) {
             throw GameException.CannotBid(e.message)
         }

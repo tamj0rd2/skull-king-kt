@@ -169,17 +169,34 @@ function connectToWs(wsAddress) {
             })
         }
 
-        showForm = () => {
+        showForm = ({roundNumber}) => {
             this.innerHTML = `
-                <label>Bid <input type="number" name="bid" min="0" max="10"></label>
-                <button id="placeBid" type="button" onclick="onBidSubmit()">Place Bid</button>
+                <label>Bid <input type="number" name="bid" min="0" max="${roundNumber}"></label>
+                <button id="placeBid" type="button" onclick="onBidSubmit()" disabled>Place Bid</button>
                 <p id="biddingError"></p>
             `
 
-            this.querySelector("#placeBid").onclick = () => {
+            const placeBidBtn = this.querySelector("#placeBid");
+            const bidInput = this.querySelector(`input[name="bid"]`);
+            const biddingError = this.querySelector("#biddingError");
+
+            bidInput.oninput = (e) => {
+                const bid = e.target.value.replace(/[^0-9]/g, '')
+                bidInput.value = bid
+                if (bid >= 0 && bid <= roundNumber) {
+                    placeBidBtn.disabled = false
+                    biddingError.innerText = ""
+                    return
+                }
+
+                placeBidBtn.disabled = true
+                biddingError.innerText = `Bid must be between 0 and ${roundNumber}`
+            }
+
+            placeBidBtn.onclick = () => {
                 socket.send(JSON.stringify({
                     type: "ClientMessage$BidPlaced",
-                    bid: this.querySelector(`input[name="bid"]`).value,
+                    bid: bidInput.value,
                 }))
                 this.hideForm()
             }

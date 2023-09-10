@@ -71,6 +71,8 @@ class Game {
     fun bid(playerId: PlayerId, bid: Int) {
         if (state != GameState.InProgress) throw GameException.CannotBid("game not in progress")
         if (phase != RoundPhase.Bidding) throw GameException.CannotBid("not in bidding phase")
+        if (bid < 0 || bid > roundNumber) throw GameException.CannotBid("bid $bid is greater than the round number ($roundNumber)")
+        if (_bids.hasPlayerAlreadyBid(playerId)) throw GameException.CannotBid("player $playerId has already bid")
 
         _bids.place(playerId, bid)
         this.gameEventSubscribers.broadcast(GameEvent.BidPlaced(playerId))
@@ -181,9 +183,11 @@ private class Bids {
     }
 
     fun place(playerId: PlayerId, bid: Int) {
-        if (bids[playerId] !is Bid.None) throw GameException.CannotBid("player $playerId has already bid")
-
         bids[playerId] = Bid.Placed(bid)
+    }
+
+    fun hasPlayerAlreadyBid(playerId: PlayerId): Boolean {
+        return bids[playerId] !is Bid.None
     }
 
     fun asCompleted(): Map<PlayerId, Int> {
@@ -196,6 +200,7 @@ private class Bids {
             }
         }
     }
+
 }
 
 sealed class Bid {

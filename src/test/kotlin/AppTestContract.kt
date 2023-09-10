@@ -38,7 +38,6 @@ import testsupport.TheRoundPhase
 import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.TheySeeBids
-import testsupport.Wip
 import testsupport.expectingFailure
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -139,19 +138,10 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     }
 
     @Test
-    @Wip
     fun `cannot bid more than the current round number`() {
         freddy and sally both SitAtTheTable
-        freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
-        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
-    }
-
-    @Test
-    @Wip
-    fun `cannot bid less than 0`() {
-        freddy and sally both SitAtTheTable
-        freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
-        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
+        gary(SaysTheGameCanStart)
+        freddy.attemptsTo(Bid(2).expectingFailure<GameException.CannotBid>())
     }
 
     @Test
