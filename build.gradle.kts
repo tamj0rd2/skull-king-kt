@@ -12,10 +12,9 @@ repositories {
     mavenCentral()
 }
 
-
 dependencies {
     val http4kVersion = "5.6.3.0"
-    val seleniumVersion = "4.11.0"
+    val seleniumVersion = "4.12.0"
     val chromeVersion = "v114"
 
     implementation("org.http4k:http4k-core:$http4kVersion")
