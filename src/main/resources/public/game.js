@@ -176,12 +176,12 @@ function connectToWs(wsAddress) {
                 <p id="biddingError"></p>
             `
 
-            const bidInput = this.querySelector(`input[name="bid"]`)
-            this.querySelector("#placeBid").onclick = function () {
+            this.querySelector("#placeBid").onclick = () => {
                 socket.send(JSON.stringify({
                     type: "ClientMessage$BidPlaced",
-                    bid: bidInput.value,
+                    bid: this.querySelector(`input[name="bid"]`).value,
                 }))
+                this.hideForm()
             }
         }
 

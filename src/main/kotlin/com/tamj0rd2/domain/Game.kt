@@ -181,6 +181,8 @@ private class Bids {
     }
 
     fun place(playerId: PlayerId, bid: Int) {
+        if (bids[playerId] !is Bid.None) throw GameException.CannotBid("player $playerId has already bid")
+
         bids[playerId] = Bid.Placed(bid)
     }
 

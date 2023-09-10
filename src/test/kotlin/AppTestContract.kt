@@ -131,11 +131,11 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     }
 
     @Test
-    @Wip
     fun `cannot bid twice`() {
         freddy and sally both SitAtTheTable
+        gary(SaysTheGameCanStart)
+        freddy(Bids(1))
         freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
-        freddy and sally both Ensure(TheGameState, Is(WaitingToStart))
     }
 
     @Test
