@@ -192,7 +192,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         sally(Plays.theFirstCardInHerHand)
         freddy and sally both Ensure {
             that(TheCurrentTrick, onlyContains(freddysFirstCard.playedBy(freddy), sallysFirstCard.playedBy(sally)))
-            that(TheRoundPhase, Is(TrickComplete))
+            that(TheRoundPhase, Is(TrickCompleted))
             that(TheirHand, isEmpty)
         }
 
@@ -221,7 +221,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         sally(Plays.theFirstCardInTheirHand)
         freddy and sally both Ensure {
             that(TheCurrentTrick, sizeIs(2))
-            that(TheRoundPhase, Is(TrickComplete))
+            that(TheRoundPhase, Is(TrickCompleted))
             that(TheirHand, sizeIs(1))
         }
 
@@ -232,7 +232,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         sally(Plays.theFirstCardInTheirHand)
         freddy and sally both Ensure {
             that(TheCurrentTrick, sizeIs(2))
-            that(TheRoundPhase, Is(TrickComplete))
+            that(TheRoundPhase, Is(TrickCompleted))
             that(TheirHand, isEmpty)
         }
 
@@ -264,7 +264,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
                 freddy and sally both Play.theFirstCardInTheirHand
                 freddy and sally both Ensure {
                     that(TheCurrentTrick, sizeIs(2))
-                    that(TheRoundPhase, Is(TrickComplete))
+                    that(TheRoundPhase, Is(TrickCompleted))
                     that(TheirHand, sizeIs(roundNumber - trickNumber))
                 }
             }

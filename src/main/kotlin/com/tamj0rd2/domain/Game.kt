@@ -93,7 +93,7 @@ class Game {
         gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, card))
 
         if (_currentTrick.size == players.size) {
-            _phase = TrickComplete
+            _phase = TrickCompleted
             gameEventSubscribers.broadcast(GameEvent.TrickCompleted)
 
             if (roundNumber == 10) {
@@ -153,7 +153,7 @@ enum class RoundPhase {
     Bidding,
     BiddingCompleted,
     TrickTaking,
-    TrickComplete;
+    TrickCompleted;
 
     companion object {
         private val mapper = values().associateBy { it.name }

@@ -23,7 +23,7 @@ function connectToWs(socket) {
         Bidding: "Bidding",
         BiddingCompleted: "BiddingCompleted",
         TrickTaking: "TrickTaking",
-        TrickComplete: "TrickComplete",
+        TrickCompleted: "TrickCompleted",
     }
 
     function listenToGameEvents(gameEventsToCallbacks) {
@@ -60,6 +60,9 @@ function connectToWs(socket) {
         const state = document.createElement("sk-gamestate")
         body.appendChild(state)
 
+        const phase = document.createElement("sk-gamephase")
+        body.appendChild(phase)
+
         const hand = document.createElement("sk-hand")
         body.appendChild(hand)
 
@@ -68,21 +71,6 @@ function connectToWs(socket) {
 
         const bidsEl = document.createElement("sk-bids")
         body.appendChild(bidsEl)
-
-        function updateGamePhase(gamePhase) {
-            const gamePhaseEl = document.getElementById("gamePhase")
-            const gamePhaseMapping = {
-                [GamePhase.Bidding]: "Place your bid!",
-                [GamePhase.BiddingCompleted]: "Bidding completed :)",
-                [GamePhase.TrickTaking]: "It's trick taking time!",
-                [GamePhase.TrickComplete]: "Trick completed :)"
-            }
-
-            const text = gamePhaseMapping[gamePhase]
-            if (!text) throw new Error("Unknown game phase: " + gamePhase)
-            gamePhaseEl.innerText = gamePhaseMapping[gamePhase]
-            gamePhaseEl.setAttribute("data-phase", gamePhase)
-        }
 
         socket.addEventListener("close", (event) => {
             console.error("disconnected from ws")
@@ -104,7 +92,6 @@ function connectToWs(socket) {
                     case EventType.RoundStarted:
                         const roundNumberEl = document.getElementById("roundNumber")
                         roundNumberEl.innerText = data.roundNumber
-                        updateGamePhase("Bidding")
 
                         const trickNumberEl = document.getElementById("trickNumber")
                         trickNumberEl.innerText = ""
@@ -115,7 +102,6 @@ function connectToWs(socket) {
                     case EventType.BidPlaced:
                         return
                     case EventType.BiddingCompleted:
-                        updateGamePhase("BiddingCompleted")
                         return
                     case EventType.CardPlayed:
                         const trick1 = document.getElementById("trick")
@@ -126,9 +112,8 @@ function connectToWs(socket) {
                         data.card.number && li1.setAttribute("number", data.card.number)
                         return trick1.appendChild(li1);
                     case EventType.TrickCompleted:
-                        return updateGamePhase("TrickComplete");
+                        return
                     case EventType.TrickStarted:
-                        updateGamePhase("TrickTaking")
                         const trickNumberEl1 = document.getElementById("trickNumber")
                         trickNumberEl1.innerText = data.trickNumber
 
@@ -345,9 +330,40 @@ function connectToWs(socket) {
         }
     }
 
+    class GamePhaseElement extends HTMLElement {
+        constructor() {
+            super()
+        }
+
+        connectedCallback() {
+            this.disconnectedCallback()
+
+            this.disconnectFn = listenToGameEvents({
+                [EventType.GameStarted]: () => this.innerHTML = `<h2 id="gamePhase"></h2>`,
+                [EventType.RoundStarted]: () => {
+                    this.updateGamePhase(GamePhase.Bidding, "Place your bid!")
+                },
+                [EventType.BiddingCompleted]: () => this.updateGamePhase(GamePhase.BiddingCompleted, "Bidding completed :)"),
+                [EventType.TrickStarted]: () => this.updateGamePhase(GamePhase.TrickTaking, "It's trick taking time!"),
+                [EventType.TrickCompleted]: () => this.updateGamePhase(GamePhase.TrickCompleted, "Trick completed :)"),
+            })
+        }
+
+        updateGamePhase = (gamePhase, text) => {
+            const gamePhaseEl = this.querySelector("#gamePhase")
+            gamePhaseEl.setAttribute("data-phase", gamePhase)
+            gamePhaseEl.innerText = text
+        }
+
+        disconnectedCallback() {
+            if (this.disconnectFn) this.disconnectFn()
+            this.disconnectFn = undefined
+        }
+    }
 
     customElements.define("sk-biddingform", BiddingElement)
     customElements.define("sk-bids", BidsElement)
     customElements.define("sk-hand", HandElement)
     customElements.define("sk-gamestate", GameStateElement)
+    customElements.define("sk-gamephase", GamePhaseElement)
 }
