@@ -44,9 +44,12 @@ function connectToWs(socket) {
         const body = document.querySelector("body")
         const biddingForm = document.createElement("sk-biddingform")
         body.appendChild(biddingForm)
+
         const bidsEl = document.createElement("sk-bids")
         body.appendChild(bidsEl)
-        const gamePhaseEl = document.getElementById("gamePhase")
+
+        const hand = document.createElement("sk-hand")
+        body.appendChild(hand)
 
         function updateGamePhase(gamePhase) {
             const gamePhaseEl = document.getElementById("gamePhase")
@@ -97,26 +100,7 @@ function connectToWs(socket) {
 
                         const trick = document.getElementById("trick")
                         trick.textContent = ""
-
-                        const handEl = document.getElementById("hand")
-                        return data.cardsDealt.forEach(card => {
-                            const li = document.createElement("li")
-                            li.innerText = card.name
-                            li.setAttribute("suit", card.suit)
-                            card.number && li.setAttribute("number", card.number)
-
-                            const button = document.createElement("button")
-                            button.innerText = "Play"
-                            button.onclick = function playCard() {
-                                li.remove()
-                                socket.send(JSON.stringify({
-                                    type: "ClientMessage$CardPlayed",
-                                    cardName: card.name,
-                                }))
-                            }
-                            li.appendChild(button)
-                            handEl.appendChild(li)
-                        });
+                        return
                     case EventTypes.BidPlaced:
                         return
                     case EventTypes.BiddingCompleted:
@@ -257,6 +241,57 @@ function connectToWs(socket) {
         }
     }
 
+    class Hand extends HTMLElement {
+        constructor() {
+            super()
+        }
+
+        connectedCallback() {
+            this.disconnectedCallback()
+            this.disconnectFn = listenToGameEvents({
+                [EventTypes.GameStarted]: this.showHand,
+                [EventTypes.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
+            })
+        }
+
+        showHand = () => {
+            this.innerHTML = `
+                <section id="handArea">
+                    <h3>Hand</h3>
+                    <ul id="hand"></ul>
+                </section> 
+            `
+        }
+
+        initialiseHand = (cards) => {
+            const hand = this.querySelector("#hand")
+            cards.forEach(card => {
+                const li = document.createElement("li")
+                li.innerText = card.name
+                li.setAttribute("suit", card.suit)
+                card.number && li.setAttribute("number", card.number)
+
+                const button = document.createElement("button")
+                button.innerText = "Play"
+                button.onclick = function playCard() {
+                    li.remove()
+                    socket.send(JSON.stringify({
+                        type: "ClientMessage$CardPlayed",
+                        cardName: card.name,
+                    }))
+                }
+                li.appendChild(button)
+                hand.appendChild(li)
+            })
+        }
+
+        disconnectedCallback() {
+            if (this.disconnectFn) this.disconnectFn()
+            this.disconnectFn = undefined
+        }
+    }
+
     customElements.define("sk-biddingform", BiddingForm)
     customElements.define("sk-bids", Bids)
+    customElements.define("sk-hand", Hand)
 }
