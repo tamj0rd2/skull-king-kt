@@ -15,6 +15,8 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.body.form
 import org.http4k.core.with
+import org.http4k.format.Jackson.asCompactJsonString
+import org.http4k.format.Jackson.asJsonObject
 import org.http4k.format.Jackson.auto
 import org.http4k.routing.ResourceLoader
 import org.http4k.routing.bind
@@ -30,7 +32,10 @@ private data class Game(
     val players: List<PlayerId>,
     val waitingForMorePlayers: Boolean,
     val playerId: PlayerId,
-) : ViewModel
+) : ViewModel {
+    // used by the UI
+    val initialState = this.asJsonObject().asCompactJsonString()
+}
 
 data class Index(val errorMessage: String? = null) : ViewModel {
     companion object {

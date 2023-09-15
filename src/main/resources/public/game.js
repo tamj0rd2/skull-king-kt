@@ -52,16 +52,14 @@ function connectToWs(socket) {
         return () => socket.removeEventListener("message", listener)
     }
 
-    configureWs()
-
-    function configureWs() {
+    (function setupGame() {
         const body = document.querySelector("body")
 
-        const state = document.createElement("sk-gamestate")
-        body.appendChild(state)
+        const gameState = document.createElement("sk-gamestate")
+        body.appendChild(gameState)
 
-        const phase = document.createElement("sk-gamephase")
-        body.appendChild(phase)
+        const gamePhase = document.createElement("sk-gamephase")
+        body.appendChild(gamePhase)
 
         const hand = document.createElement("sk-hand")
         body.appendChild(hand)
@@ -69,75 +67,43 @@ function connectToWs(socket) {
         const biddingForm = document.createElement("sk-biddingform")
         body.appendChild(biddingForm)
 
-        const bidsEl = document.createElement("sk-bids")
-        body.appendChild(bidsEl)
+        const bids = document.createElement("sk-bids")
+        body.appendChild(bids)
+
+        const roundNumberEl = document.querySelector("#roundNumber")
+        const trickNumberEl = document.querySelector("#trickNumber")
+        const trick = document.querySelector("#trick")
 
         socket.addEventListener("close", (event) => {
             console.error("disconnected from ws")
         })
 
-        socket.addEventListener("message", (event) => {
-            try {
-                const data = JSON.parse(event.data)
-                switch (data.type) {
-                    case EventType.PlayerJoined:
-                        const players = document.getElementById("players")
-                        const li = document.createElement("li")
-                        li.innerText = data.playerId
-                        players.appendChild(li)
-
-                        return
-                    case EventType.GameStarted:
-                        return
-                    case EventType.RoundStarted:
-                        const roundNumberEl = document.getElementById("roundNumber")
-                        roundNumberEl.innerText = data.roundNumber
-
-                        const trickNumberEl = document.getElementById("trickNumber")
-                        trickNumberEl.innerText = ""
-
-                        const trick = document.getElementById("trick")
-                        trick.textContent = ""
-                        return
-                    case EventType.BidPlaced:
-                        return
-                    case EventType.BiddingCompleted:
-                        return
-                    case EventType.CardPlayed:
-                        const trick1 = document.getElementById("trick")
-                        const li1 = document.createElement("li")
-                        li1.innerText = `${data.playerId}:${data.card.name}`
-                        li1.setAttribute("player", data.playerId)
-                        li1.setAttribute("suit", data.card.suit)
-                        data.card.number && li1.setAttribute("number", data.card.number)
-                        return trick1.appendChild(li1);
-                    case EventType.TrickCompleted:
-                        return
-                    case EventType.TrickStarted:
-                        const trickNumberEl1 = document.getElementById("trickNumber")
-                        trickNumberEl1.innerText = data.trickNumber
-
-                        const trick2 = document.getElementById("trick")
-                        return trick2.textContent = "";
-                    case EventType.GameCompleted:
-                        return
-                    default: {
-                        socket.send(JSON.stringify({
-                            type: "ClientMessage$UnhandledMessageFromServer",
-                            offender: data.type,
-                        }))
-                        console.error(`Unknown message from server: ${data.type}`)
-                    }
-                }
-            } catch (e) {
-                socket.send(JSON.stringify({
-                    stackTrace: e.stack,
-                    type: "ClientMessage$Error",
-                }))
-                throw e
+        listenToGameEvents({
+            [EventType.PlayerJoined]: ({playerId}) => {
+                const players = document.querySelector("#players")
+                const li = document.createElement("li")
+                li.innerText = playerId
+                players.appendChild(li)
+            },
+            [EventType.RoundStarted]: ({roundNumber}) => {
+                roundNumberEl.innerText = roundNumber
+                trickNumberEl.innerText = ""
+                trick.replaceChildren()
+            },
+            [EventType.CardPlayed]: ({playerId, card}) => {
+                const li = document.createElement("li")
+                li.innerText = `${playerId}:${card.name}`
+                li.setAttribute("player", playerId)
+                li.setAttribute("suit", card.suit)
+                card.number && li.setAttribute("number", card.number)
+                trick.appendChild(li);
+            },
+            [EventType.TrickStarted]: ({trickNumber}) => {
+                trickNumberEl.innerText = trickNumber
+                trick.replaceChildren()
             }
-        });
-    }
+        })
+    })()
 
     class BiddingElement extends HTMLElement {
         constructor() {
