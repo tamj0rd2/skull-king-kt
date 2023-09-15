@@ -6,12 +6,6 @@
 <div class="content">
     <h1>Game Page - {{playerId}}</h1>
 
-    <h2 id="gameState">
-        {{#if waitingForMorePlayers}}
-            Waiting for more players...
-        {{/if}}
-    </h2>
-
     <h2 id="roundNumber"></h2>
     <h2 id="trickNumber"></h2>
 
@@ -31,6 +25,10 @@
 </div>
 <script src="/game.js"></script>
 <script>
+    window.INITIAL_STATE = {
+        waitingForMorePlayers: {{waitingForMorePlayers}},
+    }
+
     window.addEventListener("load", function() {
         const socket = new WebSocket("{{wsHost}}/{{playerId}}");
         socket.addEventListener("message", (event) => {

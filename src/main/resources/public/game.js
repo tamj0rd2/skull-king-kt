@@ -56,29 +56,18 @@ function connectToWs(socket) {
 
     function configureWs() {
         const body = document.querySelector("body")
+
+        const state = document.createElement("sk-gamestate")
+        body.appendChild(state)
+
+        const hand = document.createElement("sk-hand")
+        body.appendChild(hand)
+
         const biddingForm = document.createElement("sk-biddingform")
         body.appendChild(biddingForm)
 
         const bidsEl = document.createElement("sk-bids")
         body.appendChild(bidsEl)
-
-        const hand = document.createElement("sk-hand")
-        body.appendChild(hand)
-
-        function updateGameState(gameState) {
-            const gameStateEl = document.getElementById("gameState")
-            const gameStateMapping = {
-                [GameState.WaitingForMorePlayers]: "Waiting for more players...",
-                [GameState.WaitingToStart]: "Waiting for the game to start",
-                [GameState.InProgress]: "The game has started!",
-                [GameState.Complete]: "The game is over!"
-            }
-
-            const text = gameStateMapping[gameState]
-            if (!text) throw new Error("Unknown game state: " + gameState)
-            gameStateEl.innerText = gameStateMapping[gameState]
-            gameStateEl.setAttribute("data-state", gameState)
-        }
 
         function updateGamePhase(gamePhase) {
             const gamePhaseEl = document.getElementById("gamePhase")
@@ -109,12 +98,8 @@ function connectToWs(socket) {
                         li.innerText = data.playerId
                         players.appendChild(li)
 
-                        if (data.waitingForMorePlayers) updateGameState(GameState.WaitingForMorePlayers)
-                        else updateGameState(GameState.WaitingToStart)
-
                         return
                     case EventType.GameStarted:
-                        updateGameState(GameState.InProgress)
                         return
                     case EventType.RoundStarted:
                         const roundNumberEl = document.getElementById("roundNumber")
@@ -150,7 +135,6 @@ function connectToWs(socket) {
                         const trick2 = document.getElementById("trick")
                         return trick2.textContent = "";
                     case EventType.GameCompleted:
-                        updateGameState(GameState.Complete)
                         return
                     default: {
                         socket.send(JSON.stringify({
@@ -170,7 +154,7 @@ function connectToWs(socket) {
         });
     }
 
-    class BiddingForm extends HTMLElement {
+    class BiddingElement extends HTMLElement {
         constructor() {
             super()
         }
@@ -224,7 +208,7 @@ function connectToWs(socket) {
         }
     }
 
-    class Bids extends HTMLElement {
+    class BidsElement extends HTMLElement {
         constructor() {
             super();
             listenToGameEvents({
@@ -267,7 +251,7 @@ function connectToWs(socket) {
         }
     }
 
-    class Hand extends HTMLElement {
+    class HandElement extends HTMLElement {
         constructor() {
             super()
         }
@@ -317,7 +301,53 @@ function connectToWs(socket) {
         }
     }
 
-    customElements.define("sk-biddingform", BiddingForm)
-    customElements.define("sk-bids", Bids)
-    customElements.define("sk-hand", Hand)
+    class GameStateElement extends HTMLElement {
+        constructor() {
+            super()
+        }
+
+        connectedCallback() {
+            this.disconnectedCallback()
+
+            this.disconnectFn = listenToGameEvents({
+                [EventType.PlayerJoined]: ({waitingForMorePlayers}) => this.updateBasedOnPlayers(waitingForMorePlayers),
+                [EventType.GameStarted]: () => this.updateGameState(GameState.InProgress),
+                [EventType.GameCompleted]: () => this.updateGameState(GameState.Complete),
+            })
+
+            this.innerHTML = `<h2 id="gameState"></h2>`
+            this.updateBasedOnPlayers(window.INITIAL_STATE.waitingForMorePlayers)
+        }
+
+        updateBasedOnPlayers = (waitingForMorePlayers) => {
+            if (waitingForMorePlayers) this.updateGameState(GameState.WaitingForMorePlayers)
+            else this.updateGameState(GameState.WaitingToStart)
+        }
+
+        updateGameState = (gameState) => {
+            const gameStateEl = this.querySelector("#gameState")
+            const gameStateMapping = {
+                [GameState.WaitingForMorePlayers]: "Waiting for more players...",
+                [GameState.WaitingToStart]: "Waiting for the game to start",
+                [GameState.InProgress]: "The game has started!",
+                [GameState.Complete]: "The game is over!"
+            }
+
+            const text = gameStateMapping[gameState]
+            if (!text) throw new Error("Unknown game state: " + gameState)
+            gameStateEl.innerText = gameStateMapping[gameState]
+            gameStateEl.setAttribute("data-state", gameState)
+        }
+
+        disconnectedCallback() {
+            if (this.disconnectFn) this.disconnectFn()
+            this.disconnectFn = undefined
+        }
+    }
+
+
+    customElements.define("sk-biddingform", BiddingElement)
+    customElements.define("sk-bids", BidsElement)
+    customElements.define("sk-hand", HandElement)
+    customElements.define("sk-gamestate", GameStateElement)
 }

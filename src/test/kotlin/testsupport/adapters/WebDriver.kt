@@ -93,6 +93,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     override val gameState: GameState
         get() = debugException {
+            // TODO: this needs updating...
             val gameState = driver.findElement(By.id("gameState")).text.lowercase()
             when {
                 gameState.contains("waiting for more players") -> GameState.WaitingForMorePlayers
