@@ -4,5 +4,6 @@ sealed class GameException(message: String, cause: Throwable? = null) : Exceptio
     class PlayerWithSameNameAlreadyJoined(playerId: PlayerId) :
         GameException("a player with the name $playerId is already in the game")
 
-    class CannotBid(reason: String? = null) : GameException(reason?.let { "cannot bid: $reason" } ?: "cannot bid")
+    class CannotBid(reason: String? = "no reason provided") : GameException("cannot bid: ${reason}")
+    class CannotPlayCard(reason: String? = "no reason provided") : GameException("cannot play card: ${reason}")
 }

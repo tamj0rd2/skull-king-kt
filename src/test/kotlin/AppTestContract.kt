@@ -66,6 +66,8 @@ interface TestConfiguration : AbilityFactory {
 sealed class AppTestContract(private val d: TestConfiguration) {
     private val freddy by lazy { Actor("Freddy First").whoCan(d.participateInGames()) }
     private val sally by lazy { Actor("Sally Second").whoCan(d.participateInGames()) }
+    // TODO: Gary's responsibilities need to go... his commands should just be automatically scheduled.
+    // the only one gary should be able to keep is rigging the deck and starting the game, for now
     private val gary by lazy { Actor("Gary GameMaster").whoCan(d.manageGames()) }
 
     @BeforeTest
@@ -115,6 +117,20 @@ sealed class AppTestContract(private val d: TestConfiguration) {
             that(TheCurrentTrick, onlyContains(11.blue.playedBy(freddy)))
             that(TheRoundPhase, Is(TrickTaking))
         }
+    }
+
+    @Test
+    fun `cannot play a card before the trick begins`() {
+        freddy and sally both SitAtTheTable
+        gary(SaysTheGameCanStart)
+
+        freddy(Bids(1))
+        freddy and sally both Ensure(TheRoundPhase, Is(Bidding))
+        freddy and sally both Play.theFirstCardInTheirHand.expectingFailure<GameException.CannotPlayCard>()
+
+        sally(Bids(1))
+        freddy and sally both Ensure(TheRoundPhase, Is(BiddingCompleted))
+        freddy and sally both Play.theFirstCardInTheirHand.expectingFailure<GameException.CannotPlayCard>()
     }
 
     @Test

@@ -84,6 +84,8 @@ class Game {
     }
 
     fun playCard(playerId: PlayerId, cardName: CardName) {
+        if (phase != TrickTaking) throw GameException.CannotPlayCard("not in trick taking phase - phase is $phase")
+
         val hand = getHandFor(playerId)
         val card = hand.find { it.name == cardName }
         requireNotNull(card) { "card $cardName not in $playerId's hand" }

@@ -47,19 +47,25 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         } catch (e: NoSuchElementException) {
             throw GameException.CannotBid(e.message)
         }
-        // TODO: is there a nicer way to deal with this?
+
         // give some time for the server to respond if necessary
         Thread.sleep(10)
+        // TODO: is there a nicer way to deal with this?
+        // YES! In the UI I can add a loading element, and here I can wait for it to disappear.
     }
 
     override fun playCard(card: Card) = debugException {
-        driver.findElement(By.id("hand"))
+        val li = driver.findElement(By.id("hand"))
             .findElements(By.tagName("li"))
             .ifEmpty { error("$playerId has no cards") }
             .find { it.toCard().name == card.name }
             .let { it ?: error("$playerId does not have card $card") }
-            .findElement(By.tagName("button"))
-            .click()
+
+        try {
+            li.findElement(By.tagName("button")).click()
+        } catch (e: NoSuchElementException) {
+            throw GameException.CannotPlayCard(e.message)
+        }
     }
 
     override val trickNumber: Int get() = debugException {

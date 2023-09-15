@@ -200,6 +200,7 @@ function connectToWs(socket) {
             this.disconnectFn = listenToGameEvents({
                 [EventType.GameStarted]: this.showHand,
                 [EventType.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
+                [EventType.TrickStarted]: this.makeCardsPlayable,
             })
         }
 
@@ -218,20 +219,26 @@ function connectToWs(socket) {
             cards.forEach(card => {
                 const li = document.createElement("li")
                 li.innerText = card.name
+                li.setAttribute("data-cardName", card.name)
                 li.setAttribute("suit", card.suit)
                 card.number && li.setAttribute("number", card.number)
+                hand.appendChild(li)
+            })
+        }
 
+        makeCardsPlayable = () => {
+            this.querySelectorAll("li").forEach(li => {
                 const button = document.createElement("button")
                 button.innerText = "Play"
                 button.onclick = function playCard() {
+                    let cardName = li.getAttribute("data-cardName")
                     li.remove()
                     socket.send(JSON.stringify({
                         type: "ClientMessage$CardPlayed",
-                        cardName: card.name,
+                        cardName: cardName,
                     }))
                 }
                 li.appendChild(button)
-                hand.appendChild(li)
             })
         }
 
