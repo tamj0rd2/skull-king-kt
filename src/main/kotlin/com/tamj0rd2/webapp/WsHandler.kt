@@ -3,7 +3,7 @@ package com.tamj0rd2.webapp
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.tamj0rd2.domain.App
-import com.tamj0rd2.domain.CardId
+import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.GameEvent
 import org.http4k.core.Request
 import org.http4k.format.Jackson.asJsonObject
@@ -40,7 +40,7 @@ fun wsHandler(app: App): RoutingWsHandler {
                         is ClientMessage.BidPlaced -> app.game.bid(playerId, message.bid)
                         is ClientMessage.UnhandledMessageFromServer -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
                         is ClientMessage.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
-                        is ClientMessage.CardPlayed -> app.game.playCard(playerId, message.cardId)
+                        is ClientMessage.CardPlayed -> app.game.playCard(playerId, message.cardName)
                     }
                 }
             }
@@ -55,7 +55,7 @@ fun wsHandler(app: App): RoutingWsHandler {
 sealed class ClientMessage {
     data class BidPlaced(val bid: Int) : ClientMessage()
 
-    data class CardPlayed(val cardId: CardId) : ClientMessage()
+    data class CardPlayed(val cardName: CardName) : ClientMessage()
 
     data class UnhandledMessageFromServer(val offender: String) : ClientMessage()
 

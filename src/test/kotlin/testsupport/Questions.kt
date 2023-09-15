@@ -39,7 +39,11 @@ val TheirHand = Question.about("their hand") { actor ->
 val HisHand = TheirHand
 val HerHand = TheirHand
 
-
+val TheirFirstCard = Question.about("the first card in their hand") { actor ->
+    actor.use<ParticipateInGames>().hand.first()
+}
+val HisFirstCard = TheirFirstCard
+val HerFirstCard = TheirFirstCard
 
 val TheySeeBids = Question.about("the bids that have been made") { actor ->
     actor.use<ParticipateInGames>().bids

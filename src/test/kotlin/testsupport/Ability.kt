@@ -2,7 +2,6 @@ package testsupport
 
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
 import com.tamj0rd2.domain.PlayerId
@@ -14,7 +13,7 @@ interface Ability
 interface ApplicationDriver {
     fun joinGame(playerId: PlayerId)
     fun bid(bid: Int)
-    fun playCard(cardId: CardId)
+    fun playCard(card: Card)
 
     val trickNumber: Int
     val roundNumber: Int

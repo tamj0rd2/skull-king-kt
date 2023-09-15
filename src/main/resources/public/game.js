@@ -1,6 +1,4 @@
-function connectToWs(wsAddress) {
-    const socket = new WebSocket(wsAddress);
-
+function connectToWs(socket) {
     const EventTypes = {
         PlayerJoined: "GameEvent$PlayerJoined",
         GameStarted: "GameEvent$GameStarted",
@@ -48,11 +46,13 @@ function connectToWs(wsAddress) {
         body.appendChild(biddingForm)
         const bidsEl = document.createElement("sk-bids")
         body.appendChild(bidsEl)
+        const gamePhaseEl = document.getElementById("gamePhase")
 
         function updateGamePhase(gamePhase) {
             const gamePhaseEl = document.getElementById("gamePhase")
             const gamePhaseMapping = {
                 "Bidding": "Place your bid!",
+                "BiddingCompleted": "Bidding completed :)",
                 "TrickTaking": "It's trick taking time!",
                 "TrickComplete": "Trick completed :)"
             }
@@ -60,6 +60,7 @@ function connectToWs(wsAddress) {
             const text = gamePhaseMapping[gamePhase]
             if (!text) throw new Error("Unknown game phase: " + gamePhase)
             gamePhaseEl.innerText = gamePhaseMapping[gamePhase]
+            gamePhaseEl.setAttribute("data-phase", gamePhase)
         }
 
         socket.addEventListener("close", (event) => {
@@ -67,8 +68,6 @@ function connectToWs(wsAddress) {
         })
 
         socket.addEventListener("message", (event) => {
-            console.log("Message from server ", event.data);
-
             try {
                 const data = JSON.parse(event.data)
                 switch (data.type) {
@@ -102,7 +101,9 @@ function connectToWs(wsAddress) {
                         const handEl = document.getElementById("hand")
                         return data.cardsDealt.forEach(card => {
                             const li = document.createElement("li")
-                            li.innerText = card.id
+                            li.innerText = card.name
+                            li.setAttribute("suit", card.suit)
+                            card.number && li.setAttribute("number", card.number)
 
                             const button = document.createElement("button")
                             button.innerText = "Play"
@@ -110,7 +111,7 @@ function connectToWs(wsAddress) {
                                 li.remove()
                                 socket.send(JSON.stringify({
                                     type: "ClientMessage$CardPlayed",
-                                    cardId: card.id,
+                                    cardName: card.name,
                                 }))
                             }
                             li.appendChild(button)
@@ -119,17 +120,20 @@ function connectToWs(wsAddress) {
                     case EventTypes.BidPlaced:
                         return
                     case EventTypes.BiddingCompleted:
-                        let {bids} = data;
-                        updateGamePhase("TrickTaking")
+                        updateGamePhase("BiddingCompleted")
                         return
                     case EventTypes.CardPlayed:
                         const trick1 = document.getElementById("trick")
                         const li1 = document.createElement("li")
-                        li1.innerText = `${data.playerId}:${data.cardId}`
+                        li1.innerText = `${data.playerId}:${data.card.name}`
+                        li1.setAttribute("player", data.playerId)
+                        li1.setAttribute("suit", data.card.suit)
+                        data.card.number && li1.setAttribute("number", data.card.number)
                         return trick1.appendChild(li1);
                     case EventTypes.TrickCompleted:
                         return updateGamePhase("TrickComplete");
                     case EventTypes.TrickStarted:
+                        updateGamePhase("TrickTaking")
                         const trickNumberEl1 = document.getElementById("trickNumber")
                         trickNumberEl1.innerText = data.trickNumber
 

@@ -16,7 +16,7 @@ sealed class GameEvent {
 
     data class BiddingCompleted(val bids: Map<PlayerId, Int>) : GameEvent()
 
-    data class CardPlayed(val playerId: String, val cardId: CardId) : GameEvent()
+    data class CardPlayed(val playerId: String, val card: Card) : GameEvent()
 
     data class TrickStarted(val trickNumber: Int) : GameEvent()
 

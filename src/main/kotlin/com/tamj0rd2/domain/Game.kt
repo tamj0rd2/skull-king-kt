@@ -1,5 +1,7 @@
 package com.tamj0rd2.domain
 
+import com.tamj0rd2.domain.RoundPhase.*
+
 class Game {
     private var _trickNumber: Int = 0
     val trickNumber: Int get() = _trickNumber
@@ -48,15 +50,9 @@ class Game {
     }
 
     private fun dealCards() {
-        val deck = (1..66).map { Card(it.toString()) }.toMutableList()
-
+        val deck = Deck.new()
         hands.replaceAll { playerId, _ ->
-            val riggedHand = riggedHands?.get(playerId)
-            if (riggedHand != null) {
-                return@replaceAll riggedHand.toMutableList()
-            }
-
-            (1..roundNumber).map { deck.removeFirst() }.toMutableList()
+            riggedHands?.get(playerId)?.toMutableList() ?: deck.takeCards(roundNumber).toMutableList()
         }
     }
 
@@ -70,7 +66,7 @@ class Game {
 
     fun bid(playerId: PlayerId, bid: Int) {
         if (state != GameState.InProgress) throw GameException.CannotBid("game not in progress")
-        if (phase != RoundPhase.Bidding) throw GameException.CannotBid("not in bidding phase")
+        if (phase != Bidding) throw GameException.CannotBid("not in bidding phase")
         if (bid < 0 || bid > roundNumber) throw GameException.CannotBid("bid $bid is greater than the round number ($roundNumber)")
         if (_bids.hasPlayerAlreadyBid(playerId)) throw GameException.CannotBid("player $playerId has already bid")
 
@@ -78,7 +74,7 @@ class Game {
         this.gameEventSubscribers.broadcast(GameEvent.BidPlaced(playerId))
 
         if (_bids.areComplete) {
-            this._phase = RoundPhase.TrickTaking
+            this._phase = BiddingCompleted
             this.gameEventSubscribers.broadcast(GameEvent.BiddingCompleted(_bids.asCompleted()))
         }
     }
@@ -87,17 +83,17 @@ class Game {
         this.gameEventSubscribers[playerId] = subscriber
     }
 
-    fun playCard(playerId: PlayerId, cardId: CardId) {
+    fun playCard(playerId: PlayerId, cardName: CardName) {
         val hand = getHandFor(playerId)
-        val card = hand.find { it.id == cardId }
-        requireNotNull(card) { "card $cardId not in $playerId's hand" }
+        val card = hand.find { it.name == cardName }
+        requireNotNull(card) { "card $cardName not in $playerId's hand" }
 
         hand.remove(card)
         _currentTrick += PlayedCard(playerId, card)
-        gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, cardId))
+        gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, card))
 
         if (_currentTrick.size == players.size) {
-            _phase = RoundPhase.TrickComplete
+            _phase = TrickComplete
             gameEventSubscribers.broadcast(GameEvent.TrickCompleted)
 
             if (roundNumber == 10) {
@@ -121,7 +117,7 @@ class Game {
         _trickNumber = 0
         _currentTrick.clear()
         _bids.initFor(players)
-        _phase = RoundPhase.Bidding
+        _phase = Bidding
         dealCards()
 
         gameEventSubscribers.forEach {
@@ -132,6 +128,7 @@ class Game {
     fun startNextTrick() {
         _trickNumber += 1
         _currentTrick.clear()
+        _phase = TrickTaking
 
         gameEventSubscribers.forEach {
             it.value.handleEvent(GameEvent.TrickStarted(trickNumber))
@@ -154,8 +151,14 @@ enum class GameState {
 
 enum class RoundPhase {
     Bidding,
+    BiddingCompleted,
     TrickTaking,
-    TrickComplete,
+    TrickComplete;
+
+    companion object {
+        private val mapper = values().associateBy { it.name }
+        fun from(phase: String) = mapper[phase] ?: error("unknown phase $phase")
+    }
 }
 
 typealias Hand = List<Card>

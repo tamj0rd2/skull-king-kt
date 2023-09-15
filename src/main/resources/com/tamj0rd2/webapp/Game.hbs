@@ -37,7 +37,11 @@
 <script src="/game.js"></script>
 <script>
     window.addEventListener("load", function() {
-        connectToWs("{{wsHost}}/{{playerId}}")
+        const socket = new WebSocket("{{wsHost}}/{{playerId}}");
+        socket.addEventListener("message", (event) => {
+            console.log(`{{playerId}} received`, event.data);
+        })
+        connectToWs(socket)
     })
 </script>
 </body>

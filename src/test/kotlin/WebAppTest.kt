@@ -1,23 +1,40 @@
+
 import org.eclipse.jetty.client.HttpClient
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
+import org.openqa.selenium.JavascriptException
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.logging.LogType
+import org.openqa.selenium.logging.LoggingPreferences
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.SkipWip
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebDriver
 import java.net.ServerSocket
+import kotlin.time.Duration.Companion.seconds
 
-// this needs to manually be kept in line with the version in gradle.build.kts
-private const val chromeVersion = 114
-private const val headless = true
+private object Config {
+    // this needs to manually be kept in line with the version in gradle.build.kts
+    const val CHROME_VERSION = 114
+    const val HEADLESS = true
 
-private val chromeDriverBinary = "${System.getProperty("user.dir")}/.chromedriver/chromedriver-$chromeVersion"
-private val chromeOptions = ChromeOptions()
-    .apply { if (headless) addArguments("--headless") }
-    .setBinary("${System.getProperty("user.dir")}/.chrome/chrome-$chromeVersion.app/Contents/MacOS/Google Chrome for Testing")
+    val loggingPreferences = LoggingPreferences().apply {
+        enable(LogType.PERFORMANCE, java.util.logging.Level.ALL)
+        enable(LogType.BROWSER, java.util.logging.Level.ALL)
+        enable(LogType.CLIENT, java.util.logging.Level.ALL)
+    }
+
+    val chromeDriverBinary = "${System.getProperty("user.dir")}/.chromedriver/chromedriver-$CHROME_VERSION"
+    val chromeOptions: ChromeOptions = ChromeOptions()
+        .setBinary("${System.getProperty("user.dir")}/.chrome/chrome-$CHROME_VERSION.app/Contents/MacOS/Google Chrome for Testing")
+        .apply {
+            if (HEADLESS) addArguments("--headless")
+            setCapability("goog:loggingPrefs", loggingPreferences)
+            setCapability("goog:chromeOptions", mapOf("perfLoggingPrefs" to loggingPreferences))
+        }
+}
 
 @SkipWip
 @Execution(ExecutionMode.CONCURRENT)
@@ -32,7 +49,7 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
     private val chromeDrivers = mutableListOf<ChromeDriver>()
 
     init {
-        System.setProperty("webdriver.chrome.driver", chromeDriverBinary)
+        System.setProperty("webdriver.chrome.driver", Config.chromeDriverBinary)
     }
 
     override fun setup() {
@@ -41,7 +58,7 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
     }
 
     override fun teardown() {
-        if (!headless) Thread.sleep(5000)
+        if (!Config.HEADLESS) Thread.sleep(5.seconds.inWholeMilliseconds)
         chromeDrivers.forEach {
             it.quit()
         }
@@ -50,7 +67,13 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
     }
 
     override fun participateInGames(): ParticipateInGames {
-        val chromeDriver = ChromeDriver(chromeOptions).apply {
+        val chromeDriver = ChromeDriver(Config.chromeOptions).apply {
+            devTools.createSession()
+            devTools.domains.events().addJavascriptExceptionListener { j: JavascriptException ->
+                print("Javascript error: '" + j.localizedMessage + "'.")
+            }
+            devTools.domains.events().addConsoleListener { println(it.messages.joinToString(" ")) }
+
             this.navigate().to(baseUrl)
             chromeDrivers += this
         }

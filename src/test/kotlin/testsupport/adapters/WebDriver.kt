@@ -2,11 +2,9 @@ package testsupport.adapters
 
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
-import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.Trick
@@ -49,13 +47,17 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         } catch (e: NoSuchElementException) {
             throw GameException.CannotBid(e.message)
         }
+        // TODO: is there a nicer way to deal with this?
+        // give some time for the server to respond if necessary
+        Thread.sleep(10)
     }
 
-    override fun playCard(cardId: CardId) = debugException {
+    override fun playCard(card: Card) = debugException {
         driver.findElement(By.id("hand"))
             .findElements(By.tagName("li"))
-            .find { it.toCardId() == cardId }
-            .let { it ?: error("$playerId does not have card $cardId") }
+            .ifEmpty { error("$playerId has no cards") }
+            .find { it.toCard().name == card.name }
+            .let { it ?: error("$playerId does not have card $card") }
             .findElement(By.tagName("button"))
             .click()
     }
@@ -79,20 +81,14 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         get() = debugException {
             driver.findElement(By.id("hand"))
                 .findElements(By.tagName("li"))
-                .map { Card(it.toCardId()) }
+                .map { it.toCard() }
         }
 
     override val trick: Trick
         get() = debugException {
             driver.findElement(By.id("trick"))
                 .findElements(By.tagName("li"))
-                .mapNotNull {
-                    it.text
-                        .apply { if (isEmpty()) return@mapNotNull null }
-                        .split(":")
-                        .apply { if (size < 2) error("cannot parse trick list item: ${it.getAttribute("outerHTML")}") }
-                        .let { (name, cardId) -> PlayedCard(name, Card(cardId)) }
-                }
+                .map { it.toCard().playedBy(it.getAttribute("player")) }
         }
 
     override val gameState: GameState
@@ -108,13 +104,8 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     override val roundPhase: RoundPhase
         get() = debugException {
-            val gamePhase = driver.findElement(By.id("gamePhase")).text.lowercase()
-            when {
-                gamePhase.contains("place your bid") -> RoundPhase.Bidding
-                gamePhase.contains("it's trick taking time") -> RoundPhase.TrickTaking
-                gamePhase.contains("trick complete") -> RoundPhase.TrickComplete
-                else -> error("could not parse game phase from: '$gamePhase'")
-            }
+            val rawPhase = driver.findElement(By.id("gamePhase")).getAttribute("data-phase")
+            RoundPhase.from(rawPhase)
         }
 
     override val bids: Map<PlayerId, Bid>
@@ -148,6 +139,6 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         driver.findElement(By.tagName("body")).getAttribute("outerHTML").let(::println)
         println("====================")
     }
-}
 
-private fun WebElement.toCardId(): CardId = text.removeSuffix("Play")
+    private fun WebElement.toCard() = Card.from(this.getAttribute("suit"), this.getAttribute("number")?.toInt())
+}

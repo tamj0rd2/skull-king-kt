@@ -22,4 +22,8 @@ class Actor(val name: String) {
     inline fun <reified T> use(): T where T : Ability {
         return this.abilities.find { it is T }?.let { (it as T) } ?: error("actor does not have ability ${T::class.simpleName}")
     }
+
+    fun <T> asksAbout(question: Question<T>): T {
+        return question.answeredBy(this)
+    }
 }

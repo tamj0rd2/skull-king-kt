@@ -3,7 +3,6 @@ package testsupport.adapters
 import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.CardId
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
@@ -26,7 +25,7 @@ class DomainDriver(private val app: App) : ApplicationDriver, GameMasterDriver {
     override fun bid(bid: Int) {
         app.game.bid(playerId, bid)
     }
-    override fun playCard(cardId: CardId) = app.game.playCard(playerId, cardId)
+    override fun playCard(card: Card) = app.game.playCard(playerId, card.name)
 
     override val playersInRoom get() = app.game.players
     override val hand get() = app.game.getCardsInHand(playerId)

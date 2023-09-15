@@ -1,20 +1,21 @@
 package testsupport
 
-import com.tamj0rd2.domain.CardId
+import com.tamj0rd2.domain.Card
 
 class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
 
 val Play = Plays
 object Plays {
-    fun card(cardId: CardId) = playsCard(cardId)
-    val theFirstCardInTheirHand = Interaction { actor ->
-        val firstCard = TheirHand.answeredBy(actor).first()
-        actor(card(firstCard.id))
+    operator fun invoke(card: Card) = Interaction {actor ->
+        actor.use<ParticipateInGames>().playCard(card)
     }
-}
 
-private fun playsCard(cardId: CardId) = Interaction { actor ->
-    actor.use<ParticipateInGames>().playCard(cardId)
+    val theFirstCardInTheirHand = Interaction { actor ->
+        val card = actor.asksAbout(TheirFirstCard)
+        actor.use<ParticipateInGames>().playCard(card)
+    }
+    val theFirstCardInHisHand = theFirstCardInTheirHand
+    val theFirstCardInHerHand = theFirstCardInTheirHand
 }
 
 fun Bids(bid: Int) = Interaction { actor ->
