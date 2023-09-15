@@ -1,5 +1,5 @@
 function connectToWs(socket) {
-    const EventTypes = {
+    const EventType = {
         PlayerJoined: "GameEvent$PlayerJoined",
         GameStarted: "GameEvent$GameStarted",
         RoundStarted: "GameEvent$RoundStarted",
@@ -10,7 +10,21 @@ function connectToWs(socket) {
         TrickStarted: "GameEvent$TrickStarted",
         GameCompleted: "GameEvent$GameCompleted",
     }
-    const knownEventTypes = Object.values(EventTypes)
+    const knownEventTypes = Object.values(EventType)
+
+    const GameState = {
+        WaitingForMorePlayers: "WaitingForMorePlayers",
+        WaitingToStart: "WaitingToStart",
+        InProgress: "InProgress",
+        Complete: "Complete",
+    }
+
+    const GamePhase = {
+        Bidding: "Bidding",
+        BiddingCompleted: "BiddingCompleted",
+        TrickTaking: "TrickTaking",
+        TrickComplete: "TrickComplete",
+    }
 
     function listenToGameEvents(gameEventsToCallbacks) {
         const listener = (event) => {
@@ -51,13 +65,28 @@ function connectToWs(socket) {
         const hand = document.createElement("sk-hand")
         body.appendChild(hand)
 
+        function updateGameState(gameState) {
+            const gameStateEl = document.getElementById("gameState")
+            const gameStateMapping = {
+                [GameState.WaitingForMorePlayers]: "Waiting for more players...",
+                [GameState.WaitingToStart]: "Waiting for the game to start",
+                [GameState.InProgress]: "The game has started!",
+                [GameState.Complete]: "The game is over!"
+            }
+
+            const text = gameStateMapping[gameState]
+            if (!text) throw new Error("Unknown game state: " + gameState)
+            gameStateEl.innerText = gameStateMapping[gameState]
+            gameStateEl.setAttribute("data-state", gameState)
+        }
+
         function updateGamePhase(gamePhase) {
             const gamePhaseEl = document.getElementById("gamePhase")
             const gamePhaseMapping = {
-                "Bidding": "Place your bid!",
-                "BiddingCompleted": "Bidding completed :)",
-                "TrickTaking": "It's trick taking time!",
-                "TrickComplete": "Trick completed :)"
+                [GamePhase.Bidding]: "Place your bid!",
+                [GamePhase.BiddingCompleted]: "Bidding completed :)",
+                [GamePhase.TrickTaking]: "It's trick taking time!",
+                [GamePhase.TrickComplete]: "Trick completed :)"
             }
 
             const text = gamePhaseMapping[gamePhase]
@@ -74,23 +103,20 @@ function connectToWs(socket) {
             try {
                 const data = JSON.parse(event.data)
                 switch (data.type) {
-                    case EventTypes.PlayerJoined:
+                    case EventType.PlayerJoined:
                         const players = document.getElementById("players")
                         const li = document.createElement("li")
                         li.innerText = data.playerId
                         players.appendChild(li)
 
-                        // TODO: I don't think I need this anymore? Or I should have a message saying waiting to start
-                        if (!data.waitingForMorePlayers) {
-                            const gameStateEl = document.getElementById("gameState")
-                            gameStateEl.innerText = ""
-                        }
+                        if (data.waitingForMorePlayers) updateGameState(GameState.WaitingForMorePlayers)
+                        else updateGameState(GameState.WaitingToStart)
+
                         return
-                    case EventTypes.GameStarted:
-                        const gameStateEl = document.getElementById("gameState")
-                        gameStateEl.innerText = "The game has started :D"
+                    case EventType.GameStarted:
+                        updateGameState(GameState.InProgress)
                         return
-                    case EventTypes.RoundStarted:
+                    case EventType.RoundStarted:
                         const roundNumberEl = document.getElementById("roundNumber")
                         roundNumberEl.innerText = data.roundNumber
                         updateGamePhase("Bidding")
@@ -101,12 +127,12 @@ function connectToWs(socket) {
                         const trick = document.getElementById("trick")
                         trick.textContent = ""
                         return
-                    case EventTypes.BidPlaced:
+                    case EventType.BidPlaced:
                         return
-                    case EventTypes.BiddingCompleted:
+                    case EventType.BiddingCompleted:
                         updateGamePhase("BiddingCompleted")
                         return
-                    case EventTypes.CardPlayed:
+                    case EventType.CardPlayed:
                         const trick1 = document.getElementById("trick")
                         const li1 = document.createElement("li")
                         li1.innerText = `${data.playerId}:${data.card.name}`
@@ -114,18 +140,18 @@ function connectToWs(socket) {
                         li1.setAttribute("suit", data.card.suit)
                         data.card.number && li1.setAttribute("number", data.card.number)
                         return trick1.appendChild(li1);
-                    case EventTypes.TrickCompleted:
+                    case EventType.TrickCompleted:
                         return updateGamePhase("TrickComplete");
-                    case EventTypes.TrickStarted:
+                    case EventType.TrickStarted:
                         updateGamePhase("TrickTaking")
                         const trickNumberEl1 = document.getElementById("trickNumber")
                         trickNumberEl1.innerText = data.trickNumber
 
                         const trick2 = document.getElementById("trick")
                         return trick2.textContent = "";
-                    case EventTypes.GameCompleted:
-                        const gameStateEl2 = document.getElementById("gameState")
-                        return gameStateEl2.innerText = "The game is over!";
+                    case EventType.GameCompleted:
+                        updateGameState(GameState.Complete)
+                        return
                     default: {
                         socket.send(JSON.stringify({
                             type: "ClientMessage$UnhandledMessageFromServer",
@@ -152,8 +178,8 @@ function connectToWs(socket) {
         connectedCallback() {
             this.disconnectedCallback()
             this.disconnectFn = listenToGameEvents({
-                [EventTypes.RoundStarted]: this.showForm,
-                [EventTypes.BiddingCompleted]: this.hideForm,
+                [EventType.RoundStarted]: this.showForm,
+                [EventType.BiddingCompleted]: this.hideForm,
             })
         }
 
@@ -202,9 +228,9 @@ function connectToWs(socket) {
         constructor() {
             super();
             listenToGameEvents({
-                [EventTypes.GameStarted]: ({players}) => this.initialiseForPlayers(players),
-                [EventTypes.BidPlaced]: ({playerId}) => this.indicateThatPlayerHasBid(playerId),
-                [EventTypes.BiddingCompleted]: ({bids}) => this.showActualBids(bids),
+                [EventType.GameStarted]: ({players}) => this.initialiseForPlayers(players),
+                [EventType.BidPlaced]: ({playerId}) => this.indicateThatPlayerHasBid(playerId),
+                [EventType.BiddingCompleted]: ({bids}) => this.showActualBids(bids),
             })
         }
 
@@ -249,8 +275,8 @@ function connectToWs(socket) {
         connectedCallback() {
             this.disconnectedCallback()
             this.disconnectFn = listenToGameEvents({
-                [EventTypes.GameStarted]: this.showHand,
-                [EventTypes.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
+                [EventType.GameStarted]: this.showHand,
+                [EventType.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
             })
         }
 
