@@ -69,11 +69,14 @@ function connectToWs(socket) {
         const trickNumberEl = document.querySelector("#trickNumber")
         listenToGameEvents({
             [EventType.RoundStarted]: ({roundNumber}) => {
-                roundNumberEl.innerText = roundNumber
+                roundNumberEl.innerText = `Round ${roundNumber}`
+                roundNumberEl.setAttribute("data-roundNumber", roundNumber)
                 trickNumberEl.innerText = ""
+                trickNumberEl.removeAttribute("data-trickNumber")
             },
             [EventType.TrickStarted]: ({trickNumber}) => {
-                trickNumberEl.innerText = trickNumber
+                trickNumberEl.innerText = `Trick ${trickNumber}`
+                trickNumberEl.setAttribute("data-trickNumber", trickNumber)
             }
         })
 
@@ -140,23 +143,25 @@ function connectToWs(socket) {
     class BidsElement extends HTMLElement {
         constructor() {
             super();
-            listenToGameEvents({
+        }
+
+        connectedCallback() {
+            this.disconnectedCallback()
+            this.disconnectFn = listenToGameEvents({
                 [EventType.GameStarted]: ({players}) => this.initialiseForPlayers(players),
                 [EventType.BidPlaced]: ({playerId}) => this.indicateThatPlayerHasBid(playerId),
                 [EventType.BiddingCompleted]: ({bids}) => this.showActualBids(bids),
             })
         }
 
-        connectedCallback() {
+        initialiseForPlayers = (players) => {
             this.innerHTML = `
                 <section id="bidsArea">
                     <h3>Bids</h3>
                     <ul id="bids"></ul>
                 </section>
             `
-        }
 
-        initialiseForPlayers = (players) => {
             const bids = this.querySelector("#bids")
             players.forEach(playerId => {
                 const li = document.createElement("li")
@@ -177,6 +182,11 @@ function connectToWs(socket) {
                 const bid = bids[playerId]
                 el.querySelector("span").innerText = ":" + bid
             })
+        }
+
+        disconnectedCallback() {
+            if (this.disconnectFn) this.disconnectFn()
+            this.disconnectFn = undefined
         }
     }
 
@@ -238,7 +248,6 @@ function connectToWs(socket) {
 
         connectedCallback() {
             this.disconnectedCallback()
-
             this.disconnectFn = listenToGameEvents({
                 [EventType.PlayerJoined]: ({waitingForMorePlayers}) => this.updateBasedOnPlayers(waitingForMorePlayers),
                 [EventType.GameStarted]: () => this.updateGameState(GameState.InProgress),
@@ -282,7 +291,6 @@ function connectToWs(socket) {
 
         connectedCallback() {
             this.disconnectedCallback()
-
             this.disconnectFn = listenToGameEvents({
                 [EventType.GameStarted]: () => {
                     this.replaceChildren()
@@ -316,6 +324,7 @@ function connectToWs(socket) {
             this.disconnectedCallback()
             this.disconnectFn = listenToGameEvents({
                 [EventType.PlayerJoined]: ({ playerId }) => this.addPlayer(playerId),
+                [EventType.GameStarted]: () => this.parentNode.removeChild(this),
             })
 
             this.innerHTML = `
@@ -347,7 +356,6 @@ function connectToWs(socket) {
         connectedCallback() {
             this.disconnectedCallback()
             this.disconnectFn = listenToGameEvents({
-                [EventType.RoundStarted]: this.initialiseTrick,
                 [EventType.TrickStarted]: this.initialiseTrick,
                 [EventType.CardPlayed]: ({playerId, card}) => this.addCard(playerId, card),
             })

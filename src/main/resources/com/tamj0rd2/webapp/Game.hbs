@@ -10,7 +10,10 @@
 </div>
 <script src="/game.js"></script>
 <script>
-    window.INITIAL_STATE = {{{initialState}}};
+    window.INITIAL_STATE = {
+        players: {{{playersJson}}},
+        waitingForMorePlayers: {{waitingForMorePlayers}},
+    };
 
     window.addEventListener("load", function() {
         const socket = new WebSocket("{{wsHost}}/{{playerId}}");

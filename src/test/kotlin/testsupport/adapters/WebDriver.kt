@@ -63,11 +63,11 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     }
 
     override val trickNumber: Int get() = debugException {
-        driver.findElement(By.id("trickNumber")).text.toInt()
+        driver.findElement(By.id("trickNumber")).getAttribute("data-trickNumber").toInt()
     }
 
     override val roundNumber: Int get() = debugException {
-        driver.findElement(By.id("roundNumber")).text.toInt()
+        driver.findElement(By.id("roundNumber")).getAttribute("data-roundNumber").toInt()
     }
 
     override val playersInRoom: List<PlayerId>

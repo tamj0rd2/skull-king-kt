@@ -29,12 +29,12 @@ import org.slf4j.LoggerFactory
 
 private data class Game(
     val wsHost: String,
-    val players: List<PlayerId>,
+    private val players: List<PlayerId>,
     val waitingForMorePlayers: Boolean,
     val playerId: PlayerId,
 ) : ViewModel {
     // used by the UI
-    val initialState = this.asJsonObject().asCompactJsonString()
+    val playersJson = players.asJsonObject().asCompactJsonString()
 }
 
 data class Index(val errorMessage: String? = null) : ViewModel {
