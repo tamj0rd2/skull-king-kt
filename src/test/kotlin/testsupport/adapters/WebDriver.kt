@@ -15,6 +15,7 @@ import org.openqa.selenium.chrome.ChromeDriver
 import testsupport.ApplicationDriver
 
 private const val debug = false
+
 class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     private lateinit var playerId: String
 
@@ -26,11 +27,8 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
             val errorElements = driver.findElements(By.id("errorMessage"))
             if (errorElements.isNotEmpty()) {
                 when (val errorMessage = errorElements.single().text) {
-                    // TODO: gross... just have a data attribute with the code on the page, rather than this.
-                    GameException.PlayerWithSameNameAlreadyJoined::class.simpleName!! -> throw GameException.PlayerWithSameNameAlreadyJoined(
-                        playerId
-                    )
-
+                    GameException.PlayerWithSameNameAlreadyJoined::class.simpleName!! ->
+                        throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
                     else -> error("unknown error message: $errorMessage")
                 }
             }
@@ -47,11 +45,6 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         } catch (e: NoSuchElementException) {
             throw GameException.CannotBid(e.message)
         }
-
-        // give some time for the server to respond if necessary
-        Thread.sleep(10)
-        // TODO: is there a nicer way to deal with this?
-        // YES! In the UI I can add a loading element, and here I can wait for it to disappear.
     }
 
     override fun playCard(card: Card) = debugException {
@@ -68,13 +61,15 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    override val trickNumber: Int get() = debugException {
-        driver.findElement(By.id("trickNumber")).getAttribute("data-trickNumber").toInt()
-    }
+    override val trickNumber: Int
+        get() = debugException {
+            driver.findElement(By.id("trickNumber")).getAttribute("data-trickNumber").toInt()
+        }
 
-    override val roundNumber: Int get() = debugException {
-        driver.findElement(By.id("roundNumber")).getAttribute("data-roundNumber").toInt()
-    }
+    override val roundNumber: Int
+        get() = debugException {
+            driver.findElement(By.id("roundNumber")).getAttribute("data-roundNumber").toInt()
+        }
 
     override val playersInRoom: List<PlayerId>
         get() = debugException {
@@ -99,14 +94,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     override val gameState: GameState
         get() = debugException {
-            // TODO: this needs updating...
-            val gameState = driver.findElement(By.id("gameState")).text.lowercase()
-            when {
-                gameState.contains("waiting for more players") -> GameState.WaitingForMorePlayers
-                gameState.contains("game has started") -> GameState.InProgress
-                gameState.contains("the game is over") -> GameState.Complete
-                else -> GameState.WaitingToStart
-            }
+            driver.findElement(By.id("gameState")).getAttribute("data-state").let(GameState::from)
         }
 
     override val roundPhase: RoundPhase

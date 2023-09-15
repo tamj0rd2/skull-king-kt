@@ -1,6 +1,6 @@
 package com.tamj0rd2.domain
 
-sealed class GameException(message: String, cause: Throwable? = null) : Exception(message, cause) {
+sealed class GameException(message: String) : Exception(message) {
     class PlayerWithSameNameAlreadyJoined(playerId: PlayerId) :
         GameException("a player with the name $playerId is already in the game")
 

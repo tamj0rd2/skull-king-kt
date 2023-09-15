@@ -148,7 +148,12 @@ enum class GameState {
     WaitingForMorePlayers,
     WaitingToStart,
     InProgress,
-    Complete,
+    Complete;
+
+    companion object {
+        private val mapper = values().associateBy { it.name }
+        fun from(state: String) = mapper[state] ?: error("unknown state $state")
+    }
 }
 
 enum class RoundPhase {

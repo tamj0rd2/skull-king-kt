@@ -67,7 +67,8 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     private val freddy by lazy { Actor("Freddy First").whoCan(d.participateInGames()) }
     private val sally by lazy { Actor("Sally Second").whoCan(d.participateInGames()) }
     // TODO: Gary's responsibilities need to go... his commands should just be automatically scheduled.
-    // the only one gary should be able to keep is rigging the deck and starting the game, for now
+    // the only one gary should be able to keep is rigging the deck and starting the game, for now.
+    // But I don't know how to fix this :(
     private val gary by lazy { Actor("Gary GameMaster").whoCan(d.manageGames()) }
 
     @BeforeTest
@@ -145,6 +146,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
         freddy and sally both Bid(1)
+        freddy and sally both Ensure(TheRoundPhase, Is(BiddingCompleted))
         gary(SaysTheTrickCanStart)
         freddy and sally both Ensure(TheRoundPhase, Is(TrickTaking))
         freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
