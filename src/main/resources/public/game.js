@@ -61,35 +61,24 @@ function connectToWs(socket) {
             document.createElement("sk-hand"),
             document.createElement("sk-biddingform"),
             document.createElement("sk-bids"),
+            document.createElement("sk-trick"),
         ]
         dynamicComponents.forEach(component => body.appendChild(component))
 
         const roundNumberEl = document.querySelector("#roundNumber")
         const trickNumberEl = document.querySelector("#trickNumber")
-        const trick = document.querySelector("#trick")
-
-        socket.addEventListener("close", (event) => {
-            console.error("disconnected from ws")
-        })
-
         listenToGameEvents({
             [EventType.RoundStarted]: ({roundNumber}) => {
                 roundNumberEl.innerText = roundNumber
                 trickNumberEl.innerText = ""
-                trick.replaceChildren()
-            },
-            [EventType.CardPlayed]: ({playerId, card}) => {
-                const li = document.createElement("li")
-                li.innerText = `${playerId}:${card.name}`
-                li.setAttribute("player", playerId)
-                li.setAttribute("suit", card.suit)
-                card.number && li.setAttribute("number", card.number)
-                trick.appendChild(li);
             },
             [EventType.TrickStarted]: ({trickNumber}) => {
                 trickNumberEl.innerText = trickNumber
-                trick.replaceChildren()
             }
+        })
+
+        socket.addEventListener("close", (event) => {
+            console.error("disconnected from ws")
         })
     })()
 
@@ -107,6 +96,7 @@ function connectToWs(socket) {
         }
 
         showForm = ({roundNumber}) => {
+            this.replaceChildren()
             this.innerHTML = `
                 <label>Bid <input type="number" name="bid" min="0" max="${roundNumber}"></label>
                 <button id="placeBid" type="button" onclick="onBidSubmit()" disabled>Place Bid</button>
@@ -204,6 +194,7 @@ function connectToWs(socket) {
         }
 
         showHand = () => {
+            this.replaceChildren()
             this.innerHTML = `
                 <section id="handArea">
                     <h3>Hand</h3>
@@ -293,10 +284,11 @@ function connectToWs(socket) {
             this.disconnectedCallback()
 
             this.disconnectFn = listenToGameEvents({
-                [EventType.GameStarted]: () => this.innerHTML = `<h2 id="gamePhase"></h2>`,
-                [EventType.RoundStarted]: () => {
-                    this.updateGamePhase(GamePhase.Bidding, "Place your bid!")
+                [EventType.GameStarted]: () => {
+                    this.replaceChildren()
+                    this.innerHTML = `<h2 id="gamePhase"></h2>`
                 },
+                [EventType.RoundStarted]: () => this.updateGamePhase(GamePhase.Bidding, "Place your bid!"),
                 [EventType.BiddingCompleted]: () => this.updateGamePhase(GamePhase.BiddingCompleted, "Bidding completed :)"),
                 [EventType.TrickStarted]: () => this.updateGamePhase(GamePhase.TrickTaking, "It's trick taking time!"),
                 [EventType.TrickCompleted]: () => this.updateGamePhase(GamePhase.TrickCompleted, "Trick completed :)"),
@@ -347,10 +339,50 @@ function connectToWs(socket) {
         }
     }
 
+    class TrickElement extends HTMLElement {
+        constructor() {
+            super()
+        }
+
+        connectedCallback() {
+            this.disconnectedCallback()
+            this.disconnectFn = listenToGameEvents({
+                [EventType.RoundStarted]: this.initialiseTrick,
+                [EventType.TrickStarted]: this.initialiseTrick,
+                [EventType.CardPlayed]: ({playerId, card}) => this.addCard(playerId, card),
+            })
+        }
+
+        initialiseTrick = () => {
+            this.replaceChildren()
+            this.innerHTML = `
+                <section id="trickArea">
+                    <h3>Cards in trick</h3>
+                    <ul id="trick"></ul>
+                </section>            
+            `
+        }
+
+        addCard = (playerId, card) => {
+            const li = document.createElement("li")
+            li.innerText = `${playerId}:${card.name}`
+            li.setAttribute("player", playerId)
+            li.setAttribute("suit", card.suit)
+            card.number && li.setAttribute("number", card.number)
+            this.querySelector("#trick").appendChild(li);
+        }
+
+        disconnectedCallback() {
+            if (this.disconnectFn) this.disconnectFn()
+            this.disconnectFn = undefined
+        }
+    }
+
     customElements.define("sk-biddingform", BiddingElement)
     customElements.define("sk-bids", BidsElement)
     customElements.define("sk-hand", HandElement)
     customElements.define("sk-gamestate", GameStateElement)
     customElements.define("sk-gamephase", GamePhaseElement)
     customElements.define("sk-players", PlayersElement)
+    customElements.define("sk-trick", TrickElement)
 }

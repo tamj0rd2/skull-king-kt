@@ -70,7 +70,7 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
         val chromeDriver = ChromeDriver(Config.chromeOptions).apply {
             devTools.createSession()
             devTools.domains.events().addJavascriptExceptionListener { j: JavascriptException ->
-                print("Javascript error: '" + j.localizedMessage + "'.")
+                println("JAVASCRIPT ERROR!: ${j.localizedMessage}")
             }
             devTools.domains.events().addConsoleListener { println(it.messages.joinToString(" ")) }
 
