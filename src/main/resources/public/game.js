@@ -54,21 +54,15 @@ function connectToWs(socket) {
 
     (function setupGame() {
         const body = document.querySelector("body")
-
-        const gameState = document.createElement("sk-gamestate")
-        body.appendChild(gameState)
-
-        const gamePhase = document.createElement("sk-gamephase")
-        body.appendChild(gamePhase)
-
-        const hand = document.createElement("sk-hand")
-        body.appendChild(hand)
-
-        const biddingForm = document.createElement("sk-biddingform")
-        body.appendChild(biddingForm)
-
-        const bids = document.createElement("sk-bids")
-        body.appendChild(bids)
+        const dynamicComponents = [
+            document.createElement("sk-gamestate"),
+            document.createElement("sk-gamephase"),
+            document.createElement("sk-players"),
+            document.createElement("sk-hand"),
+            document.createElement("sk-biddingform"),
+            document.createElement("sk-bids"),
+        ]
+        dynamicComponents.forEach(component => body.appendChild(component))
 
         const roundNumberEl = document.querySelector("#roundNumber")
         const trickNumberEl = document.querySelector("#trickNumber")
@@ -79,12 +73,6 @@ function connectToWs(socket) {
         })
 
         listenToGameEvents({
-            [EventType.PlayerJoined]: ({playerId}) => {
-                const players = document.querySelector("#players")
-                const li = document.createElement("li")
-                li.innerText = playerId
-                players.appendChild(li)
-            },
             [EventType.RoundStarted]: ({roundNumber}) => {
                 roundNumberEl.innerText = roundNumber
                 trickNumberEl.innerText = ""
@@ -267,7 +255,7 @@ function connectToWs(socket) {
             })
 
             this.innerHTML = `<h2 id="gameState"></h2>`
-            this.updateBasedOnPlayers(window.INITIAL_STATE.waitingForMorePlayers)
+            this.updateBasedOnPlayers(INITIAL_STATE.waitingForMorePlayers)
         }
 
         updateBasedOnPlayers = (waitingForMorePlayers) => {
@@ -327,9 +315,42 @@ function connectToWs(socket) {
         }
     }
 
+    class PlayersElement extends HTMLElement {
+        constructor() {
+            super()
+        }
+
+        connectedCallback() {
+            this.disconnectedCallback()
+            this.disconnectFn = listenToGameEvents({
+                [EventType.PlayerJoined]: ({ playerId }) => this.addPlayer(playerId),
+            })
+
+            this.innerHTML = `
+                <h3>Players</h3>
+                <ul id="players"></ul>
+            `
+
+            this.playersElement = document.querySelector("#players")
+            INITIAL_STATE.players.forEach(this.addPlayer)
+        }
+
+        addPlayer = (playerId) => {
+            const li = document.createElement("li")
+            li.innerText = playerId
+            this.playersElement.appendChild(li)
+        }
+
+        disconnectedCallback() {
+            if (this.disconnectFn) this.disconnectFn()
+            this.disconnectFn = undefined
+        }
+    }
+
     customElements.define("sk-biddingform", BiddingElement)
     customElements.define("sk-bids", BidsElement)
     customElements.define("sk-hand", HandElement)
     customElements.define("sk-gamestate", GameStateElement)
     customElements.define("sk-gamephase", GamePhaseElement)
+    customElements.define("sk-players", PlayersElement)
 }
