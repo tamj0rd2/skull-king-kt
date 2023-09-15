@@ -77,7 +77,10 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
             )
             Response(Status.OK).with(gameView of model)
         },
-        "/startGame" bind Method.POST to { app.game.start().respondOK() },
+        "/admin" bind Method.GET to {
+            val adminHtml = resourceLoader.load("Admin.html")?.readText() ?: error("Admin.html not found!")
+            Response(Status.OK).body(adminHtml)
+        },
         "/do-game-master-command" bind Method.POST to { req ->
             logger.info("received command: ${req.bodyString()}")
 
@@ -91,7 +94,7 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
     )
 }
 
-private fun Any.respondOK() = Response(Status.OK)
+private fun Any.respondOK() = this.let { Response(Status.OK) }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
