@@ -1,0 +1,17 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "../test"
+  },
+  "scripts": {
+    "build": "esbuild index.js --outfile=../main/resources/public/dist.js --bundle --minify --sourcemap --target=chrome58,firefox57,safari11,edge16"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "0.19.3"
+  }
+}

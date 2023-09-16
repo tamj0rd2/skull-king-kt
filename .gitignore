@@ -43,3 +43,4 @@ bin/
 
 .chrome/
 .chromedriver/
+dist.js
