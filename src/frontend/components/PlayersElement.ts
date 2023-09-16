@@ -1,7 +1,10 @@
-import {EventType, listenToGameEvents} from "../GameEvents";
-import {GameState} from "../Constants";
+import {DisconnectGameEventListener, EventType, listenToGameEvents} from "../GameEvents";
+import {PlayerId} from "../Constants";
 
 export class PlayersElement extends HTMLElement {
+    disconnectFn?: DisconnectGameEventListener
+    playersElement?: HTMLUListElement
+
     constructor() {
         super()
     }
@@ -10,7 +13,7 @@ export class PlayersElement extends HTMLElement {
         this.disconnectedCallback()
         this.disconnectFn = listenToGameEvents({
             [EventType.PlayerJoined]: ({ playerId }) => this.addPlayer(playerId),
-            [EventType.GameStarted]: () => this.parentNode.removeChild(this),
+            [EventType.GameStarted]: () => this.parentNode!!.removeChild(this),
         })
 
         this.innerHTML = `
@@ -18,14 +21,14 @@ export class PlayersElement extends HTMLElement {
                 <ul id="players"></ul>
             `
 
-        this.playersElement = document.querySelector("#players")
+        this.playersElement = document.querySelector("#players") as HTMLUListElement
         INITIAL_STATE.players.forEach(this.addPlayer)
     }
 
-    addPlayer = (playerId) => {
+    addPlayer = (playerId: PlayerId) => {
         const li = document.createElement("li")
         li.innerText = playerId
-        this.playersElement.appendChild(li)
+        this.playersElement!!.appendChild(li)
     }
 
     disconnectedCallback() {

@@ -1,7 +1,9 @@
-import {EventType, listenToGameEvents} from "../GameEvents";
-import {GameState} from "../Constants";
+import {DisconnectGameEventListener, EventType, listenToGameEvents} from "../GameEvents";
+import {Card, PlayerId} from "../Constants";
 
 export class TrickElement extends HTMLElement {
+    disconnectFn?: DisconnectGameEventListener
+
     constructor() {
         super()
     }
@@ -24,13 +26,13 @@ export class TrickElement extends HTMLElement {
             `
     }
 
-    addCard = (playerId, card) => {
+    addCard = (playerId: PlayerId, card: Card) => {
         const li = document.createElement("li")
         li.innerText = `${playerId}:${card.name}`
         li.setAttribute("player", playerId)
         li.setAttribute("suit", card.suit)
-        card.number && li.setAttribute("number", card.number)
-        this.querySelector("#trick").appendChild(li);
+        card.number && li.setAttribute("number", card.number.toString())
+        this.querySelector("#trick")!!.appendChild(li);
     }
 
     disconnectedCallback() {

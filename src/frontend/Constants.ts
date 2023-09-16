@@ -1,3 +1,10 @@
+declare global {
+    var INITIAL_STATE: {
+        players: PlayerIds
+        waitingForMorePlayers: boolean
+    }
+}
+
 export const enum GameState {
     WaitingForMorePlayers = "WaitingForMorePlayers",
     WaitingToStart = "WaitingToStart",
@@ -10,6 +17,12 @@ export const enum GamePhase {
     BiddingCompleted = "BiddingCompleted",
     TrickTaking = "TrickTaking",
     TrickCompleted = "TrickCompleted",
+}
+
+export interface Card {
+    suit: string
+    number?: number
+    name: string
 }
 
 export type PlayerId = string

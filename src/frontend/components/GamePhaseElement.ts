@@ -1,7 +1,9 @@
-import {EventType, listenToGameEvents} from "../GameEvents";
-import {GameState} from "../Constants";
+import {DisconnectGameEventListener, EventType, listenToGameEvents} from "../GameEvents";
+import {GamePhase} from "../Constants";
 
 export class GamePhaseElement extends HTMLElement {
+    disconnectFn?: DisconnectGameEventListener
+
     constructor() {
         super()
     }
@@ -20,8 +22,8 @@ export class GamePhaseElement extends HTMLElement {
         })
     }
 
-    updateGamePhase = (gamePhase, text) => {
-        const gamePhaseEl = this.querySelector("#gamePhase")
+    updateGamePhase = (gamePhase: GamePhase, text: string) => {
+        const gamePhaseEl = this.querySelector("#gamePhase") as HTMLHeadingElement
         gamePhaseEl.setAttribute("data-phase", gamePhase)
         gamePhaseEl.innerText = text
     }

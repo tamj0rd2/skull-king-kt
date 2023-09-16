@@ -1,7 +1,9 @@
-import {EventType, listenToGameEvents} from "../GameEvents";
+import {DisconnectGameEventListener, EventType, listenToGameEvents} from "../GameEvents";
 import {GameState} from "../Constants";
 
 export class GameStateElement extends HTMLElement {
+    disconnectFn?: DisconnectGameEventListener
+
     constructor() {
         super()
     }
@@ -18,13 +20,13 @@ export class GameStateElement extends HTMLElement {
         this.updateBasedOnPlayers(INITIAL_STATE.waitingForMorePlayers)
     }
 
-    updateBasedOnPlayers = (waitingForMorePlayers) => {
+    updateBasedOnPlayers = (waitingForMorePlayers: boolean) => {
         if (waitingForMorePlayers) this.updateGameState(GameState.WaitingForMorePlayers)
         else this.updateGameState(GameState.WaitingToStart)
     }
 
-    updateGameState = (gameState) => {
-        const gameStateEl = this.querySelector("#gameState")
+    updateGameState = (gameState: GameState) => {
+        const gameStateEl = this.querySelector("#gameState") as HTMLHeadingElement
         const gameStateMapping = {
             [GameState.WaitingForMorePlayers]: "Waiting for more players...",
             [GameState.WaitingToStart]: "Waiting for the game to start",
