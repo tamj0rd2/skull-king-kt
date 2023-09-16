@@ -2,16 +2,17 @@
   "name": "frontend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "directories": {
     "test": "../test"
   },
   "scripts": {
-    "build": "esbuild index.js --outfile=../main/resources/public/dist.js --bundle --minify --sourcemap --target=chrome58,firefox57,safari11,edge16"
+    "build": "esbuild index.ts --outfile=../main/resources/public/dist.js --bundle --minify --sourcemap"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@tsconfig/recommended": "^1.0.3",
     "esbuild": "0.19.3"
   }
 }

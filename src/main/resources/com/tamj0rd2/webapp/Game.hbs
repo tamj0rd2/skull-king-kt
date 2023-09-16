@@ -8,7 +8,7 @@
     <h2 id="roundNumber"></h2>
     <h2 id="trickNumber"></h2>
 </div>
-<script src="/game.js"></script>
+<script src="/dist.js"></script>
 <script>
     window.INITIAL_STATE = {
         players: {{{playersJson}}},
@@ -16,11 +16,11 @@
     };
 
     window.addEventListener("load", function() {
-        const socket = new WebSocket("{{wsHost}}/{{playerId}}");
-        socket.addEventListener("message", (event) => {
-            console.log(`{{playerId}} received`, event.data);
+        window.socket = new WebSocket("{{wsHost}}/{{playerId}}")
+        window.socket.addEventListener("message", (event) => {
+            console.log(`{{playerId}} received`, event.data)
         })
-        connectToWs(socket)
+        connectToWs()
     })
 </script>
 </body>

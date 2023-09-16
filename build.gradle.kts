@@ -42,10 +42,28 @@ tasks.test {
 }
 
 tasks.withType<KotlinCompile> {
+    dependsOn("buildFrontend")
+
     kotlinOptions.jvmTarget = "17"
 }
 application {
     mainClass.set("MainKt")
+}
+
+task("buildFrontend") {
+    doFirst("npm install") {
+        exec {
+            workingDir = file("src/frontend")
+            commandLine = listOf("npm", "install")
+        }
+    }
+
+    doLast("build js") {
+        exec {
+            workingDir = file("src/frontend")
+            commandLine = listOf("npm", "run", "build")
+        }
+    }
 }
 
 // if I want backing fields:
