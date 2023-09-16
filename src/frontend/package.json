@@ -7,7 +7,7 @@
     "test": "../test"
   },
   "scripts": {
-    "build": "esbuild index.ts --outfile=../main/resources/public/dist.js --bundle --minify --sourcemap"
+    "build": "esbuild index.ts --outfile=../main/resources/public/game.js --bundle --minify --sourcemap"
   },
   "author": "",
   "license": "ISC",

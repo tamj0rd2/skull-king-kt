@@ -43,5 +43,5 @@ bin/
 
 .chrome/
 .chromedriver/
-dist.js
-dist.js.map
+game.js
+game.js.map
