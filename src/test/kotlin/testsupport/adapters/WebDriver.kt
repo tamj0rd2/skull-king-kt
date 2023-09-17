@@ -115,6 +115,8 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 }
         }
 
+    override val currentPlayer: PlayerId get() = TODO("Not yet implemented")
+
     private fun <T> debugException(block: () -> T): T {
         try {
             return block()

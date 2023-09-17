@@ -33,6 +33,12 @@ val TheRoundPhase = Question.about("the round phase") { actor ->
     actor.use<ParticipateInGames>().roundPhase
 }
 
+object TheTurnOrder {
+    val currentPlayer = Question.about("the next player") { actor ->
+        actor.use<ParticipateInGames>().currentPlayer
+    }
+}
+
 val TheirHand = Question.about("their hand") { actor ->
     actor.use<ParticipateInGames>().hand
 }

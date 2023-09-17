@@ -35,4 +35,5 @@ class DomainDriver(private val app: App) : ApplicationDriver, GameMasterDriver {
     override val bids: Map<PlayerId, Bid> get() = app.game.bids
     override val trickNumber: Int get() = app.game.trickNumber
     override val roundNumber: Int get() = app.game.roundNumber
+    override val currentPlayer: PlayerId get() = app.game.currentPlayersTurn
 }

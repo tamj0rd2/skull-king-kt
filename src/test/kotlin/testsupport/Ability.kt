@@ -15,6 +15,7 @@ interface ApplicationDriver {
     fun bid(bid: Int)
     fun playCard(card: Card)
 
+    val currentPlayer: PlayerId
     val trickNumber: Int
     val roundNumber: Int
     val trick: Trick

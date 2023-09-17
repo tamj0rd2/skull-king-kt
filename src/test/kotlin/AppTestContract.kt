@@ -40,6 +40,7 @@ import testsupport.ThePlayersAtTheTable
 import testsupport.TheRoundNumber
 import testsupport.TheRoundPhase
 import testsupport.TheTrickNumber
+import testsupport.TheTurnOrder
 import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.expectingFailure
@@ -107,7 +108,11 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy and sally both Ensure(TheRoundPhase, Is(BiddingCompleted))
 
         gary(SaysTheTrickCanStart)
-        freddy and sally both Ensure(TheRoundPhase, Is(TrickTaking))
+        freddy and sally both Ensure {
+            that(TheRoundPhase, Is(TrickTaking))
+            that(TheTurnOrder.currentPlayer, Is(freddy.name))
+        }
+
         freddy(
             Ensures(HisHand, sizeIs(1)),
             Plays(11.blue),
@@ -117,6 +122,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheCurrentTrick, onlyContains(11.blue.playedBy(freddy)))
             that(TheRoundPhase, Is(TrickTaking))
+            that(TheTurnOrder.currentPlayer, Is(sally.name))
         }
     }
 
@@ -202,6 +208,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheRoundPhase, Is(TrickTaking))
             that(TheTrickNumber, Is(1))
+            that(TheTurnOrder.currentPlayer, Is(freddy.name))
         }
 
         val freddysFirstCard = freddy.asksAbout(HisFirstCard)
@@ -234,6 +241,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheRoundPhase, Is(TrickTaking))
             that(TheTrickNumber, Is(1))
+            that(TheTurnOrder.currentPlayer, Is(freddy.name))
         }
         freddy(Plays.theFirstCardInTheirHand)
         sally(Plays.theFirstCardInTheirHand)
@@ -245,7 +253,11 @@ sealed class AppTestContract(private val d: TestConfiguration) {
 
         // round 2 trick 2
         gary(SaysTheTrickCanStart)
-        freddy and sally both Ensure(TheTrickNumber, Is(2))
+        freddy and sally both Ensure {
+            that(TheTrickNumber, Is(2))
+            that(TheTurnOrder.currentPlayer, Is(freddy.name))
+        }
+
         freddy(Plays.theFirstCardInTheirHand)
         sally(Plays.theFirstCardInTheirHand)
         freddy and sally both Ensure {
@@ -277,6 +289,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
                     that(TheRoundPhase, Is(TrickTaking))
                     that(TheTrickNumber, Is(trickNumber))
                     that(TheirHand, sizeIs(roundNumber - trickNumber + 1))
+                    that(TheTurnOrder.currentPlayer, Is(freddy.name))
                 }
 
                 freddy and sally both Play.theFirstCardInTheirHand

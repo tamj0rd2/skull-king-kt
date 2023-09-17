@@ -32,6 +32,9 @@ class Game {
     private val _currentTrick = mutableListOf<PlayedCard>()
     val currentTrick: List<PlayedCard> get() = _currentTrick
 
+    private var roundTurnOrder = mutableListOf<PlayerId>()
+    val currentPlayersTurn get(): PlayerId = roundTurnOrder.first()
+
     fun addPlayer(playerId: PlayerId) {
         if (_players.contains(playerId)) throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
 
@@ -92,6 +95,7 @@ class Game {
 
         hand.remove(card)
         _currentTrick += PlayedCard(playerId, card)
+        roundTurnOrder.removeFirst()
         gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, card))
 
         if (_currentTrick.size == players.size) {
@@ -120,6 +124,7 @@ class Game {
         _currentTrick.clear()
         _bids.initFor(players)
         _phase = Bidding
+        roundTurnOrder = (1..roundNumber).flatMap { players }.toMutableList()
         dealCards()
 
         gameEventSubscribers.forEach {
