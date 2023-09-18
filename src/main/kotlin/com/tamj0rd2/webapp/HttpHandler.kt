@@ -50,7 +50,7 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
 
     val indexView = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
     return routes(
-        static(resourceLoader),
+        static(resourceLoader, "map" to ContentType.APPLICATION_JSON),
         "/" bind Method.GET to {
             Response(Status.OK).with(indexView of Index.withoutError)
         },
