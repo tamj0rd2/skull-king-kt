@@ -1,11 +1,7 @@
 package com.tamj0rd2.domain
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import java.util.*
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 sealed class Card(val name: CardName) {
     override fun toString(): String {
         return name.lowercase(Locale.getDefault())
@@ -52,10 +48,10 @@ enum class Suit() {
     }
 }
 
-val Int.blue: Card get() = Card.NumberedCard(Suit.Blue, this)
-val Int.yellow: Card get() = Card.NumberedCard(Suit.Yellow, this)
-val Int.red: Card get() = Card.NumberedCard(Suit.Red, this)
-val Int.black: Card get() = Card.NumberedCard(Suit.Black, this)
+val Int.blue get() = Card.NumberedCard(Suit.Blue, this)
+val Int.yellow get() = Card.NumberedCard(Suit.Yellow, this)
+val Int.red get() = Card.NumberedCard(Suit.Red, this)
+val Int.black get() = Card.NumberedCard(Suit.Black, this)
 
 
 enum class SpecialSuit() {

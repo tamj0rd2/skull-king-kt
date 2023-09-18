@@ -1,12 +1,13 @@
 package com.tamj0rd2.webapp
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.webapp.CustomJackson.asCompactJsonString
+import com.tamj0rd2.webapp.CustomJackson.asJsonObject
+import com.tamj0rd2.webapp.CustomJackson.auto
 import org.http4k.core.Body
 import org.http4k.core.ContentType
 import org.http4k.core.HttpHandler
@@ -15,9 +16,6 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.body.form
 import org.http4k.core.with
-import org.http4k.format.Jackson.asCompactJsonString
-import org.http4k.format.Jackson.asJsonObject
-import org.http4k.format.Jackson.auto
 import org.http4k.routing.ResourceLoader
 import org.http4k.routing.bind
 import org.http4k.routing.routes
@@ -96,8 +94,6 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
 
 private fun Any.respondOK() = this.let { Response(Status.OK) }
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 sealed class GameMasterCommand {
     object StartGame : GameMasterCommand()
     data class RigDeck(val playerId: PlayerId, val cards: List<Card>) : GameMasterCommand()

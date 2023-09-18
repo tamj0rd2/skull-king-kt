@@ -3,13 +3,13 @@ package testsupport.adapters
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.webapp.GameMasterCommand
+import com.tamj0rd2.webapp.CustomJackson.asCompactJsonString
+import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 import org.eclipse.jetty.client.HttpClient
 import org.http4k.client.JettyClient
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Status
-import org.http4k.format.Jackson.asCompactJsonString
-import org.http4k.format.Jackson.asJsonObject
 import testsupport.GameMasterDriver
 
 class HTTPDriver(private val baseUrl: String, httpClient: HttpClient) : GameMasterDriver {

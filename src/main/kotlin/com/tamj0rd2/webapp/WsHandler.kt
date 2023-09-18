@@ -1,13 +1,11 @@
 package com.tamj0rd2.webapp
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.GameEvent
+import com.tamj0rd2.webapp.CustomJackson.asJsonObject
+import com.tamj0rd2.webapp.CustomJackson.auto
 import org.http4k.core.Request
-import org.http4k.format.Jackson.asJsonObject
-import org.http4k.format.Jackson.auto
 import org.http4k.lens.Path
 import org.http4k.routing.RoutingWsHandler
 import org.http4k.routing.websockets
@@ -48,8 +46,6 @@ fun wsHandler(app: App): RoutingWsHandler {
     )
 }
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 // For this parsing to work, the FE needs to specifically reference ClientMessage$SubTypeName.
 // the prefix wouldn't be necessary if I didn't nest the Subtypes here, but I wanted better organisation :D
 sealed class ClientMessage {
