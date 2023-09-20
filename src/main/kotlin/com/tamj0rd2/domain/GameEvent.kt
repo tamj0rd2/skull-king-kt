@@ -10,13 +10,13 @@ sealed class GameEvent {
 
     data class GameStarted(val players: List<PlayerId>) : GameEvent()
 
-    data class RoundStarted(val cardsDealt: List<Card>, val roundNumber: Int) : GameEvent()
+    data class RoundStarted(val cardsDealt: List<Card>, val roundNumber: Int, val firstPlayer: PlayerId) : GameEvent()
 
     data class BidPlaced(val playerId: PlayerId) : GameEvent()
 
     data class BiddingCompleted(val bids: Map<PlayerId, Int>) : GameEvent()
 
-    data class CardPlayed(val playerId: String, val card: Card) : GameEvent()
+    data class CardPlayed(val playerId: PlayerId, val card: Card, val nextPlayer: PlayerId?) : GameEvent()
 
     data class TrickStarted(val trickNumber: Int) : GameEvent()
 

@@ -96,7 +96,7 @@ class Game {
         hand.remove(card)
         _currentTrick += PlayedCard(playerId, card)
         roundTurnOrder.removeFirst()
-        gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, card))
+        gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, card, roundTurnOrder.firstOrNull()))
 
         if (_currentTrick.size == players.size) {
             _phase = TrickCompleted
@@ -127,8 +127,9 @@ class Game {
         roundTurnOrder = (1..roundNumber).flatMap { players }.toMutableList()
         dealCards()
 
+        val firstPlayer = roundTurnOrder.first()
         gameEventSubscribers.forEach {
-            it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key), roundNumber))
+            it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key), roundNumber, firstPlayer))
         }
     }
 
@@ -143,6 +144,7 @@ class Game {
     }
 }
 
+// TODO: introduce tiny types for these. e.g a small data class that represents the data
 typealias PlayerId = String
 
 fun interface GameEventSubscriber {

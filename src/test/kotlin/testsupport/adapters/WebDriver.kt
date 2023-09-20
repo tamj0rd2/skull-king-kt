@@ -115,7 +115,9 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 }
         }
 
-    override val currentPlayer: PlayerId get() = TODO("Not yet implemented")
+    override val currentPlayer: PlayerId get() = debugException {
+        driver.findElement(By.id("currentPlayer")).getAttribute("data-playerId") ?: error("no player id for the current player")
+    }
 
     private fun <T> debugException(block: () -> T): T {
         try {

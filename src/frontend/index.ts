@@ -35,16 +35,25 @@ window.connectToWs = () => {
 
     const roundNumberEl = document.querySelector("#roundNumber") as HTMLHeadingElement
     const trickNumberEl = document.querySelector("#trickNumber") as HTMLHeadingElement
+    const playerWhoseTurnItIsEl = document.querySelector("#currentPlayer") as HTMLHeadingElement
     listenToGameEvents({
-        [EventType.RoundStarted]: ({roundNumber}) => {
+        [EventType.RoundStarted]: ({roundNumber, firstPlayer}) => {
             roundNumberEl.innerText = `Round ${roundNumber}`
             roundNumberEl.setAttribute("data-roundNumber", roundNumber)
+
             trickNumberEl.innerText = ""
             trickNumberEl.removeAttribute("data-trickNumber")
+
+            playerWhoseTurnItIsEl.innerText = firstPlayer ? "" : firstPlayer
+            playerWhoseTurnItIsEl.setAttribute("data-playerId", firstPlayer)
         },
         [EventType.TrickStarted]: ({trickNumber}) => {
             trickNumberEl.innerText = `Trick ${trickNumber}`
             trickNumberEl.setAttribute("data-trickNumber", trickNumber)
+        },
+        [EventType.CardPlayed]: ({nextPlayer}) => {
+            playerWhoseTurnItIsEl.innerText = nextPlayer ? "" : nextPlayer
+            playerWhoseTurnItIsEl.setAttribute("data-playerId", nextPlayer)
         }
     })
 
