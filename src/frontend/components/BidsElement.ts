@@ -54,3 +54,5 @@ export class BidsElement extends HTMLElement {
         this.disconnectFn = undefined
     }
 }
+
+customElements.define("sk-bids", BidsElement)

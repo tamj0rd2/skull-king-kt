@@ -7,12 +7,13 @@
     "test": "../test"
   },
   "scripts": {
-    "build": "esbuild index.ts --outfile=../main/resources/public/game.js --bundle --minify --sourcemap"
+    "build": "tsc && esbuild index.ts --outfile=../main/resources/public/game.js --bundle --minify --sourcemap"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.3",
-    "esbuild": "0.19.3"
+    "esbuild": "0.19.3",
+    "typescript": "^5.2.2"
   }
 }

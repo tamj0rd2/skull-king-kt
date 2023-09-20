@@ -71,3 +71,5 @@ export class HandElement extends HTMLElement {
         this.disconnectFn = undefined
     }
 }
+
+customElements.define("sk-hand", HandElement)

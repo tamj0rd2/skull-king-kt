@@ -40,3 +40,5 @@ export class TrickElement extends HTMLElement {
         this.disconnectFn = undefined
     }
 }
+
+customElements.define("sk-trick", TrickElement)

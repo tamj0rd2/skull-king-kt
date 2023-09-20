@@ -57,3 +57,5 @@ export class BiddingElement extends HTMLElement {
         this.disconnectFn = undefined
     }
 }
+
+customElements.define("sk-biddingform", BiddingElement)

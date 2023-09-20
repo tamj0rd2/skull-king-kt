@@ -8,8 +8,15 @@
     <h2 id="roundNumber"></h2>
     <h2 id="trickNumber"></h2>
     <h2 id="currentPlayer"></h2>
+
+    <sk-gamestate></sk-gamestate>
+    <sk-gamephase></sk-gamephase>
+    <sk-players></sk-players>
+    <sk-hand></sk-hand>
+    <sk-biddingform></sk-biddingform>
+    <sk-bids></sk-bids>
+    <sk-trick></sk-trick>
 </div>
-<script src="/game.js"></script>
 <script>
     window.INITIAL_STATE = {
         playerId: "{{playerId}}",
@@ -17,13 +24,16 @@
         waitingForMorePlayers: {{waitingForMorePlayers}},
     };
 
-    window.addEventListener("load", function() {
-        window.socket = new WebSocket("{{wsHost}}/{{playerId}}")
-        window.socket.addEventListener("message", (event) => {
-            console.log(`{{playerId}} received`, event.data)
-        })
-        connectToWs()
+    window.socket = new WebSocket("{{wsHost}}/{{playerId}}")
+    window.socket.addEventListener("message", (event) => {
+        console.log(`{{playerId}} received`, event.data)
     })
+
+    const gameScript = document.createElement('script')
+    gameScript.async = false
+    gameScript.defer = false
+    gameScript.src = '/game.js'
+    document.head.appendChild(gameScript)
 </script>
 </body>
 </html>

@@ -36,3 +36,5 @@ export class PlayersElement extends HTMLElement {
         this.disconnectFn = undefined
     }
 }
+
+customElements.define("sk-players", PlayersElement)
