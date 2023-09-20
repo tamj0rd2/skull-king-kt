@@ -1,5 +1,5 @@
 import {DisconnectGameEventListener, EventType, listenToGameEvents} from "../GameEvents";
-import {Card} from "../Constants";
+import {Card, PlayerId} from "../Constants";
 
 export class HandElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -12,7 +12,8 @@ export class HandElement extends HTMLElement {
         this.disconnectFn = listenToGameEvents({
             [EventType.GameStarted]: this.showHand,
             [EventType.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
-            [EventType.TrickStarted]: this.makeCardsPlayable,
+            [EventType.TrickStarted]: ({ firstPlayer }) => this.toggleCardPlayabilityDependingOnTurn(firstPlayer),
+            [EventType.CardPlayed]: ({ nextPlayer }) => this.toggleCardPlayabilityDependingOnTurn(nextPlayer),
         })
     }
 
@@ -35,6 +36,17 @@ export class HandElement extends HTMLElement {
             li.setAttribute("suit", card.suit)
             card.number && li.setAttribute("number", card.number.toString())
             hand.appendChild(li)
+        })
+    }
+
+    toggleCardPlayabilityDependingOnTurn = (currentPlayer: PlayerId) => {
+        if (INITIAL_STATE.playerId === currentPlayer) this.makeCardsPlayable()
+        else this.makeCardsUnplayable()
+    }
+
+    makeCardsUnplayable = () => {
+        this.querySelectorAll("li button").forEach(button => {
+            button.parentNode!!.removeChild(button)
         })
     }
 

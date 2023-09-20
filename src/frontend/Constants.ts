@@ -1,5 +1,6 @@
 declare global {
     var INITIAL_STATE: {
+        playerId: PlayerId;
         players: PlayerIds
         waitingForMorePlayers: boolean
     }

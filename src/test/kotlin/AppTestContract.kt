@@ -141,6 +141,36 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     }
 
     @Test
+    fun `cannot play a card when it is not their turn`() {
+        val thirzah = Actor("Thirzah Third").whoCan(d.participateInGames())
+        val thePlayers = listOf(freddy, sally, thirzah)
+
+        thePlayers all SitAtTheTable
+
+        // advancing straight to round 2
+        gary(SaysTheGameCanStart)
+        thePlayers all Bid(1)
+        gary(SaysTheTrickCanStart)
+        thePlayers all Play.theFirstCardInTheirHand
+        thePlayers all Ensure(TheRoundPhase, Is(TrickCompleted))
+        gary(SaysTheRoundCanStart)
+        thePlayers all Bid(1)
+        gary(SaysTheTrickCanStart)
+
+        // the actual test
+        thePlayers all Ensure(TheCurrentPlayer, Is(freddy.name))
+        sally.attemptsTo(Play.theFirstCardInHerHand.expectingFailure<GameException.CannotPlayCard>())
+
+        freddy and sally both Play.theFirstCardInTheirHand
+
+        thePlayers all Ensure(TheCurrentPlayer, Is(thirzah.name))
+        sally.attemptsTo(Play.theFirstCardInHerHand.expectingFailure<GameException.CannotPlayCard>())
+
+        // recovery
+        thirzah(Plays.theFirstCardInTheirHand)
+    }
+
+    @Test
     fun `cannot bid before the game has started`() {
         freddy and sally both SitAtTheTable
         freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
@@ -315,6 +345,10 @@ private fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.name)
 private infix fun Pair<Actor, Actor>.both(activity: Activity) {
     first(activity)
     second(activity)
+}
+
+private infix fun List<Actor>.all(activity: Activity) {
+    forEach { actor -> actor(activity) }
 }
 
 private infix fun Actor.and(other: Actor) = this to other

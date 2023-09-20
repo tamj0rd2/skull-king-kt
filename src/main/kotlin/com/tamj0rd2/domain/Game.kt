@@ -88,6 +88,7 @@ class Game {
 
     fun playCard(playerId: PlayerId, cardName: CardName) {
         if (phase != TrickTaking) throw GameException.CannotPlayCard("not in trick taking phase - phase is $phase")
+        if (currentPlayersTurn != playerId) throw GameException.CannotPlayCard("it is not $playerId's turn to play a card")
 
         val hand = getHandFor(playerId)
         val card = hand.find { it.name == cardName }
@@ -127,9 +128,8 @@ class Game {
         roundTurnOrder = (1..roundNumber).flatMap { players }.toMutableList()
         dealCards()
 
-        val firstPlayer = roundTurnOrder.first()
         gameEventSubscribers.forEach {
-            it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key), roundNumber, firstPlayer))
+            it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key), roundNumber))
         }
     }
 
@@ -138,8 +138,9 @@ class Game {
         _currentTrick.clear()
         _phase = TrickTaking
 
+        val firstPlayer = roundTurnOrder.first()
         gameEventSubscribers.forEach {
-            it.value.handleEvent(GameEvent.TrickStarted(trickNumber))
+            it.value.handleEvent(GameEvent.TrickStarted(trickNumber, firstPlayer))
         }
     }
 }
