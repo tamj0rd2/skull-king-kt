@@ -1,4 +1,4 @@
-import {DisconnectGameEventListener, EventType, listenToGameEvents} from "../GameEvents";
+import {DisconnectGameEventListener, MessageToClient, listenToGameEvents} from "../GameEvents";
 import {PlayerId} from "../Constants";
 
 export class PlayersElement extends HTMLElement {
@@ -12,8 +12,8 @@ export class PlayersElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToGameEvents({
-            [EventType.PlayerJoined]: ({ playerId }) => this.addPlayer(playerId),
-            [EventType.GameStarted]: () => this.parentNode!!.removeChild(this),
+            [MessageToClient.PlayerJoined]: ({ playerId }) => this.addPlayer(playerId),
+            [MessageToClient.GameStarted]: () => this.parentNode!!.removeChild(this),
         })
 
         this.innerHTML = `

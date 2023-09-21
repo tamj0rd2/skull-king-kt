@@ -31,11 +31,11 @@ class CustomJacksonTest {
 
     @Test
     fun `can serialize and deserialize ClientMessages`() {
-        val expected = ClientMessage.BidPlaced(1)
+        val expected = MessageFromClient.BidPlaced(1)
         val jsonString = expected.asJsonObject().asCompactJsonString()
         println(jsonString)
 
-        val result = jsonString.asJsonObject().asA(ClientMessage::class)
+        val result = jsonString.asJsonObject().asA(MessageFromClient::class)
         assertEquals(expected, result)
     }
 

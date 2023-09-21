@@ -1,4 +1,4 @@
-import {EventType, listenToGameEvents} from "./GameEvents";
+import {MessageToClient, listenToGameEvents} from "./GameEvents";
 export {BiddingElement} from "./components/BiddingElement";
 export {BidsElement} from "./components/BidsElement";
 export {HandElement} from "./components/HandElement";
@@ -15,21 +15,21 @@ const roundNumberEl = document.querySelector("#roundNumber") as HTMLHeadingEleme
 const trickNumberEl = document.querySelector("#trickNumber") as HTMLHeadingElement
 const playerWhoseTurnItIsEl = document.querySelector("#currentPlayer") as HTMLHeadingElement
 listenToGameEvents({
-    [EventType.RoundStarted]: ({roundNumber}) => {
+    [MessageToClient.RoundStarted]: ({roundNumber}) => {
         roundNumberEl.innerText = `Round ${roundNumber}`
         roundNumberEl.setAttribute("data-roundNumber", roundNumber)
 
         trickNumberEl.innerText = ""
         trickNumberEl.removeAttribute("data-trickNumber")
     },
-    [EventType.TrickStarted]: ({trickNumber, firstPlayer}) => {
+    [MessageToClient.TrickStarted]: ({trickNumber, firstPlayer}) => {
         trickNumberEl.innerText = `Trick ${trickNumber}`
         trickNumberEl.setAttribute("data-trickNumber", trickNumber)
 
         playerWhoseTurnItIsEl.innerText = firstPlayer ? "" : firstPlayer
         playerWhoseTurnItIsEl.setAttribute("data-playerId", firstPlayer)
     },
-    [EventType.CardPlayed]: ({nextPlayer}) => {
+    [MessageToClient.CardPlayed]: ({nextPlayer}) => {
         playerWhoseTurnItIsEl.innerText = nextPlayer ? "" : nextPlayer
         playerWhoseTurnItIsEl.setAttribute("data-playerId", nextPlayer)
     }

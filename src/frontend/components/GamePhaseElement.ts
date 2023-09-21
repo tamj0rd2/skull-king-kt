@@ -1,4 +1,4 @@
-import {DisconnectGameEventListener, EventType, listenToGameEvents} from "../GameEvents";
+import {DisconnectGameEventListener, MessageToClient, listenToGameEvents} from "../GameEvents";
 import {GamePhase} from "../Constants";
 
 export class GamePhaseElement extends HTMLElement {
@@ -11,14 +11,14 @@ export class GamePhaseElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToGameEvents({
-            [EventType.GameStarted]: () => {
+            [MessageToClient.GameStarted]: () => {
                 this.replaceChildren()
                 this.innerHTML = `<h2 id="gamePhase"></h2>`
             },
-            [EventType.RoundStarted]: () => this.updateGamePhase(GamePhase.Bidding, "Place your bid!"),
-            [EventType.BiddingCompleted]: () => this.updateGamePhase(GamePhase.BiddingCompleted, "Bidding completed :)"),
-            [EventType.TrickStarted]: () => this.updateGamePhase(GamePhase.TrickTaking, "It's trick taking time!"),
-            [EventType.TrickCompleted]: () => this.updateGamePhase(GamePhase.TrickCompleted, "Trick completed :)"),
+            [MessageToClient.RoundStarted]: () => this.updateGamePhase(GamePhase.Bidding, "Place your bid!"),
+            [MessageToClient.BiddingCompleted]: () => this.updateGamePhase(GamePhase.BiddingCompleted, "Bidding completed :)"),
+            [MessageToClient.TrickStarted]: () => this.updateGamePhase(GamePhase.TrickTaking, "It's trick taking time!"),
+            [MessageToClient.TrickCompleted]: () => this.updateGamePhase(GamePhase.TrickCompleted, "Trick completed :)"),
         })
     }
 

@@ -1,4 +1,4 @@
-export enum EventType {
+export enum MessageToClient {
     PlayerJoined = "MessageToClient$PlayerJoined",
     GameStarted = "MessageToClient$GameStarted",
     RoundStarted = "MessageToClient$RoundStarted",
@@ -10,15 +10,22 @@ export enum EventType {
     GameCompleted = "MessageToClient$GameCompleted",
 }
 
-const knownEventTypes = Object.values(EventType)
+const knownMessagesToClient = Object.values(MessageToClient)
+
+export enum MessageFromClient {
+    BidPlaced = "MessageFromClient$BidPlaced",
+    CardPlayed = "MessageFromClient$CardPlayed",
+    UnhandledServerMessage = "MessageFromClient$UnhandledServerMessage",
+    Error = "MessageFromClient$Error",
+}
 
 export interface GameEvent {
-    type: EventType
+    type: MessageToClient
     [key: string]: any
 }
 
 export type GameEventListener = (event: GameEvent) => void
-export type GameEventListeners = { [key in EventType]?: GameEventListener }
+export type GameEventListeners = { [key in MessageToClient]?: GameEventListener }
 export type DisconnectGameEventListener = () => void
 
 export function listenToGameEvents(gameEventCallbacks: GameEventListeners): DisconnectGameEventListener {
@@ -28,9 +35,9 @@ export function listenToGameEvents(gameEventCallbacks: GameEventListeners): Disc
             const callback = gameEventCallbacks[data.type]
             if (callback) return callback(data)
 
-            if (!knownEventTypes.includes(data.type)) {
+            if (!knownMessagesToClient.includes(data.type)) {
                 socket.send(JSON.stringify({
-                    type: "ClientMessage$UnhandledMessageFromServer",
+                    type: MessageFromClient.UnhandledServerMessage,
                     offender: data.type,
                 }))
                 console.error(`Unknown message from server: ${data.type}`)
@@ -38,7 +45,7 @@ export function listenToGameEvents(gameEventCallbacks: GameEventListeners): Disc
         } catch (e) {
             socket.send(JSON.stringify({
                 stackTrace: (e as Error).stack,
-                type: "ClientMessage$Error",
+                type: MessageFromClient.Error,
             }))
             throw e
         }

@@ -16,7 +16,7 @@ object CustomJackson : ConfigurableJackson(
         .done()
         .addMixIn<MessageToClient, DefaultMixin>()
         .addMixIn<GameMasterCommand, DefaultMixin>()
-        .addMixIn<ClientMessage, DefaultMixin>()
+        .addMixIn<MessageFromClient, DefaultMixin>()
         .addMixIn<Card, DefaultMixin>()
 )
 

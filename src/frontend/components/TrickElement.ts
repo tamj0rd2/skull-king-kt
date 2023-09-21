@@ -1,4 +1,4 @@
-import {DisconnectGameEventListener, EventType, listenToGameEvents} from "../GameEvents";
+import {DisconnectGameEventListener, MessageToClient, listenToGameEvents} from "../GameEvents";
 import {Card, PlayerId} from "../Constants";
 
 export class TrickElement extends HTMLElement {
@@ -11,8 +11,8 @@ export class TrickElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToGameEvents({
-            [EventType.TrickStarted]: this.initialiseTrick,
-            [EventType.CardPlayed]: ({playerId, card}) => this.addCard(playerId, card),
+            [MessageToClient.TrickStarted]: this.initialiseTrick,
+            [MessageToClient.CardPlayed]: ({playerId, card}) => this.addCard(playerId, card),
         })
     }
 

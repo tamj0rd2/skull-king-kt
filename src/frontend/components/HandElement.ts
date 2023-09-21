@@ -1,4 +1,4 @@
-import {DisconnectGameEventListener, EventType, listenToGameEvents} from "../GameEvents";
+import {DisconnectGameEventListener, MessageToClient, listenToGameEvents, MessageFromClient} from "../GameEvents";
 import {Card, PlayerId} from "../Constants";
 
 export class HandElement extends HTMLElement {
@@ -10,10 +10,10 @@ export class HandElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToGameEvents({
-            [EventType.GameStarted]: this.showHand,
-            [EventType.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
-            [EventType.TrickStarted]: ({ firstPlayer }) => this.toggleCardPlayabilityDependingOnTurn(firstPlayer),
-            [EventType.CardPlayed]: ({ nextPlayer }) => this.toggleCardPlayabilityDependingOnTurn(nextPlayer),
+            [MessageToClient.GameStarted]: this.showHand,
+            [MessageToClient.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
+            [MessageToClient.TrickStarted]: ({ firstPlayer }) => this.toggleCardPlayabilityDependingOnTurn(firstPlayer),
+            [MessageToClient.CardPlayed]: ({ nextPlayer }) => this.toggleCardPlayabilityDependingOnTurn(nextPlayer),
         })
     }
 
@@ -58,7 +58,7 @@ export class HandElement extends HTMLElement {
                 let cardName = li.getAttribute("data-cardName")
                 li.remove()
                 socket.send(JSON.stringify({
-                    type: "ClientMessage$CardPlayed",
+                    type: MessageFromClient.CardPlayed,
                     cardName: cardName,
                 }))
             }

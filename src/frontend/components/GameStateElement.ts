@@ -1,4 +1,4 @@
-import {DisconnectGameEventListener, EventType, listenToGameEvents} from "../GameEvents";
+import {DisconnectGameEventListener, MessageToClient, listenToGameEvents} from "../GameEvents";
 import {GameState} from "../Constants";
 
 export class GameStateElement extends HTMLElement {
@@ -11,9 +11,9 @@ export class GameStateElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToGameEvents({
-            [EventType.PlayerJoined]: ({waitingForMorePlayers}) => this.updateBasedOnPlayers(waitingForMorePlayers),
-            [EventType.GameStarted]: () => this.updateGameState(GameState.InProgress),
-            [EventType.GameCompleted]: () => this.updateGameState(GameState.Complete),
+            [MessageToClient.PlayerJoined]: ({waitingForMorePlayers}) => this.updateBasedOnPlayers(waitingForMorePlayers),
+            [MessageToClient.GameStarted]: () => this.updateGameState(GameState.InProgress),
+            [MessageToClient.GameCompleted]: () => this.updateGameState(GameState.Complete),
         })
 
         this.innerHTML = `<h2 id="gameState"></h2>`

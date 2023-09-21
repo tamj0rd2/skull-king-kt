@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory
 internal fun wsHandler(game: Game): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
     val messageToClientLens = WsMessage.auto<MessageToClient>().toLens()
-    val clientMessageLens = WsMessage.auto<ClientMessage>().toLens()
+    val clientMessageLens = WsMessage.auto<MessageFromClient>().toLens()
 
     return websockets(
         "/{playerId}" bind { req: Request ->
@@ -50,10 +50,10 @@ internal fun wsHandler(game: Game): RoutingWsHandler {
                     logger.info("received client message from $playerId: ${it.bodyString()}")
 
                     when(val message = clientMessageLens(it)) {
-                        is ClientMessage.BidPlaced -> game.bid(playerId, message.bid)
-                        is ClientMessage.UnhandledMessageFromServer -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
-                        is ClientMessage.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
-                        is ClientMessage.CardPlayed -> game.playCard(playerId, message.cardName)
+                        is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
+                        is MessageFromClient.UnhandledServerMessage -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
+                        is MessageFromClient.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
+                        is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
                     }
                 }
             }
@@ -61,15 +61,13 @@ internal fun wsHandler(game: Game): RoutingWsHandler {
     )
 }
 
-// For this parsing to work, the FE needs to specifically reference ClientMessage$SubTypeName.
-// the prefix wouldn't be necessary if I didn't nest the Subtypes here, but I wanted better organisation :D
-sealed class ClientMessage {
-    data class BidPlaced(val bid: Int) : ClientMessage()
+internal sealed class MessageFromClient {
+    data class BidPlaced(val bid: Int) : MessageFromClient()
 
-    data class CardPlayed(val cardName: CardName) : ClientMessage()
+    data class CardPlayed(val cardName: CardName) : MessageFromClient()
 
-    data class UnhandledMessageFromServer(val offender: String) : ClientMessage()
+    data class UnhandledServerMessage(val offender: String) : MessageFromClient()
 
-    data class Error(val stackTrace: String) : ClientMessage()
+    data class Error(val stackTrace: String) : MessageFromClient()
 }
 
