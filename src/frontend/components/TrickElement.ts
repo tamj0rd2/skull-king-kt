@@ -13,6 +13,7 @@ export class TrickElement extends HTMLElement {
         this.disconnectFn = listenToGameEvents({
             [MessageToClient.TrickStarted]: this.initialiseTrick,
             [MessageToClient.CardPlayed]: ({playerId, card}) => this.addCard(playerId, card),
+            [MessageToClient.RoundStarted]: () => this.replaceChildren(),
         })
     }
 

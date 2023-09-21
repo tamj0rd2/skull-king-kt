@@ -1,6 +1,8 @@
 package com.tamj0rd2.domain
 
 sealed class GameEvent {
+    val timestamp = System.currentTimeMillis()
+
     data class GameStarted(val players: List<PlayerId>) : GameEvent()
 
     data class PlayerJoined(val playerId: PlayerId) : GameEvent()

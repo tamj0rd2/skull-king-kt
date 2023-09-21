@@ -5,12 +5,12 @@
 <body>
 <div class="content">
     <h1>Game Page - {{playerId}}</h1>
+    <sk-gamestate></sk-gamestate>
     <h2 id="roundNumber"></h2>
+    <sk-gamephase></sk-gamephase>
     <h2 id="trickNumber"></h2>
     <h2 id="currentPlayer"></h2>
 
-    <sk-gamestate></sk-gamestate>
-    <sk-gamephase></sk-gamephase>
     <sk-players></sk-players>
     <sk-hand></sk-hand>
     <sk-biddingform></sk-biddingform>
@@ -26,7 +26,7 @@
 
     window.socket = new WebSocket("{{wsHost}}/{{playerId}}")
     window.socket.addEventListener("message", (event) => {
-        console.log(`{{playerId}} received`, event.data)
+        console.log(`{{playerId}} received`, JSON.parse(event.data))
     })
 
     const gameScript = document.createElement('script')

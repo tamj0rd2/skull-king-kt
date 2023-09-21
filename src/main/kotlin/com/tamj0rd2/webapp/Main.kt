@@ -8,13 +8,21 @@ import org.http4k.server.asServer
 
 object Server {
     @JvmStatic fun main(args: Array<String>) {
-        make(8080, hotReload = true).start()
+        make(
+            port = 8080,
+            hotReload = true,
+            automateGameMasterCommands = true
+        ).start()
     }
 
-    fun make(port: Int, hotReload: Boolean = false): Http4kServer {
+    fun make(
+        port: Int,
+        hotReload: Boolean = false,
+        automateGameMasterCommands: Boolean = false
+    ): Http4kServer {
         val game = Game()
-        val http = httpHandler(game, port, hotReload)
-        val ws = wsHandler(game)
+        val http = httpHandler(game, port, hotReload, automateGameMasterCommands)
+        val ws = wsHandler(game, automateGameMasterCommands)
         return PolyHandler(http, ws).asServer(Undertow(port))
     }
 }

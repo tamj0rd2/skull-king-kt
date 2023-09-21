@@ -14,18 +14,29 @@ import org.http4k.routing.ws.bind
 import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsResponse
 import org.slf4j.LoggerFactory
+import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.concurrent.timerTask
 
-internal fun wsHandler(game: Game): RoutingWsHandler {
+internal fun wsHandler(game: Game, automateGameMasterCommands: Boolean): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
     val messageToClientLens = WsMessage.auto<MessageToClient>().toLens()
     val clientMessageLens = WsMessage.auto<MessageFromClient>().toLens()
 
+    if (automateGameMasterCommands) {
+        AutomatedGameMaster(game).start()
+    }
+
     return websockets(
         "/admin" bind { req ->
-            WsResponse {ws ->
+            WsResponse { ws ->
                 game.subscribeToGameEvents {
-                    val messageToClient = when(it) {
-                        is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(it.playerId, game.isInState(GameState.WaitingForMorePlayers))
+                    val messageToClient = when (it) {
+                        is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(
+                            it.playerId,
+                            game.isInState(GameState.WaitingForMorePlayers)
+                        )
+
                         is GameEvent.BiddingCompleted -> MessageToClient.BiddingCompleted(emptyMap())
                         is GameEvent.TrickCompleted -> MessageToClient.TrickCompleted
                         is GameEvent.RoundStarted -> MessageToClient.RoundStarted(emptyList(), it.roundNumber)
@@ -47,17 +58,33 @@ internal fun wsHandler(game: Game): RoutingWsHandler {
                 val logger = LoggerFactory.getLogger("wsHandler pid='$playerId'")
 
                 game.subscribeToGameEvents {
-                    val messageToClient = when(it) {
+                    val messageToClient = when (it) {
                         is GameEvent.BidPlaced -> MessageToClient.BidPlaced(it.playerId)
                         is GameEvent.BiddingCompleted -> MessageToClient.BiddingCompleted(it.bids)
-                        is GameEvent.CardPlayed -> MessageToClient.CardPlayed(it.playerId, it.card, game.currentPlayersTurn)
+                        is GameEvent.CardPlayed -> MessageToClient.CardPlayed(
+                            it.playerId,
+                            it.card,
+                            game.currentPlayersTurn
+                        )
+
                         is GameEvent.CardsDealt -> TODO("add cards dealt event")
                         is GameEvent.GameCompleted -> MessageToClient.GameCompleted
                         is GameEvent.GameStarted -> MessageToClient.GameStarted(it.players)
-                        is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(it.playerId, game.isInState(GameState.WaitingForMorePlayers))
-                        is GameEvent.RoundStarted -> MessageToClient.RoundStarted(game.getCardsInHand(playerId), it.roundNumber)
+                        is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(
+                            it.playerId,
+                            game.isInState(GameState.WaitingForMorePlayers)
+                        )
+
+                        is GameEvent.RoundStarted -> MessageToClient.RoundStarted(
+                            game.getCardsInHand(playerId),
+                            it.roundNumber
+                        )
+
                         is GameEvent.TrickCompleted -> MessageToClient.TrickCompleted
-                        is GameEvent.TrickStarted -> MessageToClient.TrickStarted(it.trickNumber, game.currentPlayersTurn ?: error("currentPlayer is null"))
+                        is GameEvent.TrickStarted -> MessageToClient.TrickStarted(
+                            it.trickNumber,
+                            game.currentPlayersTurn ?: error("currentPlayer is null")
+                        )
                     }
 
                     logger.info("sending message to $playerId: ${messageToClient.asJsonObject()}")
@@ -67,7 +94,7 @@ internal fun wsHandler(game: Game): RoutingWsHandler {
                 ws.onMessage {
                     logger.info("received client message from $playerId: ${it.bodyString()}")
 
-                    when(val message = clientMessageLens(it)) {
+                    when (val message = clientMessageLens(it)) {
                         is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
                         is MessageFromClient.UnhandledServerMessage -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
                         is MessageFromClient.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
@@ -89,3 +116,41 @@ internal sealed class MessageFromClient {
     data class Error(val stackTrace: String) : MessageFromClient()
 }
 
+
+class AutomatedGameMaster(private val game: Game) {
+    private val allGameEvents = CopyOnWriteArrayList<GameEvent>()
+
+    fun start() {
+        val timer = Timer()
+
+        game.subscribeToGameEvents {event ->
+            allGameEvents.add(event)
+
+            when(event) {
+                is GameEvent.PlayerJoined -> {
+                    if (game.state != GameState.WaitingToStart) return@subscribeToGameEvents
+                    timer.schedule(timerTask {
+                        if (allGameEvents.last() == event) game.start()
+                    }, 5000)
+                }
+                is GameEvent.BiddingCompleted -> {
+                    timer.schedule(timerTask {
+                        val lastEvent = allGameEvents.last()
+                        require(lastEvent == event) { "last event was not bidding completed, it was $lastEvent" }
+                        game.startNextTrick()
+                    }, 3000)
+                }
+                is GameEvent.TrickCompleted -> {
+                    timer.schedule(timerTask {
+                        val lastEvent = allGameEvents.last()
+                        require(lastEvent == event) { "last event was not trick completed, it was $lastEvent" }
+
+                        if (game.roundNumber == game.trickNumber) game.startNextRound()
+                        else game.startNextTrick()
+                    }, 5000)
+                }
+                else -> {}
+            }
+        }
+    }
+}

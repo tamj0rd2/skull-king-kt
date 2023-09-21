@@ -12,8 +12,14 @@ export class HandElement extends HTMLElement {
         this.disconnectFn = listenToGameEvents({
             [MessageToClient.GameStarted]: this.showHand,
             [MessageToClient.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
-            [MessageToClient.TrickStarted]: ({ firstPlayer }) => this.toggleCardPlayabilityDependingOnTurn(firstPlayer),
-            [MessageToClient.CardPlayed]: ({ nextPlayer }) => this.toggleCardPlayabilityDependingOnTurn(nextPlayer),
+            [MessageToClient.TrickStarted]: ({ firstPlayer }) => {
+                if (INITIAL_STATE.playerId === firstPlayer) this.makeCardsPlayable()
+            },
+            [MessageToClient.CardPlayed]: ({ playerId, nextPlayer }) => {
+                if (INITIAL_STATE.playerId === playerId) this.makeCardsUnplayable()
+                if (INITIAL_STATE.playerId === nextPlayer) this.makeCardsPlayable()
+            },
+            [MessageToClient.TrickCompleted]: () => this.makeCardsUnplayable(),
         })
     }
 
@@ -38,12 +44,6 @@ export class HandElement extends HTMLElement {
             hand.appendChild(li)
         })
     }
-
-    toggleCardPlayabilityDependingOnTurn = (currentPlayer: PlayerId) => {
-        if (INITIAL_STATE.playerId === currentPlayer) this.makeCardsPlayable()
-        else this.makeCardsUnplayable()
-    }
-
     makeCardsUnplayable = () => {
         this.querySelectorAll("li button").forEach(button => {
             button.parentNode!!.removeChild(button)

@@ -11,6 +11,7 @@ import org.http4k.core.Body
 import org.http4k.core.ContentType
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
+import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.body.form
@@ -46,7 +47,8 @@ private data class Admin(val wsHost: String) : ViewModel
 internal fun httpHandler(
     game: com.tamj0rd2.domain.Game,
     port: Int,
-    hotReload: Boolean
+    hotReload: Boolean,
+    automateGameMasterCommands: Boolean
 ): HttpHandler {
     val logger = LoggerFactory.getLogger("httpHandler")
     val (renderer, resourceLoader) = buildResourceLoaders(hotReload)
@@ -54,6 +56,26 @@ internal fun httpHandler(
 
     val wsHost = "ws://localhost:$port"
     val htmlLens = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
+
+    fun gameMasterCommandHandler(req: Request): Response {
+        if (automateGameMasterCommands) return Response(Status.FORBIDDEN)
+
+        logger.info("received command: ${req.bodyString()}")
+
+        try {
+            when (val command = gameMasterCommandLens(req)) {
+                is GameMasterCommand.StartGame -> game.start().respondOK()
+                is GameMasterCommand.RigDeck -> game.rigDeck(command.playerId, command.cards).respondOK()
+                is GameMasterCommand.StartNextRound -> game.startNextRound().respondOK()
+                is GameMasterCommand.StartNextTrick -> game.startNextTrick().respondOK()
+            }
+        } catch (e: Exception) {
+            logger.error("error while executing command: ${req.bodyString()}", e)
+            return Response(Status.INTERNAL_SERVER_ERROR).body(e.message ?: "unknown error")
+        }
+
+        return Response(Status.OK)
+    }
 
     return routes(
         static(resourceLoader, "map" to ContentType.APPLICATION_JSON),
@@ -85,21 +107,7 @@ internal fun httpHandler(
             val model = Admin(wsHost)
             Response(Status.OK).with(htmlLens of model)
         },
-        "/do-game-master-command" bind Method.POST to { req ->
-            logger.info("received command: ${req.bodyString()}")
-
-            try {
-                when (val command = gameMasterCommandLens(req)) {
-                    is GameMasterCommand.StartGame -> game.start().respondOK()
-                    is GameMasterCommand.RigDeck -> game.rigDeck(command.playerId, command.cards).respondOK()
-                    is GameMasterCommand.StartNextRound -> game.startNextRound().respondOK()
-                    is GameMasterCommand.StartNextTrick -> game.startNextTrick().respondOK()
-                }
-            } catch (e: Exception) {
-                logger.error("error while executing command: ${req.bodyString()}", e)
-                Response(Status.INTERNAL_SERVER_ERROR).body(e.message ?: "unknown error")
-            }
-        }
+        "/do-game-master-command" bind Method.POST to ::gameMasterCommandHandler
     )
 }
 

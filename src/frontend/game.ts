@@ -26,11 +26,11 @@ listenToGameEvents({
         trickNumberEl.innerText = `Trick ${trickNumber}`
         trickNumberEl.setAttribute("data-trickNumber", trickNumber)
 
-        playerWhoseTurnItIsEl.innerText = firstPlayer ? "" : firstPlayer
+        playerWhoseTurnItIsEl.innerText = `Current player: ${firstPlayer}`
         playerWhoseTurnItIsEl.setAttribute("data-playerId", firstPlayer)
     },
     [MessageToClient.CardPlayed]: ({nextPlayer}) => {
-        playerWhoseTurnItIsEl.innerText = nextPlayer ? "" : nextPlayer
+        playerWhoseTurnItIsEl.innerText = nextPlayer ? `Current player: ${nextPlayer}` : ""
         playerWhoseTurnItIsEl.setAttribute("data-playerId", nextPlayer)
     }
 })
