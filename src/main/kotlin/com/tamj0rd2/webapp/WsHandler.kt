@@ -29,8 +29,7 @@ internal fun wsHandler(game: Game): RoutingWsHandler {
                 val logger = LoggerFactory.getLogger("wsHandler pid='$playerId'")
 
                 game.subscribeToGameEvents {
-                    logger.info("sending game event to $playerId: ${it.asJsonObject()}")
-                    val messageToClient: MessageToClient = when(it) {
+                    val messageToClient = when(it) {
                         is GameEvent.BidPlaced -> MessageToClient.BidPlaced(it.playerId)
                         is GameEvent.BiddingCompleted -> MessageToClient.BiddingCompleted(it.bids)
                         is GameEvent.CardPlayed -> MessageToClient.CardPlayed(it.playerId, it.card, game.currentPlayersTurn)
@@ -43,6 +42,7 @@ internal fun wsHandler(game: Game): RoutingWsHandler {
                         is GameEvent.TrickStarted -> MessageToClient.TrickStarted(it.trickNumber, game.currentPlayersTurn ?: error("currentPlayer is null"))
                     }
 
+                    logger.info("sending message to $playerId: ${messageToClient.asJsonObject()}")
                     ws.send(messageToClientLens(messageToClient))
                 }
 
