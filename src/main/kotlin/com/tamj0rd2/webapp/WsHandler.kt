@@ -17,7 +17,7 @@ import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsResponse
 import org.slf4j.LoggerFactory
 
-internal fun wsHandler(game: Game, gameEventHandler: GameEventHandler): RoutingWsHandler {
+internal fun wsHandler(game: Game): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
     val messageToClientLens = WsMessage.auto<MessageToClient>().toLens()
     val clientMessageLens = WsMessage.auto<ClientMessage>().toLens()
@@ -28,7 +28,7 @@ internal fun wsHandler(game: Game, gameEventHandler: GameEventHandler): RoutingW
                 val playerId: PlayerId = playerIdPath(req)
                 val logger = LoggerFactory.getLogger("wsHandler pid='$playerId'")
 
-                gameEventHandler.subscribeToGameEvents(playerId) {
+                game.subscribeToGameEvents {
                     logger.info("sending game event to $playerId: ${it.asJsonObject()}")
                     val messageToClient: MessageToClient = when(it) {
                         is GameEvent.BidPlaced -> MessageToClient.BidPlaced(it.playerId)

@@ -6,7 +6,7 @@ fun interface GameEventListener {
     fun handle(event: GameEvent)
 }
 
-class Game(private val eventListener: GameEventListener? = null) {
+class Game {
     private var _trickNumber: Int = 0
     val trickNumber: Int get() = _trickNumber
 
@@ -39,6 +39,11 @@ class Game(private val eventListener: GameEventListener? = null) {
     val currentPlayersTurn get(): PlayerId? = roundTurnOrder.firstOrNull()
 
     fun isInState(state: GameState) = this.state == state
+
+    private val eventListeners = mutableListOf<GameEventListener>()
+    fun subscribeToGameEvents(listener: GameEventListener) {
+        this.eventListeners += listener
+    }
 
     fun addPlayer(playerId: PlayerId) {
         if (_players.contains(playerId)) throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
@@ -136,7 +141,7 @@ class Game(private val eventListener: GameEventListener? = null) {
     }
 
     private fun recordEvent(event: GameEvent) {
-        eventListener?.handle(event)
+        eventListeners.forEach { it.handle(event) }
     }
 }
 

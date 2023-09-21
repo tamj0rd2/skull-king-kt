@@ -12,10 +12,9 @@ object Server {
     }
 
     fun make(port: Int, hotReload: Boolean = false): Http4kServer {
-        val gameEventHandler = GameEventHandler()
-        val game = Game(gameEventHandler)
+        val game = Game()
         val http = httpHandler(game, port, hotReload)
-        val ws = wsHandler(game, gameEventHandler)
+        val ws = wsHandler(game)
         return PolyHandler(http, ws).asServer(Undertow(port))
     }
 }
