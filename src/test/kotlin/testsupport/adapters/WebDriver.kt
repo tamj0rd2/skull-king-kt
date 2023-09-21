@@ -1,6 +1,6 @@
 package testsupport.adapters
 
-import com.tamj0rd2.domain.Bid
+import com.tamj0rd2.domain.DeprecatedBid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
@@ -103,19 +103,20 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
             RoundPhase.from(rawPhase)
         }
 
-    override val bids: Map<PlayerId, Bid>
+    override val bids: Map<PlayerId, DeprecatedBid>
         get() = debugException {
             driver.findElement(By.id("bids"))
                 .findElements(By.tagName("li"))
                 .associate {
                     val (name, bid) = it.text.split(":")
-                        .apply { if (size < 2) return@associate this[0] to Bid.None }
-                    if (bid == "has bid") return@associate name to Bid.IsHidden
-                    name to Bid.Placed(bid.toInt())
+                        .apply { if (size < 2) return@associate this[0] to DeprecatedBid.None }
+                    if (bid == "has bid") return@associate name to DeprecatedBid.IsHidden
+                    name to DeprecatedBid.Placed(bid.toInt())
                 }
         }
 
-    override val currentPlayer: PlayerId get() = debugException {
+    override val currentPlayer: PlayerId?
+        get() = debugException {
         driver.findElement(By.id("currentPlayer")).getAttribute("data-playerId") ?: error("no player id for the current player")
     }
 

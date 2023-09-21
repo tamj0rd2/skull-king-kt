@@ -1,4 +1,5 @@
 
+import com.tamj0rd2.webapp.Server
 import org.eclipse.jetty.client.HttpClient
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
@@ -43,7 +44,7 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
         close()
         localPort
     }
-    private val server = WebServer.make(port, hotReload = false)
+    private val server = Server.make(port, hotReload = false)
     private val baseUrl = "http://localhost:$port"
     private val httpClient = HttpClient()
     private val chromeDrivers = mutableListOf<ChromeDriver>()

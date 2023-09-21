@@ -2,7 +2,11 @@ package com.tamj0rd2.domain
 
 import com.tamj0rd2.domain.RoundPhase.*
 
-class Game {
+fun interface GameEventListener {
+    fun handle(event: GameEvent)
+}
+
+class Game(private val eventListener: GameEventListener? = null) {
     private var _trickNumber: Int = 0
     val trickNumber: Int get() = _trickNumber
 
@@ -22,9 +26,8 @@ class Game {
     private var riggedHands: MutableMap<PlayerId, Hand>? = null
 
     private val _bids = Bids()
-    val bids: Map<PlayerId, Bid> get() = _bids.forDisplay()
+    val bids: Map<PlayerId, DeprecatedBid> get() = _bids.forDisplay()
 
-    private val gameEventSubscribers = mutableMapOf<PlayerId, GameEventSubscriber>()
     private val roomSizeToStartGame = 2
 
     private val waitingForMorePlayers get() = players.size < roomSizeToStartGame
@@ -33,14 +36,16 @@ class Game {
     val currentTrick: List<PlayedCard> get() = _currentTrick
 
     private var roundTurnOrder = mutableListOf<PlayerId>()
-    val currentPlayersTurn get(): PlayerId = roundTurnOrder.first()
+    val currentPlayersTurn get(): PlayerId? = roundTurnOrder.firstOrNull()
+
+    fun isInState(state: GameState) = this.state == state
 
     fun addPlayer(playerId: PlayerId) {
         if (_players.contains(playerId)) throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
 
         _players += playerId
         if (!waitingForMorePlayers) _state = GameState.WaitingToStart
-        gameEventSubscribers.broadcast(MessageToClient.PlayerJoined(playerId, waitingForMorePlayers))
+        recordEvent(GameEvent.PlayerJoined(playerId))
     }
 
     fun start() {
@@ -48,7 +53,7 @@ class Game {
 
         _state = GameState.InProgress
         players.forEach { hands[it] = mutableListOf() }
-        gameEventSubscribers.broadcast(MessageToClient.GameStarted(players))
+        recordEvent(GameEvent.GameStarted(players))
         startNextRound()
     }
 
@@ -74,16 +79,12 @@ class Game {
         if (_bids.hasPlayerAlreadyBid(playerId)) throw GameException.CannotBid("player $playerId has already bid")
 
         _bids.place(playerId, bid)
-        this.gameEventSubscribers.broadcast(MessageToClient.BidPlaced(playerId))
+        recordEvent(GameEvent.BidPlaced(playerId, Bid(bid)))
 
         if (_bids.areComplete) {
             this._phase = BiddingCompleted
-            this.gameEventSubscribers.broadcast(MessageToClient.BiddingCompleted(_bids.asCompleted()))
+            recordEvent(GameEvent.BiddingCompleted(_bids.asCompleted()))
         }
-    }
-
-    fun subscribeToGameEvents(playerId: PlayerId, subscriber: GameEventSubscriber) {
-        this.gameEventSubscribers[playerId] = subscriber
     }
 
     fun playCard(playerId: PlayerId, cardName: CardName) {
@@ -97,15 +98,16 @@ class Game {
         hand.remove(card)
         _currentTrick += PlayedCard(playerId, card)
         roundTurnOrder.removeFirst()
-        gameEventSubscribers.broadcast(MessageToClient.CardPlayed(playerId, card, roundTurnOrder.firstOrNull()))
+
+        recordEvent(GameEvent.CardPlayed(playerId, card))
 
         if (_currentTrick.size == players.size) {
             _phase = TrickCompleted
-            gameEventSubscribers.broadcast(MessageToClient.TrickCompleted)
+            recordEvent(GameEvent.TrickCompleted)
 
             if (roundNumber == 10) {
                 _state = GameState.Complete
-                gameEventSubscribers.broadcast(MessageToClient.GameCompleted)
+                recordEvent(GameEvent.GameCompleted)
             }
         }
     }
@@ -113,10 +115,6 @@ class Game {
     fun rigDeck(playerId: PlayerId, cards: List<Card>) {
         if (riggedHands == null) riggedHands = players.associateWith { emptyList<Card>() }.toMutableMap()
         riggedHands!![playerId] = cards
-    }
-
-    private fun Map<PlayerId, GameEventSubscriber>.broadcast(event: MessageToClient) {
-        this.forEach { it.value.handleEvent(event) }
     }
 
     fun startNextRound() {
@@ -127,30 +125,23 @@ class Game {
         _phase = Bidding
         roundTurnOrder = (1..roundNumber).flatMap { players }.toMutableList()
         dealCards()
-
-        gameEventSubscribers.forEach {
-            it.value.handleEvent(MessageToClient.RoundStarted(getCardsInHand(it.key), roundNumber))
-        }
+        recordEvent(GameEvent.RoundStarted(roundNumber))
     }
 
     fun startNextTrick() {
         _trickNumber += 1
         _currentTrick.clear()
         _phase = TrickTaking
+        recordEvent(GameEvent.TrickStarted(trickNumber))
+    }
 
-        val firstPlayer = roundTurnOrder.first()
-        gameEventSubscribers.forEach {
-            it.value.handleEvent(MessageToClient.TrickStarted(trickNumber, firstPlayer))
-        }
+    private fun recordEvent(event: GameEvent) {
+        eventListener?.handle(event)
     }
 }
 
 // TODO: introduce tiny types for these. e.g a small data class that represents the data
 typealias PlayerId = String
-
-fun interface GameEventSubscriber {
-    fun handleEvent(event: MessageToClient)
-}
 
 enum class GameState {
     WaitingForMorePlayers,
@@ -186,50 +177,52 @@ data class PlayedCard(val playerId: PlayerId, val card: Card) {
     }
 }
 
-private class Bids {
-    private var bids = mutableMapOf<PlayerId, Bid>()
+data class Bid(val bid: Int)
 
-    val areComplete get() = bids.none { it.value is Bid.None }
+private class Bids {
+    private var bids = mutableMapOf<PlayerId, DeprecatedBid>()
+
+    val areComplete get() = bids.none { it.value is DeprecatedBid.None }
 
     fun initFor(players: Collection<PlayerId>) {
-        bids = players.associateWith { Bid.None }.toMutableMap()
+        bids = players.associateWith { DeprecatedBid.None }.toMutableMap()
     }
 
-    fun forDisplay(): Map<PlayerId, Bid> = when {
+    fun forDisplay(): Map<PlayerId, DeprecatedBid> = when {
         areComplete -> bids
-        else -> bids.mapValues { if (it.value is Bid.Placed) Bid.IsHidden else it.value }
+        else -> bids.mapValues { if (it.value is DeprecatedBid.Placed) DeprecatedBid.IsHidden else it.value }
     }
 
     fun place(playerId: PlayerId, bid: Int) {
-        bids[playerId] = Bid.Placed(bid)
+        bids[playerId] = DeprecatedBid.Placed(bid)
     }
 
     fun hasPlayerAlreadyBid(playerId: PlayerId): Boolean {
-        return bids[playerId] !is Bid.None
+        return bids[playerId] !is DeprecatedBid.None
     }
 
     fun asCompleted(): Map<PlayerId, Int> {
         return bids.mapValues {
-            require(it.value !is Bid.None)
+            require(it.value !is DeprecatedBid.None)
             when (val bid = it.value) {
-                is Bid.None -> error("not all players have bid")
-                is Bid.IsHidden -> error("this should be impossible. this is just for display")
-                is Bid.Placed -> bid.bid
+                is DeprecatedBid.None -> error("not all players have bid")
+                is DeprecatedBid.IsHidden -> error("this should be impossible. this is just for display")
+                is DeprecatedBid.Placed -> bid.bid
             }
         }
     }
 
 }
 
-sealed class Bid {
+sealed class DeprecatedBid {
     override fun toString(): String = when (this) {
         is None -> "None"
         is IsHidden -> "Hidden"
         is Placed -> bid.toString()
     }
 
-    object None : Bid()
-    object IsHidden : Bid()
+    object None : DeprecatedBid()
+    object IsHidden : DeprecatedBid()
 
-    data class Placed(val bid: Int) : Bid()
+    data class Placed(val bid: Int) : DeprecatedBid()
 }

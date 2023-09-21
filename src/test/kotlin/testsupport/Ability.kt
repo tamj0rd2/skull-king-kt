@@ -1,7 +1,7 @@
 package testsupport
 
-import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.DeprecatedBid
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
 import com.tamj0rd2.domain.PlayerId
@@ -15,7 +15,7 @@ interface ApplicationDriver {
     fun bid(bid: Int)
     fun playCard(card: Card)
 
-    val currentPlayer: PlayerId
+    val currentPlayer: PlayerId?
     val trickNumber: Int
     val roundNumber: Int
     val trick: Trick
@@ -23,7 +23,7 @@ interface ApplicationDriver {
     val gameState: GameState
     val playersInRoom: List<PlayerId>
     val hand: Hand
-    val bids: Map<PlayerId, Bid>
+    val bids: Map<PlayerId, DeprecatedBid>
 }
 
 interface GameMasterDriver {

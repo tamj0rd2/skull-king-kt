@@ -1,7 +1,7 @@
-import com.tamj0rd2.domain.App
-import testsupport.ParticipateInGames
+
+import com.tamj0rd2.domain.Game
 import testsupport.ManageGames
-import testsupport.SkipWip
+import testsupport.ParticipateInGames
 import testsupport.adapters.DomainDriver
 
 class InMemoryAppTest : AppTestContract(object : TestConfiguration {
@@ -9,9 +9,9 @@ class InMemoryAppTest : AppTestContract(object : TestConfiguration {
 
     override fun teardown() {}
 
-    private val app = App()
+    private val game = Game()
 
-    override fun participateInGames(): ParticipateInGames = ParticipateInGames(DomainDriver(app))
+    override fun participateInGames(): ParticipateInGames = ParticipateInGames(DomainDriver(game))
 
-    override fun manageGames(): ManageGames = ManageGames(DomainDriver(app))
+    override fun manageGames(): ManageGames = ManageGames(DomainDriver(game))
 })

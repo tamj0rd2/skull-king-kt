@@ -1,6 +1,5 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
@@ -42,7 +41,11 @@ data class Index(val errorMessage: String? = null) : ViewModel {
     }
 }
 
-fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
+internal fun httpHandler(
+    game: com.tamj0rd2.domain.Game,
+    port: Int,
+    hotReload: Boolean
+): HttpHandler {
     val logger = LoggerFactory.getLogger("httpHandler")
     val (renderer, resourceLoader) = buildResourceLoaders(hotReload)
     val gameMasterCommandLens = Body.auto<GameMasterCommand>().toLens()
@@ -62,15 +65,15 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
             }
 
             try {
-                app.game.addPlayer(playerId)
+                game.addPlayer(playerId)
             } catch (e: GameException.PlayerWithSameNameAlreadyJoined) {
                 return@to Response(Status.OK).with(indexView of Index.withError(e::class.simpleName!!))
             }
 
             val model = Game(
                 wsHost = "ws://localhost:$port",
-                players = app.game.players,
-                waitingForMorePlayers = app.game.state == GameState.WaitingForMorePlayers,
+                players = game.players,
+                waitingForMorePlayers = game.state == GameState.WaitingForMorePlayers,
                 playerId = playerId,
             )
             Response(Status.OK).with(gameView of model)
@@ -83,10 +86,10 @@ fun httpHandler(port: Int, hotReload: Boolean, app: App): HttpHandler {
             logger.info("received command: ${req.bodyString()}")
 
             when (val command = gameMasterCommandLens(req)) {
-                is GameMasterCommand.StartGame -> app.game.start().respondOK()
-                is GameMasterCommand.RigDeck -> app.game.rigDeck(command.playerId, command.cards).respondOK()
-                is GameMasterCommand.StartNextRound -> app.game.startNextRound().respondOK()
-                is GameMasterCommand.StartNextTrick -> app.game.startNextTrick().respondOK()
+                is GameMasterCommand.StartGame -> game.start().respondOK()
+                is GameMasterCommand.RigDeck -> game.rigDeck(command.playerId, command.cards).respondOK()
+                is GameMasterCommand.StartNextRound -> game.startNextRound().respondOK()
+                is GameMasterCommand.StartNextTrick -> game.startNextTrick().respondOK()
             }
         }
     )

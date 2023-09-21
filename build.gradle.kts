@@ -46,8 +46,9 @@ tasks.withType<KotlinCompile> {
 
     kotlinOptions.jvmTarget = "17"
 }
+
 application {
-    mainClass.set("MainKt")
+    mainClass.set("com.tamj0rd2.webapp.Server")
 }
 
 task("buildFrontend") {
