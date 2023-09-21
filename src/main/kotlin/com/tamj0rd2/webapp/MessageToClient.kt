@@ -1,6 +1,9 @@
-package com.tamj0rd2.domain
+package com.tamj0rd2.webapp
 
-sealed class MessageToClient {
+import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.PlayerId
+
+internal sealed class MessageToClient {
     data class PlayerJoined(val playerId: PlayerId, val waitingForMorePlayers: Boolean) : MessageToClient()
 
     data class GameStarted(val players: List<PlayerId>) : MessageToClient()

@@ -1,7 +1,6 @@
 package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.MessageToClient
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 import com.tamj0rd2.webapp.CustomJackson.asCompactJsonString

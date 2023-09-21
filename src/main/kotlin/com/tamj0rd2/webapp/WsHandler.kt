@@ -4,7 +4,6 @@ import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
-import com.tamj0rd2.domain.MessageToClient
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 import com.tamj0rd2.webapp.CustomJackson.auto
