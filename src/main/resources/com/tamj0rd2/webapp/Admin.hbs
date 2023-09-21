@@ -1,0 +1,21 @@
+<html>
+<head>
+    <link href="/style.css" rel="stylesheet" type="text/css"/>
+    <title>Skull King Admin Panel</title>
+</head>
+<body>
+<div class="content">
+    <h1>Admin panel</h1>
+    <button id="startGame">Start game</button>
+    <button id="startRound">Start round</button>
+    <button id="startTrick">Start trick</button>
+    <button id="automateCommands">Automate commands</button>
+</div>
+<script src="/admin.js"></script>
+<script>
+    window.INITIAL_ADMIN_STATE = {
+        wsHost: "{{wsHost}}",
+    }
+</script>
+</body>
+</html>

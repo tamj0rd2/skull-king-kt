@@ -7,12 +7,10 @@ import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 import com.tamj0rd2.webapp.CustomJackson.auto
-import org.http4k.core.Request
 import org.http4k.lens.Path
 import org.http4k.routing.RoutingWsHandler
 import org.http4k.routing.websockets
 import org.http4k.routing.ws.bind
-import org.http4k.websocket.Websocket
 import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsResponse
 import org.slf4j.LoggerFactory
@@ -23,8 +21,28 @@ internal fun wsHandler(game: Game): RoutingWsHandler {
     val clientMessageLens = WsMessage.auto<MessageFromClient>().toLens()
 
     return websockets(
-        "/{playerId}" bind { req: Request ->
-            WsResponse { ws: Websocket ->
+        "/admin" bind { req ->
+            WsResponse {ws ->
+                game.subscribeToGameEvents {
+                    val messageToClient = when(it) {
+                        is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(it.playerId, game.isInState(GameState.WaitingForMorePlayers))
+                        is GameEvent.BiddingCompleted -> MessageToClient.BiddingCompleted(emptyMap())
+                        is GameEvent.TrickCompleted -> MessageToClient.TrickCompleted
+                        is GameEvent.RoundStarted -> MessageToClient.RoundStarted(emptyList(), it.roundNumber)
+                        is GameEvent.TrickStarted -> MessageToClient.TrickStarted(it.trickNumber, "")
+                        is GameEvent.BidPlaced,
+                        is GameEvent.CardPlayed,
+                        is GameEvent.CardsDealt,
+                        is GameEvent.GameCompleted,
+                        is GameEvent.GameStarted -> null
+                    }
+
+                    messageToClient?.let { ws.send(messageToClientLens(it)) }
+                }
+            }
+        },
+        "/{playerId}" bind { req ->
+            WsResponse { ws ->
                 val playerId: PlayerId = playerIdPath(req)
                 val logger = LoggerFactory.getLogger("wsHandler pid='$playerId'")
 

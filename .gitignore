@@ -45,3 +45,5 @@ bin/
 .chromedriver/
 game.js
 game.js.map
+admin.js
+admin.js.map

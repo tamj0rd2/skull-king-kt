@@ -34,12 +34,14 @@ private data class Game(
     val playersJson = players.asJsonObject().asCompactJsonString()
 }
 
-data class Index(val errorMessage: String? = null) : ViewModel {
+private data class Index(val errorMessage: String? = null) : ViewModel {
     companion object {
         val withoutError = Index()
         fun withError(errorMessage: String) = Index(errorMessage)
     }
 }
+
+private data class Admin(val wsHost: String) : ViewModel
 
 internal fun httpHandler(
     game: com.tamj0rd2.domain.Game,
@@ -49,47 +51,53 @@ internal fun httpHandler(
     val logger = LoggerFactory.getLogger("httpHandler")
     val (renderer, resourceLoader) = buildResourceLoaders(hotReload)
     val gameMasterCommandLens = Body.auto<GameMasterCommand>().toLens()
-    val gameView = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
 
-    val indexView = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
+    val wsHost = "ws://localhost:$port"
+    val htmlLens = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
+
     return routes(
         static(resourceLoader, "map" to ContentType.APPLICATION_JSON),
         "/" bind Method.GET to {
-            Response(Status.OK).with(indexView of Index.withoutError)
+            Response(Status.OK).with(htmlLens of Index.withoutError)
         },
         "/play" bind Method.POST to {
             val playerId = it.form("playerId") ?: error("playerId not posted!")
 
             if (playerId == "feTesting") {
-                return@to Response(Status.OK).with(gameView of Game("", listOf(playerId), true, playerId))
+                return@to Response(Status.OK).with(htmlLens of Game("", listOf(playerId), true, playerId))
             }
 
             try {
                 game.addPlayer(playerId)
             } catch (e: GameException.PlayerWithSameNameAlreadyJoined) {
-                return@to Response(Status.OK).with(indexView of Index.withError(e::class.simpleName!!))
+                return@to Response(Status.OK).with(htmlLens of Index.withError(e::class.simpleName!!))
             }
 
             val model = Game(
-                wsHost = "ws://localhost:$port",
+                wsHost = wsHost,
                 players = game.players,
                 waitingForMorePlayers = game.state == GameState.WaitingForMorePlayers,
                 playerId = playerId,
             )
-            Response(Status.OK).with(gameView of model)
+            Response(Status.OK).with(htmlLens of model)
         },
         "/admin" bind Method.GET to {
-            val adminHtml = resourceLoader.load("Admin.html")?.readText() ?: error("Admin.html not found!")
-            Response(Status.OK).body(adminHtml)
+            val model = Admin(wsHost)
+            Response(Status.OK).with(htmlLens of model)
         },
         "/do-game-master-command" bind Method.POST to { req ->
             logger.info("received command: ${req.bodyString()}")
 
-            when (val command = gameMasterCommandLens(req)) {
-                is GameMasterCommand.StartGame -> game.start().respondOK()
-                is GameMasterCommand.RigDeck -> game.rigDeck(command.playerId, command.cards).respondOK()
-                is GameMasterCommand.StartNextRound -> game.startNextRound().respondOK()
-                is GameMasterCommand.StartNextTrick -> game.startNextTrick().respondOK()
+            try {
+                when (val command = gameMasterCommandLens(req)) {
+                    is GameMasterCommand.StartGame -> game.start().respondOK()
+                    is GameMasterCommand.RigDeck -> game.rigDeck(command.playerId, command.cards).respondOK()
+                    is GameMasterCommand.StartNextRound -> game.startNextRound().respondOK()
+                    is GameMasterCommand.StartNextTrick -> game.startNextTrick().respondOK()
+                }
+            } catch (e: Exception) {
+                logger.error("error while executing command: ${req.bodyString()}", e)
+                Response(Status.INTERNAL_SERVER_ERROR).body(e.message ?: "unknown error")
             }
         }
     )
