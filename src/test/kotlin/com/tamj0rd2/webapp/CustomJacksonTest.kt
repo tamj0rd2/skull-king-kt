@@ -1,7 +1,7 @@
 package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.GameEvent
+import com.tamj0rd2.domain.MessageToClient
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 import com.tamj0rd2.webapp.CustomJackson.asCompactJsonString
@@ -12,11 +12,11 @@ import kotlin.test.assertEquals
 class CustomJacksonTest {
     @Test
     fun `can serialize and deserialize game events`() {
-        val expected = GameEvent.BidPlaced("somePlayer")
+        val expected = MessageToClient.BidPlaced("somePlayer")
         val jsonString = expected.asJsonObject().asCompactJsonString()
         println(jsonString)
 
-        val result = jsonString.asJsonObject().asA(GameEvent::class)
+        val result = jsonString.asJsonObject().asA(MessageToClient::class)
         assertEquals(expected, result)
     }
 

@@ -1,13 +1,13 @@
 export enum EventType {
-    PlayerJoined = "GameEvent$PlayerJoined",
-    GameStarted = "GameEvent$GameStarted",
-    RoundStarted = "GameEvent$RoundStarted",
-    BidPlaced = "GameEvent$BidPlaced",
-    BiddingCompleted = "GameEvent$BiddingCompleted",
-    CardPlayed = "GameEvent$CardPlayed",
-    TrickCompleted = "GameEvent$TrickCompleted",
-    TrickStarted = "GameEvent$TrickStarted",
-    GameCompleted = "GameEvent$GameCompleted",
+    PlayerJoined = "MessageToClient$PlayerJoined",
+    GameStarted = "MessageToClient$GameStarted",
+    RoundStarted = "MessageToClient$RoundStarted",
+    BidPlaced = "MessageToClient$BidPlaced",
+    BiddingCompleted = "MessageToClient$BiddingCompleted",
+    CardPlayed = "MessageToClient$CardPlayed",
+    TrickCompleted = "MessageToClient$TrickCompleted",
+    TrickStarted = "MessageToClient$TrickStarted",
+    GameCompleted = "MessageToClient$GameCompleted",
 }
 
 const knownEventTypes = Object.values(EventType)

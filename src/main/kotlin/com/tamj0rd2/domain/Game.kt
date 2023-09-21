@@ -40,7 +40,7 @@ class Game {
 
         _players += playerId
         if (!waitingForMorePlayers) _state = GameState.WaitingToStart
-        gameEventSubscribers.broadcast(GameEvent.PlayerJoined(playerId, waitingForMorePlayers))
+        gameEventSubscribers.broadcast(MessageToClient.PlayerJoined(playerId, waitingForMorePlayers))
     }
 
     fun start() {
@@ -48,7 +48,7 @@ class Game {
 
         _state = GameState.InProgress
         players.forEach { hands[it] = mutableListOf() }
-        gameEventSubscribers.broadcast(GameEvent.GameStarted(players))
+        gameEventSubscribers.broadcast(MessageToClient.GameStarted(players))
         startNextRound()
     }
 
@@ -74,11 +74,11 @@ class Game {
         if (_bids.hasPlayerAlreadyBid(playerId)) throw GameException.CannotBid("player $playerId has already bid")
 
         _bids.place(playerId, bid)
-        this.gameEventSubscribers.broadcast(GameEvent.BidPlaced(playerId))
+        this.gameEventSubscribers.broadcast(MessageToClient.BidPlaced(playerId))
 
         if (_bids.areComplete) {
             this._phase = BiddingCompleted
-            this.gameEventSubscribers.broadcast(GameEvent.BiddingCompleted(_bids.asCompleted()))
+            this.gameEventSubscribers.broadcast(MessageToClient.BiddingCompleted(_bids.asCompleted()))
         }
     }
 
@@ -97,15 +97,15 @@ class Game {
         hand.remove(card)
         _currentTrick += PlayedCard(playerId, card)
         roundTurnOrder.removeFirst()
-        gameEventSubscribers.broadcast(GameEvent.CardPlayed(playerId, card, roundTurnOrder.firstOrNull()))
+        gameEventSubscribers.broadcast(MessageToClient.CardPlayed(playerId, card, roundTurnOrder.firstOrNull()))
 
         if (_currentTrick.size == players.size) {
             _phase = TrickCompleted
-            gameEventSubscribers.broadcast(GameEvent.TrickCompleted)
+            gameEventSubscribers.broadcast(MessageToClient.TrickCompleted)
 
             if (roundNumber == 10) {
                 _state = GameState.Complete
-                gameEventSubscribers.broadcast(GameEvent.GameCompleted)
+                gameEventSubscribers.broadcast(MessageToClient.GameCompleted)
             }
         }
     }
@@ -115,7 +115,7 @@ class Game {
         riggedHands!![playerId] = cards
     }
 
-    private fun Map<PlayerId, GameEventSubscriber>.broadcast(event: GameEvent) {
+    private fun Map<PlayerId, GameEventSubscriber>.broadcast(event: MessageToClient) {
         this.forEach { it.value.handleEvent(event) }
     }
 
@@ -129,7 +129,7 @@ class Game {
         dealCards()
 
         gameEventSubscribers.forEach {
-            it.value.handleEvent(GameEvent.RoundStarted(getCardsInHand(it.key), roundNumber))
+            it.value.handleEvent(MessageToClient.RoundStarted(getCardsInHand(it.key), roundNumber))
         }
     }
 
@@ -140,7 +140,7 @@ class Game {
 
         val firstPlayer = roundTurnOrder.first()
         gameEventSubscribers.forEach {
-            it.value.handleEvent(GameEvent.TrickStarted(trickNumber, firstPlayer))
+            it.value.handleEvent(MessageToClient.TrickStarted(trickNumber, firstPlayer))
         }
     }
 }
@@ -149,7 +149,7 @@ class Game {
 typealias PlayerId = String
 
 fun interface GameEventSubscriber {
-    fun handleEvent(event: GameEvent)
+    fun handleEvent(event: MessageToClient)
 }
 
 enum class GameState {

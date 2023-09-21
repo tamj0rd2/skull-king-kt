@@ -2,7 +2,7 @@ package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.App
 import com.tamj0rd2.domain.CardName
-import com.tamj0rd2.domain.GameEvent
+import com.tamj0rd2.domain.MessageToClient
 import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 import com.tamj0rd2.webapp.CustomJackson.auto
 import org.http4k.core.Request
@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory
 
 fun wsHandler(app: App): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
-    val gameEventLens = WsMessage.auto<GameEvent>().toLens()
+    val messageToClientLens = WsMessage.auto<MessageToClient>().toLens()
     val clientMessageLens = WsMessage.auto<ClientMessage>().toLens()
 
     return websockets(
@@ -28,7 +28,7 @@ fun wsHandler(app: App): RoutingWsHandler {
 
                 app.game.subscribeToGameEvents(playerId) {
                     logger.info("sending game event to $playerId: ${it.asJsonObject()}")
-                    ws.send(gameEventLens(it))
+                    ws.send(messageToClientLens(it))
                 }
 
                 ws.onMessage {
