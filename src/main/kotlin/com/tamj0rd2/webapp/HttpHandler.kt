@@ -42,8 +42,6 @@ private data class Index(val errorMessage: String? = null) : ViewModel {
     }
 }
 
-private data class Admin(val wsHost: String) : ViewModel
-
 internal fun httpHandler(
     game: com.tamj0rd2.domain.Game,
     port: Int,
@@ -101,10 +99,6 @@ internal fun httpHandler(
                 waitingForMorePlayers = game.state == GameState.WaitingForMorePlayers,
                 playerId = playerId,
             )
-            Response(Status.OK).with(htmlLens of model)
-        },
-        "/admin" bind Method.GET to {
-            val model = Admin(wsHost)
             Response(Status.OK).with(htmlLens of model)
         },
         "/do-game-master-command" bind Method.POST to ::gameMasterCommandHandler

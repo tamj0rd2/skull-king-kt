@@ -6,9 +6,8 @@
     "test": "../test"
   },
   "scripts": {
-    "build": "tsc && npm run build:game && npm run build:admin",
-    "build:game": "esbuild game.ts --outfile=../main/resources/public/game.js --bundle --minify --sourcemap",
-    "build:admin": "esbuild admin.ts --outfile=../main/resources/public/admin.js --bundle --minify --sourcemap"
+    "build": "tsc && npm run build:game",
+    "build:game": "esbuild game.ts --outfile=../main/resources/public/game.js --bundle --minify --sourcemap"
   },
   "author": "",
   "license": "ISC",

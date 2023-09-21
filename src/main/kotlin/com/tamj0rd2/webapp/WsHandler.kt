@@ -28,30 +28,6 @@ internal fun wsHandler(game: Game, automateGameMasterCommands: Boolean): Routing
     }
 
     return websockets(
-        "/admin" bind { req ->
-            WsResponse { ws ->
-                game.subscribeToGameEvents {
-                    val messageToClient = when (it) {
-                        is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(
-                            it.playerId,
-                            game.isInState(GameState.WaitingForMorePlayers)
-                        )
-
-                        is GameEvent.BiddingCompleted -> MessageToClient.BiddingCompleted(emptyMap())
-                        is GameEvent.TrickCompleted -> MessageToClient.TrickCompleted
-                        is GameEvent.RoundStarted -> MessageToClient.RoundStarted(emptyList(), it.roundNumber)
-                        is GameEvent.TrickStarted -> MessageToClient.TrickStarted(it.trickNumber, "")
-                        is GameEvent.BidPlaced,
-                        is GameEvent.CardPlayed,
-                        is GameEvent.CardsDealt,
-                        is GameEvent.GameCompleted,
-                        is GameEvent.GameStarted -> null
-                    }
-
-                    messageToClient?.let { ws.send(messageToClientLens(it)) }
-                }
-            }
-        },
         "/{playerId}" bind { req ->
             WsResponse { ws ->
                 val playerId: PlayerId = playerIdPath(req)
