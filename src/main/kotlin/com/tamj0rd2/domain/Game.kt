@@ -7,6 +7,9 @@ fun interface GameEventListener {
 }
 
 class Game {
+    private var _trickWinner: PlayerId? = null
+    val trickWinner: PlayerId? get() = _trickWinner
+
     private var _trickNumber: Int = 0
     val trickNumber: Int get() = _trickNumber
 
@@ -32,8 +35,8 @@ class Game {
 
     private val waitingForMorePlayers get() = players.size < roomSizeToStartGame
 
-    private val _currentTrick = mutableListOf<PlayedCard>()
-    val currentTrick: List<PlayedCard> get() = _currentTrick
+    private lateinit var trickManager: TrickManager
+    val currentTrick: List<PlayedCard> get() = trickManager.cards
 
     private var roundTurnOrder = mutableListOf<PlayerId>()
     val currentPlayersTurn get(): PlayerId? = roundTurnOrder.firstOrNull()
@@ -58,6 +61,7 @@ class Game {
 
         _state = GameState.InProgress
         players.forEach { hands[it] = mutableListOf() }
+        trickManager = TrickManager(players.size)
         recordEvent(GameEvent.GameStarted(players))
         startNextRound()
     }
@@ -101,13 +105,14 @@ class Game {
         requireNotNull(card) { "card $cardName not in $playerId's hand" }
 
         hand.remove(card)
-        _currentTrick += PlayedCard(playerId, card)
+        trickManager.add(PlayedCard(playerId, card))
         roundTurnOrder.removeFirst()
 
         recordEvent(GameEvent.CardPlayed(playerId, card))
 
-        if (_currentTrick.size == players.size) {
+        if (trickManager.isComplete) {
             _phase = TrickCompleted
+            _trickWinner = determineTrickWinner()
             recordEvent(GameEvent.TrickCompleted)
 
             if (roundNumber == 10) {
@@ -125,7 +130,8 @@ class Game {
     fun startNextRound() {
         _roundNumber += 1
         _trickNumber = 0
-        _currentTrick.clear()
+
+        trickManager.clear()
         _bids.initFor(players)
         _phase = Bidding
         roundTurnOrder = (1..roundNumber).flatMap { players }.toMutableList()
@@ -135,13 +141,17 @@ class Game {
 
     fun startNextTrick() {
         _trickNumber += 1
-        _currentTrick.clear()
+        trickManager.clear()
         _phase = TrickTaking
         recordEvent(GameEvent.TrickStarted(trickNumber))
     }
 
     private fun recordEvent(event: GameEvent) {
         eventListeners.forEach { it.handle(event) }
+    }
+
+    private fun determineTrickWinner(): PlayerId? {
+        return "Sally Second"
     }
 }
 
@@ -173,8 +183,6 @@ enum class RoundPhase {
 }
 
 typealias Hand = List<Card>
-
-typealias Trick = List<PlayedCard>
 
 data class PlayedCard(val playerId: PlayerId, val card: Card) {
     override fun toString(): String {

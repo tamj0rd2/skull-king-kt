@@ -4,9 +4,9 @@ import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.DeprecatedBid
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameState
+import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
-import com.tamj0rd2.domain.Trick
 import testsupport.ApplicationDriver
 import testsupport.GameMasterDriver
 
@@ -37,9 +37,11 @@ class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver
         game.playCard(playerId, card.name)
     }
 
+    override val trickWinner: PlayerId? get() = game.trickWinner
+
     override val playersInRoom get() = game.players
     override val hand get() = game.getCardsInHand(playerId)
-    override val trick: Trick get() = game.currentTrick
+    override val trick: List<PlayedCard> get() = game.currentTrick
     override val gameState: GameState? get() = game.state
     override val roundPhase: RoundPhase? get() = game.phase
     override val bids: Map<PlayerId, DeprecatedBid> get() = game.bids

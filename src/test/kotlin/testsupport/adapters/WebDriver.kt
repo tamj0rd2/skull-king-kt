@@ -5,9 +5,9 @@ import com.tamj0rd2.domain.DeprecatedBid
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
+import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
-import com.tamj0rd2.domain.Trick
 import org.openqa.selenium.By
 import org.openqa.selenium.NoSuchElementException
 import org.openqa.selenium.WebDriver
@@ -62,6 +62,9 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
+    override val trickWinner: PlayerId?
+        get() = TODO("Not yet implemented")
+
     override val trickNumber: Int?
         get() = debugException {
             driver.findElement(By.id("trickNumber")).getAttributeOrNull("data-trickNumber")?.toInt()
@@ -86,7 +89,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 .map { it.toCard() }
         }
 
-    override val trick: Trick
+    override val trick: List<PlayedCard>
         get() = debugException {
             driver.findElement(By.id("trick"))
                 .findElements(By.tagName("li"))

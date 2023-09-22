@@ -41,6 +41,10 @@ val TheCurrentPlayer = Question.about("the current player") { actor ->
     actor.use<ParticipateInGames>().currentPlayer
 }
 
+val TheWinnerOfTheTrick = Question.about("the winner of the trick") { actor ->
+    actor.use<ParticipateInGames>().trickWinner
+}
+
 val TheirHand = Question.about("their hand") { actor ->
     actor.use<ParticipateInGames>().hand
 }

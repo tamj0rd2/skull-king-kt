@@ -45,8 +45,10 @@ import testsupport.ThePlayersAtTheTable
 import testsupport.TheRoundNumber
 import testsupport.TheRoundPhase
 import testsupport.TheTrickNumber
+import testsupport.TheWinnerOfTheTrick
 import testsupport.TheirHand
 import testsupport.TheySeeBids
+import testsupport.Wip
 import testsupport.expectingFailure
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -68,10 +70,10 @@ interface TestConfiguration : AbilityFactory {
 // scoring
 // using actual cards lol
 
-sealed class AppTestContract(private val c: TestConfiguration) {
-    private val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
-    private val sally by lazy { Actor("Sally Second").whoCan(c.participateInGames()) }
-    private val gary by lazy { Actor("Gary GameMaster").whoCan(c.manageGames()) }
+sealed class AppTestContract(protected val c: TestConfiguration) {
+    protected val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
+    protected val sally by lazy { Actor("Sally Second").whoCan(c.participateInGames()) }
+    protected val gary by lazy { Actor("Gary GameMaster").whoCan(c.manageGames()) }
 
     @BeforeTest fun setup() = c.setup()
 
@@ -122,6 +124,32 @@ sealed class AppTestContract(private val c: TestConfiguration) {
             that(TheCurrentTrick, onlyContains(11.blue.playedBy(freddy)))
             that(TheRoundPhase, Is(TrickTaking))
             that(TheCurrentPlayer, Is(sally.name))
+        }
+    }
+
+    @Test
+    @Wip
+    fun `winning a trick`() {
+        freddy and sally both SitAtTheTable
+        gary(
+            RigsTheDeck.SoThat(freddy).willEndUpWith(11.blue),
+            RigsTheDeck.SoThat(sally).willEndUpWith(12.blue),
+            SaysTheGameCanStart
+        )
+        freddy and sally both Bid(1)
+        freddy and sally both Ensure(TheRoundPhase, Is(BiddingCompleted))
+
+        gary(SaysTheTrickCanStart)
+        freddy and sally both Ensure {
+            that(TheRoundPhase, Is(TrickTaking))
+            that(TheCurrentPlayer, Is(freddy.name))
+        }
+
+        freddy and sally both Play.theFirstCardInTheirHand
+
+        freddy and sally both Ensure {
+            that(TheRoundPhase, Is(TrickCompleted))
+            that(TheWinnerOfTheTrick, Is(sally.name))
         }
     }
 
