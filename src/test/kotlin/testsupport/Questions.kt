@@ -2,7 +2,11 @@ package testsupport
 
 import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.assertion.assertThat
-import java.time.Clock
+import com.natpryce.hamkrest.equalTo
+import java.time.Instant.now
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 open class Question<T>(private val description: String, private val answer: (Actor) -> T) {
     fun answeredBy(actor: Actor): T = answer(actor)
@@ -57,24 +61,27 @@ val TheCurrentTrick = Question.about("the current trick") { actor ->
     actor.use<ParticipateInGames>().trick
 }
 
+fun interface EnsureActivity : Activity
+
 val Ensures = Ensure
 object Ensure {
     interface That {
-        fun <T> that(question: Question<T>, matcher: Matcher<T>)
+        fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration = 1.seconds)
+        fun <T> Is(expected: T?): Matcher<T>
     }
 
-    operator fun invoke(block: That.() -> Unit) = Activity { actor ->
+    operator fun invoke(block: That.() -> Unit) = EnsureActivity { actor ->
         object : That {
-            override fun <T> that(question: Question<T>, matcher: Matcher<T>) {
-                actor.invoke(Ensure(question, matcher))
+            override fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration) {
+                actor.invoke(Ensure(question, matcher, within))
             }
+
+            override fun <T> Is(expected: T?): Matcher<T> = equalTo(expected)
         }.apply(block)
     }
 
-    operator fun <T> invoke(question: Question<T>, matcher: Matcher<T>) = Activity { actor ->
-        val clock = Clock.systemDefaultZone()
-        val startTime = clock.instant()
-        val mustEndBy = startTime.plusSeconds(1)
+    operator fun <T> invoke(question: Question<T>, matcher: Matcher<T>, within: Duration = 1.seconds) = EnsureActivity { actor ->
+        val mustEndBy = now().plus(within.toJavaDuration())
 
         do {
             try {
@@ -82,7 +89,7 @@ object Ensure {
                 assertThat(answer, matcher) { "$actor asked a $question" }
                 break
             } catch (e: AssertionError) {
-                if (clock.instant() > mustEndBy) throw e
+                if (now() > mustEndBy) throw e
                 Thread.sleep(50)
             }
         } while (true)

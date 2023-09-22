@@ -26,7 +26,7 @@
 
     window.socket = new WebSocket("{{wsHost}}/{{playerId}}")
     window.socket.addEventListener("message", (event) => {
-        console.log(`{{playerId}} received`, JSON.parse(event.data))
+        console.log(`{{playerId}} received`, event.data)
     })
 
     const gameScript = document.createElement('script')

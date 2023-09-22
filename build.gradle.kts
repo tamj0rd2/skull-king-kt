@@ -30,6 +30,7 @@ dependencies {
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
     testImplementation("com.natpryce:hamkrest:1.8.0.1")
     testImplementation("org.http4k:http4k-client-jetty:$http4kVersion")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }
 
 tasks.test {

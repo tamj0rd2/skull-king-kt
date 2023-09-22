@@ -5,6 +5,7 @@ import org.http4k.server.Http4kServer
 import org.http4k.server.PolyHandler
 import org.http4k.server.Undertow
 import org.http4k.server.asServer
+import kotlin.time.Duration
 
 object Server {
     @JvmStatic fun main(args: Array<String>) {
@@ -18,11 +19,12 @@ object Server {
     fun make(
         port: Int,
         hotReload: Boolean = false,
-        automateGameMasterCommands: Boolean = false
+        automateGameMasterCommands: Boolean = false,
+        automaticGameMasterDelayOverride: Duration? = null
     ): Http4kServer {
         val game = Game()
         val http = httpHandler(game, port, hotReload, automateGameMasterCommands)
-        val ws = wsHandler(game, automateGameMasterCommands)
+        val ws = wsHandler(game, automateGameMasterCommands, automaticGameMasterDelayOverride)
         return PolyHandler(http, ws).asServer(Undertow(port))
     }
 }

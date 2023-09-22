@@ -82,13 +82,11 @@ internal fun httpHandler(
         },
         "/play" bind Method.POST to {
             val playerId = it.form("playerId") ?: error("playerId not posted!")
-
-            if (playerId == "feTesting") {
-                return@to Response(Status.OK).with(htmlLens of Game("", listOf(playerId), true, playerId))
-            }
+            logger.info("$playerId is trying to join the game")
 
             try {
                 game.addPlayer(playerId)
+                logger.info("$playerId joined the game")
             } catch (e: GameException.PlayerWithSameNameAlreadyJoined) {
                 return@to Response(Status.OK).with(htmlLens of Index.withError(e::class.simpleName!!))
             }

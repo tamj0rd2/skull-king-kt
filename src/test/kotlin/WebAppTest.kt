@@ -1,6 +1,8 @@
 
+import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.webapp.Server
 import org.eclipse.jetty.client.HttpClient
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import org.openqa.selenium.JavascriptException
@@ -8,12 +10,21 @@ import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
+import testsupport.Actor
+import testsupport.Ensure
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
+import testsupport.SitAtTheTable
+import testsupport.SitsAtTheTable
 import testsupport.SkipWip
+import testsupport.TheGameState
+import testsupport.ThePlayersAtTheTable
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebDriver
 import java.net.ServerSocket
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 private object Config {
@@ -37,14 +48,17 @@ private object Config {
         }
 }
 
-@SkipWip
-@Execution(ExecutionMode.CONCURRENT)
-class WebAppTest : AppTestContract(object : TestConfiguration {
+private class WebAppTestConfiguration(automaticGameMasterCommandDelay: Duration?) : TestConfiguration {
     private val port = ServerSocket(0).run {
         close()
         localPort
     }
-    private val server = Server.make(port, hotReload = false)
+    private val server = Server.make(
+        port,
+        hotReload = false,
+        automateGameMasterCommands = automaticGameMasterCommandDelay != null,
+        automaticGameMasterDelayOverride = automaticGameMasterCommandDelay,
+    )
     private val baseUrl = "http://localhost:$port"
     private val httpClient = HttpClient()
     private val chromeDrivers = mutableListOf<ChromeDriver>()
@@ -82,4 +96,43 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
     }
 
     override fun manageGames(): ManageGames = ManageGames(HTTPDriver(baseUrl, httpClient))
-})
+}
+
+@SkipWip
+@Execution(ExecutionMode.CONCURRENT)
+class WebAppTest : AppTestContract(WebAppTestConfiguration(automaticGameMasterCommandDelay = null))
+
+@Execution(ExecutionMode.CONCURRENT)
+class WebAppTestWithAutomatedGameMasterCommands {
+    private val gmDelay = 1.seconds
+    private val c = WebAppTestConfiguration(automaticGameMasterCommandDelay = gmDelay)
+
+    private val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
+    private val sally by lazy { Actor("Sally Second").whoCan(c.participateInGames()) }
+
+    @BeforeTest fun setup() = c.setup()
+
+    @AfterTest fun teardown() = c.teardown()
+
+    @Test
+    fun `the game automatically starts after a delay when the minimum table size is reached`() {
+        freddy and sally both SitAtTheTable
+        freddy and sally both Ensure {
+            that(TheGameState, Is(GameState.InProgress), within = gmDelay * 2)
+        }
+    }
+
+    @Test
+    fun `the auto-start of the game still allows for other people to join`() {
+        val thirzah = Actor("Thirzah Third").whoCan(c.participateInGames())
+
+        freddy and sally both SitAtTheTable
+        Thread.sleep((gmDelay / 4).inWholeMilliseconds)
+        thirzah(SitsAtTheTable)
+
+        freddy and sally and thirzah all Ensure {
+            that(ThePlayersAtTheTable, areOnly(freddy, sally, thirzah))
+            that(TheGameState, Is(GameState.InProgress), within = gmDelay * 2)
+        }
+    }
+}

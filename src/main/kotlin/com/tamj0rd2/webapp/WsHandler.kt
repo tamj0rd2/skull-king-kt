@@ -17,14 +17,15 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.timerTask
+import kotlin.time.Duration
 
-internal fun wsHandler(game: Game, automateGameMasterCommands: Boolean): RoutingWsHandler {
+internal fun wsHandler(game: Game, automateGameMasterCommands: Boolean, automaticGameMasterDelayOverride: Duration?): RoutingWsHandler {
     val playerIdPath = Path.of("playerId")
     val messageToClientLens = WsMessage.auto<MessageToClient>().toLens()
     val clientMessageLens = WsMessage.auto<MessageFromClient>().toLens()
 
     if (automateGameMasterCommands) {
-        AutomatedGameMaster(game).start()
+        AutomatedGameMaster(game, automaticGameMasterDelayOverride).start()
     }
 
     return websockets(
@@ -93,8 +94,9 @@ internal sealed class MessageFromClient {
 }
 
 
-class AutomatedGameMaster(private val game: Game) {
+private class AutomatedGameMaster(private val game: Game, private val delayOverride: Duration?) {
     private val allGameEvents = CopyOnWriteArrayList<GameEvent>()
+    private val logger = LoggerFactory.getLogger(this::class.simpleName)
 
     fun start() {
         val timer = Timer()
@@ -106,24 +108,35 @@ class AutomatedGameMaster(private val game: Game) {
                 is GameEvent.PlayerJoined -> {
                     if (game.state != GameState.WaitingToStart) return@subscribeToGameEvents
                     timer.schedule(timerTask {
-                        if (allGameEvents.last() == event) game.start()
-                    }, 5000)
+                        if (allGameEvents.last() != event) return@timerTask
+
+                        logger.info("Starting the game")
+                        game.start()
+                    }, delayOverride?.inWholeMilliseconds ?: 5000)
                 }
                 is GameEvent.BiddingCompleted -> {
                     timer.schedule(timerTask {
                         val lastEvent = allGameEvents.last()
                         require(lastEvent == event) { "last event was not bidding completed, it was $lastEvent" }
+
+                        logger.info("Starting the first trick")
                         game.startNextTrick()
-                    }, 3000)
+                    }, delayOverride?.inWholeMilliseconds ?: 3000)
                 }
                 is GameEvent.TrickCompleted -> {
                     timer.schedule(timerTask {
                         val lastEvent = allGameEvents.last()
                         require(lastEvent == event) { "last event was not trick completed, it was $lastEvent" }
 
-                        if (game.roundNumber == game.trickNumber) game.startNextRound()
-                        else game.startNextTrick()
-                    }, 5000)
+                        if (game.roundNumber == game.trickNumber) {
+                            logger.info("Starting the next round")
+                            game.startNextRound()
+                        }
+                        else {
+                            logger.info("Starting the next trick")
+                            game.startNextTrick()
+                        }
+                    }, delayOverride?.inWholeMilliseconds ?: 5000)
                 }
                 else -> {}
             }

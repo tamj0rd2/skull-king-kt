@@ -15,11 +15,15 @@ import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase.*
 import com.tamj0rd2.domain.Suit.*
 import com.tamj0rd2.domain.blue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.Bid
 import testsupport.Bids
 import testsupport.Ensure
+import testsupport.EnsureActivity
 import testsupport.Ensures
 import testsupport.HerFirstCard
 import testsupport.HisFirstCard
@@ -64,19 +68,14 @@ interface TestConfiguration : AbilityFactory {
 // scoring
 // using actual cards lol
 
-sealed class AppTestContract(private val d: TestConfiguration) {
-    private val freddy by lazy { Actor("Freddy First").whoCan(d.participateInGames()) }
-    private val sally by lazy { Actor("Sally Second").whoCan(d.participateInGames()) }
-    // TODO: Gary's responsibilities need to go... his commands should just be automatically scheduled.
-    // the only one gary should be able to keep is rigging the deck and starting the game, for now.
-    // But I don't know how to fix this :(
-    private val gary by lazy { Actor("Gary GameMaster").whoCan(d.manageGames()) }
+sealed class AppTestContract(private val c: TestConfiguration) {
+    private val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
+    private val sally by lazy { Actor("Sally Second").whoCan(c.participateInGames()) }
+    private val gary by lazy { Actor("Gary GameMaster").whoCan(c.manageGames()) }
 
-    @BeforeTest
-    fun setup() = d.setup()
+    @BeforeTest fun setup() = c.setup()
 
-    @AfterTest
-    fun teardown() = d.teardown()
+    @AfterTest fun teardown() = c.teardown()
 
     @Test
     fun `sitting at an empty table and waiting for more players to join`() {
@@ -142,7 +141,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
 
     @Test
     fun `cannot play a card when it is not their turn`() {
-        val thirzah = Actor("Thirzah Third").whoCan(d.participateInGames())
+        val thirzah = Actor("Thirzah Third").whoCan(c.participateInGames())
         val thePlayers = listOf(freddy, sally, thirzah)
 
         thePlayers all SitAtTheTable
@@ -206,7 +205,7 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     @Test
     fun `a player can't join twice`() {
         freddy(SitsAtTheTable)
-        val freddyOnASecondDevice = Actor(freddy.name).whoCan(d.participateInGames())
+        val freddyOnASecondDevice = Actor(freddy.name).whoCan(c.participateInGames())
         freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure<GameException.PlayerWithSameNameAlreadyJoined>())
     }
 
@@ -340,25 +339,31 @@ sealed class AppTestContract(private val d: TestConfiguration) {
     }
 }
 
-private fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.name)
+internal fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.name)
 
-private infix fun Pair<Actor, Actor>.both(activity: Activity) {
-    first(activity)
-    second(activity)
+internal infix fun Pair<Actor, Actor>.both(activity: Activity) {
+    listOf(first, second).all(activity)
 }
 
-private infix fun List<Actor>.all(activity: Activity) {
+internal infix fun List<Actor>.all(activity: Activity) {
+    if (activity is EnsureActivity) {
+        // assertions can safely happen in parallel
+        parallelMap { actor -> actor(activity) }
+        return
+    }
+
     forEach { actor -> actor(activity) }
 }
 
-private infix fun Actor.and(other: Actor) = this to other
+internal infix fun Actor.and(other: Actor) = this to other
+internal infix fun Pair<Actor, Actor>.and(other: Actor) = listOf(first, second, other)
 
-private fun areOnly(vararg expected: Actor): Matcher<Collection<PlayerId>> =
+internal fun areOnly(vararg expected: Actor): Matcher<Collection<PlayerId>> =
     areOnly<PlayerId>(*expected.map { it.name }.toTypedArray())
 
-private fun <T> onlyContains(vararg expected: T): Matcher<Collection<T>> = areOnly(*expected)
+internal fun <T> onlyContains(vararg expected: T): Matcher<Collection<T>> = areOnly(*expected)
 
-private fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> = object : Matcher<Collection<T>?> {
+internal fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> = object : Matcher<Collection<T>?> {
     override fun invoke(actual: Collection<T>?): MatchResult {
         if (actual?.toSet() != expected.toSet()) return MatchResult.Mismatch("was: ${describe(actual)}")
         return MatchResult.Match
@@ -377,3 +382,7 @@ fun where(vararg bids: Pair<Actor, DeprecatedBid>): Matcher<Map<PlayerId, Deprec
 infix fun Actor.bid(bid: Int): Pair<Actor, DeprecatedBid> = Pair(this, Placed(bid))
 fun Actor.bidIsHidden(): Pair<Actor, DeprecatedBid> = Pair(this, IsHidden)
 fun Actor.hasNotBid(): Pair<Actor, DeprecatedBid> = Pair(this, None)
+
+private fun <A, B>List<A>.parallelMap(f: suspend (A) -> B): List<B> = runBlocking {
+    map { async(Dispatchers.Default) { f(it) } }.map { it.await() }
+}
