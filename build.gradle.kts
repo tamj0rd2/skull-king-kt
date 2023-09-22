@@ -49,7 +49,24 @@ tasks.withType<KotlinCompile> {
 }
 
 application {
-    mainClass.set("com.tamj0rd2.webapp.Server")
+    mainClass.set("com.tamj0rd2.webapp.ServerKt")
+}
+
+tasks.withType<Jar> {
+    manifest {
+        attributes["Main-Class"] = "com.tamj0rd2.webapp.ServerKt"
+    }
+
+    // To avoid the duplicate handling strategy error
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    // To add all of the dependencies
+    from(sourceSets.main.get().output)
+
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    })
 }
 
 task("buildFrontend") {

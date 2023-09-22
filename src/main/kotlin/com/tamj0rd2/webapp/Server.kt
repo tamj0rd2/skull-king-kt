@@ -8,14 +8,6 @@ import org.http4k.server.asServer
 import kotlin.time.Duration
 
 object Server {
-    @JvmStatic fun main(args: Array<String>) {
-        make(
-            port = 8080,
-            hotReload = true,
-            automateGameMasterCommands = true
-        ).start()
-    }
-
     fun make(
         port: Int,
         hotReload: Boolean = false,
@@ -27,4 +19,12 @@ object Server {
         val ws = wsHandler(game, automateGameMasterCommands, automaticGameMasterDelayOverride)
         return PolyHandler(http, ws).asServer(Undertow(port))
     }
+}
+
+fun main() {
+    Server.make(
+        port = System.getenv("PORT")?.toInt() ?: 8080,
+        hotReload = true,
+        automateGameMasterCommands = true
+    ).start()
 }
