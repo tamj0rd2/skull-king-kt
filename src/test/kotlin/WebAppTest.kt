@@ -16,6 +16,8 @@ import testsupport.Bid
 import testsupport.Ensure
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
+import testsupport.Play
+import testsupport.Question
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
 import testsupport.SkipWip
@@ -155,13 +157,55 @@ class WebAppTestWithAutomatedGameMasterCommands {
     @Test
     fun `when all players have bid, the trick automatically begins after a delay`() {
         freddy and sally both SitAtTheTable
-        freddy and sally both Ensure(TheRoundPhase, Is(RoundPhase.Bidding), within = expectedDelay * 2)
+        freddy and sally both Ensure(TheRoundPhase, Is(RoundPhase.Bidding), within = expectedDelay)
 
         freddy and sally both Bid(1)
         freddy and sally both Ensure(within = expectedDelay) {
             that(TheRoundPhase, Is(RoundPhase.TrickTaking))
             that(TheTrickNumber, Is(1))
             that(TheCurrentPlayer, Is(freddy.name))
+        }
+    }
+
+    @Test
+    fun `when all players have played their card, the next trick or round automatically begins`() {
+        data class RoundState(val round: Int?, val phase: RoundPhase?, val trick: Int? = null)
+        val TheRoundState = Question("about the round state") {actor ->
+            RoundState(
+                round = actor.asksAbout(TheRoundNumber),
+                phase = actor.asksAbout(TheRoundPhase),
+                trick = actor.asksAbout(TheTrickNumber)
+            )
+        }
+
+        freddy and sally both SitAtTheTable
+        freddy and sally both Ensure(within=expectedDelay) {
+            that(TheRoundState, Is(RoundState(round = 1, phase = RoundPhase.Bidding)))
+        }
+
+        freddy and sally both Bid(1)
+        freddy and sally both Ensure(within = expectedDelay) {
+            that(TheRoundState, Is(RoundState(round = 1, phase = RoundPhase.TrickTaking, trick = 1)))
+        }
+
+        freddy and sally both Play.theFirstCardInTheirHand
+        freddy and sally both Ensure(within = expectedDelay) {
+            that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.Bidding)))
+        }
+
+        freddy and sally both Bid(1)
+        freddy and sally both Ensure(within = expectedDelay) {
+            that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.TrickTaking, trick = 1)))
+        }
+
+        freddy and sally both Play.theFirstCardInTheirHand
+        freddy and sally both Ensure(within = expectedDelay) {
+            that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.TrickTaking, trick = 2)))
+        }
+
+        freddy and sally both Play.theFirstCardInTheirHand
+        freddy and sally both Ensure(within = expectedDelay) {
+            that(TheRoundState, Is(RoundState(round = 3, phase = RoundPhase.Bidding)))
         }
     }
 }
