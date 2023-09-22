@@ -13,7 +13,7 @@ export class GamePhaseElement extends HTMLElement {
         this.disconnectFn = listenToGameEvents({
             [MessageToClient.GameStarted]: () => {
                 this.replaceChildren()
-                this.innerHTML = `<h2 id="gamePhase"></h2>`
+                this.innerHTML = `<h2 id="roundPhase"></h2>`
             },
             [MessageToClient.RoundStarted]: () => this.updateGamePhase(GamePhase.Bidding, "Place your bid!"),
             [MessageToClient.BiddingCompleted]: () => this.updateGamePhase(GamePhase.BiddingCompleted, "Bidding completed :)"),
@@ -23,7 +23,7 @@ export class GamePhaseElement extends HTMLElement {
     }
 
     updateGamePhase = (gamePhase: GamePhase, text: string) => {
-        const gamePhaseEl = this.querySelector("#gamePhase") as HTMLHeadingElement
+        const gamePhaseEl = this.querySelector("#roundPhase") as HTMLHeadingElement
         gamePhaseEl.setAttribute("data-phase", gamePhase)
         gamePhaseEl.innerText = text
     }

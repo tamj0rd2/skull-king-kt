@@ -1,5 +1,6 @@
 
 import com.tamj0rd2.domain.GameState
+import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.webapp.Server
 import org.eclipse.jetty.client.HttpClient
 import org.junit.jupiter.api.Test
@@ -11,14 +12,20 @@ import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import testsupport.Actor
+import testsupport.Bid
 import testsupport.Ensure
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
 import testsupport.SkipWip
+import testsupport.TheCurrentPlayer
 import testsupport.TheGameState
 import testsupport.ThePlayersAtTheTable
+import testsupport.TheRoundNumber
+import testsupport.TheRoundPhase
+import testsupport.TheTrickNumber
+import testsupport.TheirHand
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebDriver
 import java.net.ServerSocket
@@ -26,6 +33,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import com.natpryce.hamkrest.equalTo as Is
 
 private object Config {
     // this needs to manually be kept in line with the version in gradle.build.kts
@@ -105,6 +113,7 @@ class WebAppTest : AppTestContract(WebAppTestConfiguration(automaticGameMasterCo
 @Execution(ExecutionMode.CONCURRENT)
 class WebAppTestWithAutomatedGameMasterCommands {
     private val gmDelay = 1.seconds
+    private val expectedDelay = gmDelay * 2
     private val c = WebAppTestConfiguration(automaticGameMasterCommandDelay = gmDelay)
 
     private val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
@@ -117,8 +126,12 @@ class WebAppTestWithAutomatedGameMasterCommands {
     @Test
     fun `the game automatically starts after a delay when the minimum table size is reached`() {
         freddy and sally both SitAtTheTable
-        freddy and sally both Ensure {
-            that(TheGameState, Is(GameState.InProgress), within = gmDelay * 2)
+        freddy and sally both Ensure(within = expectedDelay) {
+            that(ThePlayersAtTheTable, areOnly(freddy, sally))
+            that(TheGameState, Is(GameState.InProgress))
+            that(TheRoundNumber, Is(1))
+            that(TheirHand, sizeIs(1))
+            that(TheRoundPhase, Is(RoundPhase.Bidding))
         }
     }
 
@@ -130,9 +143,25 @@ class WebAppTestWithAutomatedGameMasterCommands {
         Thread.sleep((gmDelay / 4).inWholeMilliseconds)
         thirzah(SitsAtTheTable)
 
-        freddy and sally and thirzah all Ensure {
+        freddy and sally and thirzah all Ensure(within = expectedDelay) {
             that(ThePlayersAtTheTable, areOnly(freddy, sally, thirzah))
-            that(TheGameState, Is(GameState.InProgress), within = gmDelay * 2)
+            that(TheGameState, Is(GameState.InProgress))
+            that(TheRoundNumber, Is(1))
+            that(TheirHand, sizeIs(1))
+            that(TheRoundPhase, Is(RoundPhase.Bidding))
+        }
+    }
+
+    @Test
+    fun `when all players have bid, the trick automatically begins after a delay`() {
+        freddy and sally both SitAtTheTable
+        freddy and sally both Ensure(TheRoundPhase, Is(RoundPhase.Bidding), within = expectedDelay * 2)
+
+        freddy and sally both Bid(1)
+        freddy and sally both Ensure(within = expectedDelay) {
+            that(TheRoundPhase, Is(RoundPhase.TrickTaking))
+            that(TheTrickNumber, Is(1))
+            that(TheCurrentPlayer, Is(freddy.name))
         }
     }
 }

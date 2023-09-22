@@ -1,7 +1,7 @@
 package testsupport.adapters
 
-import com.tamj0rd2.domain.DeprecatedBid
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.DeprecatedBid
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
@@ -10,11 +10,12 @@ import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.Trick
 import org.openqa.selenium.By
 import org.openqa.selenium.NoSuchElementException
+import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
 import testsupport.ApplicationDriver
 
-private const val debug = false
+private const val debug = true
 
 class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     private lateinit var playerId: String
@@ -61,14 +62,14 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    override val trickNumber: Int
+    override val trickNumber: Int?
         get() = debugException {
-            driver.findElement(By.id("trickNumber")).getAttribute("data-trickNumber").toInt()
+            driver.findElement(By.id("trickNumber")).getAttributeOrNull("data-trickNumber")?.toInt()
         }
 
-    override val roundNumber: Int
+    override val roundNumber: Int?
         get() = debugException {
-            driver.findElement(By.id("roundNumber")).getAttribute("data-roundNumber").toInt()
+            driver.findElement(By.id("roundNumber")).getAttributeOrNull("data-roundNumber")?.toInt()
         }
 
     override val playersInRoom: List<PlayerId>
@@ -92,15 +93,18 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 .map { it.toCard().playedBy(it.getAttribute("player")) }
         }
 
-    override val gameState: GameState
+    override val gameState: GameState?
         get() = debugException {
-            driver.findElement(By.id("gameState")).getAttribute("data-state").let(GameState::from)
+            driver.findElementOrNull(By.id("gameState"))
+                ?.getAttributeOrNull("data-state")
+                ?.let(GameState::from)
         }
 
-    override val roundPhase: RoundPhase
+    override val roundPhase: RoundPhase?
         get() = debugException {
-            val rawPhase = driver.findElement(By.id("gamePhase")).getAttribute("data-phase")
-            RoundPhase.from(rawPhase)
+            driver.findElementOrNull(By.id("roundPhase"))
+                ?.getAttributeOrNull("data-phase")
+                ?.let(RoundPhase::from)
         }
 
     override val bids: Map<PlayerId, DeprecatedBid>
@@ -120,6 +124,14 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         driver.findElement(By.id("currentPlayer")).getAttribute("data-playerId") ?: error("no player id for the current player")
     }
 
+    private fun WebElement.getAttributeOrNull(attributeName: String): String? = getAttribute(attributeName)
+
+    private fun WebDriver.findElementOrNull(by: By): WebElement? = try {
+        findElement(by)
+    } catch (e: NoSuchElementException) {
+        null
+    }
+
     private fun <T> debugException(block: () -> T): T {
         try {
             return block()
@@ -135,9 +147,12 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     }
 
     private fun printBody() {
-        println("===$playerId's view===")
-        driver.findElement(By.tagName("body")).getAttribute("outerHTML").let(::println)
-        println("====================")
+        val html = driver.findElement(By.tagName("body")).getAttribute("outerHTML")
+        println("""
+            |===========$playerId's view===========
+            |$html
+            |===========end of $playerId's view===========
+        """.trimMargin())
     }
 
     private fun WebElement.toCard() = Card.from(this.getAttribute("suit"), this.getAttribute("number")?.toInt())

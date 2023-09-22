@@ -65,22 +65,30 @@ fun interface EnsureActivity : Activity
 
 val Ensures = Ensure
 object Ensure {
+    private val defDelay = 1.seconds
+
     interface That {
-        fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration = 1.seconds)
+        fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration? = null)
         fun <T> Is(expected: T?): Matcher<T>
     }
 
-    operator fun invoke(block: That.() -> Unit) = EnsureActivity { actor ->
+    operator fun invoke(within: Duration = defDelay, block: That.() -> Unit) = EnsureActivity { actor ->
+        val outerWithin = within
+
         object : That {
-            override fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration) {
-                actor.invoke(Ensure(question, matcher, within))
+            override fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration?) {
+                actor.invoke(Ensure(
+                    question = question,
+                    matcher = matcher,
+                    within = within ?: outerWithin
+                ))
             }
 
             override fun <T> Is(expected: T?): Matcher<T> = equalTo(expected)
         }.apply(block)
     }
 
-    operator fun <T> invoke(question: Question<T>, matcher: Matcher<T>, within: Duration = 1.seconds) = EnsureActivity { actor ->
+    operator fun <T> invoke(question: Question<T>, matcher: Matcher<T>, within: Duration = defDelay) = EnsureActivity { actor ->
         val mustEndBy = now().plus(within.toJavaDuration())
 
         do {

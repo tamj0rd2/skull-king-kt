@@ -16,11 +16,11 @@ interface ApplicationDriver {
     fun playCard(card: Card)
 
     val currentPlayer: PlayerId?
-    val trickNumber: Int
-    val roundNumber: Int
+    val trickNumber: Int?
+    val roundNumber: Int?
     val trick: Trick
-    val roundPhase: RoundPhase
-    val gameState: GameState
+    val roundPhase: RoundPhase?
+    val gameState: GameState?
     val playersInRoom: List<PlayerId>
     val hand: Hand
     val bids: Map<PlayerId, DeprecatedBid>
