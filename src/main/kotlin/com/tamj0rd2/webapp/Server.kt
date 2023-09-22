@@ -18,7 +18,7 @@ object Server {
         val game = Game()
         val http = httpHandler(
             game = game,
-            host = if (host == "localhost") "$host:$port" else host,
+            host = host,
             hotReload = hotReload,
             automateGameMasterCommands = automateGameMasterCommands,
         )

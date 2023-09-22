@@ -25,11 +25,9 @@
     };
 
     let wsProtocol = "ws";
-    if (document.location.protocol === "https:") {
-        wsProtocol += "s"
-    }
+    if (location.protocol === "https:") wsProtocol += "s"
 
-    window.socket = new WebSocket(`${wsProtocol}://{{host}}/{{playerId}}`)
+    window.socket = new WebSocket(`${wsProtocol}://{{host}}:${location.port}/{{playerId}}`)
     window.socket.addEventListener("message", (event) => {
         console.log(`{{playerId}} received`, event.data)
     })
