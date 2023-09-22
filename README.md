@@ -1,5 +1,11 @@
 # Skull king
 
+## Deployment
+
+- [Install flyctl](https://fly.io/docs/hands-on/install-flyctl/)
+- `flyctl auth login`
+- `flyctl deploy`
+
 ## Development
 
 ### Setting up ChromeDriver

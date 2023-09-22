@@ -24,7 +24,12 @@
         waitingForMorePlayers: {{waitingForMorePlayers}},
     };
 
-    window.socket = new WebSocket("{{wsHost}}/{{playerId}}")
+    let wsProtocol = "ws";
+    if (document.location.protocol === "https:") {
+        wsProtocol += "s"
+    }
+
+    window.socket = new WebSocket(`${wsProtocol}://{{host}}/{{playerId}}`)
     window.socket.addEventListener("message", (event) => {
         console.log(`{{playerId}} received`, event.data)
     })

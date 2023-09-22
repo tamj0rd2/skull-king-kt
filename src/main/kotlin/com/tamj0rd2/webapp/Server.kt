@@ -10,21 +10,31 @@ import kotlin.time.Duration
 object Server {
     fun make(
         port: Int,
+        host: String = "localhost",
         hotReload: Boolean = false,
         automateGameMasterCommands: Boolean = false,
         automaticGameMasterDelayOverride: Duration? = null
     ): Http4kServer {
         val game = Game()
-        val http = httpHandler(game, port, hotReload, automateGameMasterCommands)
+        val http = httpHandler(
+            game = game,
+            host = if (host == "localhost") "$host:$port" else host,
+            hotReload = hotReload,
+            automateGameMasterCommands = automateGameMasterCommands,
+        )
+
         val ws = wsHandler(game, automateGameMasterCommands, automaticGameMasterDelayOverride)
         return PolyHandler(http, ws).asServer(Undertow(port))
     }
 }
 
 fun main() {
+    val port = System.getenv("PORT")?.toInt() ?: 8080
+    val host = System.getenv("HOST") ?: "localhost"
     Server.make(
-        port = System.getenv("PORT")?.toInt() ?: 8080,
+        port = port,
+        host = host,
         hotReload = true,
         automateGameMasterCommands = true
-    ).start()
+    ).start().apply { println("Server started on port $host:$port") }
 }

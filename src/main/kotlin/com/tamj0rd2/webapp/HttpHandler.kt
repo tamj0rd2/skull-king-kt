@@ -26,7 +26,7 @@ import org.http4k.template.viewModel
 import org.slf4j.LoggerFactory
 
 private data class Game(
-    val wsHost: String,
+    val host: String,
     private val players: List<PlayerId>,
     val waitingForMorePlayers: Boolean,
     val playerId: PlayerId,
@@ -44,7 +44,7 @@ private data class Index(val errorMessage: String? = null) : ViewModel {
 
 internal fun httpHandler(
     game: com.tamj0rd2.domain.Game,
-    port: Int,
+    host: String,
     hotReload: Boolean,
     automateGameMasterCommands: Boolean
 ): HttpHandler {
@@ -52,7 +52,6 @@ internal fun httpHandler(
     val (renderer, resourceLoader) = buildResourceLoaders(hotReload)
     val gameMasterCommandLens = Body.auto<GameMasterCommand>().toLens()
 
-    val wsHost = "ws://localhost:$port"
     val htmlLens = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
 
     fun gameMasterCommandHandler(req: Request): Response {
@@ -92,7 +91,7 @@ internal fun httpHandler(
             }
 
             val model = Game(
-                wsHost = wsHost,
+                host = host,
                 players = game.players,
                 waitingForMorePlayers = game.state == GameState.WaitingForMorePlayers,
                 playerId = playerId,
