@@ -15,10 +15,10 @@ export class GamePhaseElement extends HTMLElement {
                 this.replaceChildren()
                 this.innerHTML = `<h2 id="roundPhase"></h2>`
             },
-            [MessageToClient.RoundStarted]: () => this.updateGamePhase(GamePhase.Bidding, "Place your bid!"),
-            [MessageToClient.BiddingCompleted]: () => this.updateGamePhase(GamePhase.BiddingCompleted, "Bidding completed :)"),
-            [MessageToClient.TrickStarted]: () => this.updateGamePhase(GamePhase.TrickTaking, "It's trick taking time!"),
-            [MessageToClient.TrickCompleted]: () => this.updateGamePhase(GamePhase.TrickCompleted, "Trick completed :)"),
+            [MessageToClient.RoundStarted]: () => this.updateGamePhase(GamePhase.Bidding, "Place your bid"),
+            [MessageToClient.BiddingCompleted]: () => this.updateGamePhase(GamePhase.BiddingCompleted, "All bids are in"),
+            [MessageToClient.TrickStarted]: () => this.updateGamePhase(GamePhase.TrickTaking, ""),
+            [MessageToClient.TrickCompleted]: () => this.updateGamePhase(GamePhase.TrickCompleted, ""),
         })
     }
 
