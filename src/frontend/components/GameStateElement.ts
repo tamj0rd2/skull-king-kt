@@ -11,31 +11,34 @@ export class GameStateElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToGameEvents({
-            [MessageToClient.PlayerJoined]: ({waitingForMorePlayers}) => this.updateBasedOnPlayers(waitingForMorePlayers),
-            [MessageToClient.GameStarted]: () => this.updateGameState(GameState.InProgress),
-            [MessageToClient.GameCompleted]: () => this.updateGameState(GameState.Complete),
+            [MessageToClient.PlayerJoined]: ({waitingForMorePlayers}) => this.setBasedOnPlayers(waitingForMorePlayers),
+            [MessageToClient.GameStarted]: () => this.set(GameState.InProgress),
+            [MessageToClient.GameCompleted]: () => this.set(GameState.Complete),
         })
 
         this.innerHTML = `<h2 id="gameState"></h2>`
-        this.updateBasedOnPlayers(INITIAL_STATE.waitingForMorePlayers)
+        this.setBasedOnPlayers(INITIAL_STATE.waitingForMorePlayers)
     }
 
-    updateBasedOnPlayers = (waitingForMorePlayers: boolean) => {
-        if (waitingForMorePlayers) this.updateGameState(GameState.WaitingForMorePlayers)
-        else this.updateGameState(GameState.WaitingToStart)
+    setBasedOnPlayers = (waitingForMorePlayers: boolean) => {
+        const gameState = waitingForMorePlayers
+            ? GameState.WaitingForMorePlayers
+            : GameState.WaitingToStart
+
+        this.set(gameState)
     }
 
-    updateGameState = (gameState: GameState) => {
+    set = (gameState: GameState) => {
         const gameStateEl = this.querySelector("#gameState") as HTMLHeadingElement
         const gameStateMapping = {
             [GameState.WaitingForMorePlayers]: "Waiting for more players...",
             [GameState.WaitingToStart]: "Waiting for the game to start",
-            [GameState.InProgress]: "The game has started!",
+            [GameState.InProgress]: "",
             [GameState.Complete]: "The game is over!"
         }
 
         const text = gameStateMapping[gameState]
-        if (!text) throw new Error("Unknown game state: " + gameState)
+        if (text === undefined) throw new Error("Unknown game state: " + gameState)
         gameStateEl.innerText = gameStateMapping[gameState]
         gameStateEl.setAttribute("data-state", gameState)
     }
