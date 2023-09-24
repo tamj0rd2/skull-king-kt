@@ -65,9 +65,8 @@ val TheCurrentTrick = Question.about("the current trick") { actor ->
     actor.use<ParticipateInGames>().trick
 }
 
-fun interface EnsureActivity : Activity
-
 val Ensures = Ensure
+
 object Ensure {
     private val defDelay = 1.seconds
 
@@ -76,7 +75,7 @@ object Ensure {
         fun <T> Is(expected: T?): Matcher<T>
     }
 
-    operator fun invoke(within: Duration = defDelay, block: That.() -> Unit) = EnsureActivity { actor ->
+    operator fun invoke(within: Duration = defDelay, block: That.() -> Unit) = Activity { actor ->
         val outerWithin = within
 
         object : That {
@@ -92,7 +91,7 @@ object Ensure {
         }.apply(block)
     }
 
-    operator fun <T> invoke(question: Question<T>, matcher: Matcher<T>, within: Duration = defDelay) = EnsureActivity { actor ->
+    operator fun <T> invoke(question: Question<T>, matcher: Matcher<T>, within: Duration = defDelay) = Activity { actor ->
         val mustEndBy = now().plus(within.toJavaDuration())
 
         do {

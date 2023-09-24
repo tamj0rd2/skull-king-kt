@@ -12,7 +12,7 @@ import testsupport.GameMasterDriver
 
 class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver {
 
-    private lateinit var playerId: String
+    private lateinit var playerId: PlayerId
 
     override fun joinGame(playerId: PlayerId) {
         this.playerId = playerId

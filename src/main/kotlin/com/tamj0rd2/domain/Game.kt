@@ -149,8 +149,13 @@ class Game {
     }
 }
 
-// TODO: introduce tiny types for these. e.g a small data class that represents the data
-typealias PlayerId = String
+data class PlayerId(val playerId: String) {
+    override fun toString(): String = playerId
+
+    companion object {
+        fun from(playerId: String) = PlayerId(playerId)
+    }
+}
 
 enum class GameState {
     WaitingForMorePlayers,

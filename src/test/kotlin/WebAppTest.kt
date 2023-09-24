@@ -30,6 +30,7 @@ import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebDriver
+import testsupport.playerId
 import java.net.ServerSocket
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -128,7 +129,7 @@ class WebAppTestWithAutomatedGameMasterCommands {
     @Test
     fun `the game automatically starts after a delay when the minimum table size is reached`() {
         freddy and sally both SitAtTheTable
-        freddy and sally both Ensure(within = expectedDelay) {
+        freddy and sally bothInParallel Ensure(within = expectedDelay) {
             that(ThePlayersAtTheTable, areOnly(freddy, sally))
             that(TheGameState, Is(GameState.InProgress))
             that(TheRoundNumber, Is(1))
@@ -145,7 +146,7 @@ class WebAppTestWithAutomatedGameMasterCommands {
         Thread.sleep((gmDelay / 4).inWholeMilliseconds)
         thirzah(SitsAtTheTable)
 
-        freddy and sally and thirzah all Ensure(within = expectedDelay) {
+        freddy and sally and thirzah allInParallel Ensure(within = expectedDelay) {
             that(ThePlayersAtTheTable, areOnly(freddy, sally, thirzah))
             that(TheGameState, Is(GameState.InProgress))
             that(TheRoundNumber, Is(1))
@@ -157,13 +158,13 @@ class WebAppTestWithAutomatedGameMasterCommands {
     @Test
     fun `when all players have bid, the trick automatically begins after a delay`() {
         freddy and sally both SitAtTheTable
-        freddy and sally both Ensure(TheRoundPhase, Is(RoundPhase.Bidding), within = expectedDelay)
+        freddy and sally bothInParallel Ensure(TheRoundPhase, Is(RoundPhase.Bidding), within = expectedDelay)
 
         freddy and sally both Bid(1)
-        freddy and sally both Ensure(within = expectedDelay) {
+        freddy and sally bothInParallel Ensure(within = expectedDelay) {
             that(TheRoundPhase, Is(RoundPhase.TrickTaking))
             that(TheTrickNumber, Is(1))
-            that(TheCurrentPlayer, Is(freddy.name))
+            that(TheCurrentPlayer, Is(freddy.playerId))
         }
     }
 
@@ -179,32 +180,32 @@ class WebAppTestWithAutomatedGameMasterCommands {
         }
 
         freddy and sally both SitAtTheTable
-        freddy and sally both Ensure(within=expectedDelay) {
+        freddy and sally bothInParallel Ensure(within=expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 1, phase = RoundPhase.Bidding)))
         }
 
         freddy and sally both Bid(1)
-        freddy and sally both Ensure(within = expectedDelay) {
+        freddy and sally bothInParallel Ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 1, phase = RoundPhase.TrickTaking, trick = 1)))
         }
 
         freddy and sally both Play.theFirstCardInTheirHand
-        freddy and sally both Ensure(within = expectedDelay) {
+        freddy and sally bothInParallel Ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.Bidding)))
         }
 
         freddy and sally both Bid(1)
-        freddy and sally both Ensure(within = expectedDelay) {
+        freddy and sally bothInParallel Ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.TrickTaking, trick = 1)))
         }
 
         freddy and sally both Play.theFirstCardInTheirHand
-        freddy and sally both Ensure(within = expectedDelay) {
+        freddy and sally bothInParallel Ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.TrickTaking, trick = 2)))
         }
 
         freddy and sally both Play.theFirstCardInTheirHand
-        freddy and sally both Ensure(within = expectedDelay) {
+        freddy and sally bothInParallel Ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 3, phase = RoundPhase.Bidding)))
         }
     }

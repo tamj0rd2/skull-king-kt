@@ -27,12 +27,24 @@ import org.slf4j.LoggerFactory
 
 private data class Game(
     val host: String,
-    private val players: List<PlayerId>,
+    val playersJson: String,
     val waitingForMorePlayers: Boolean,
-    val playerId: PlayerId,
+    val playerId: String,
 ) : ViewModel {
-    // used by the UI
-    val playersJson = players.asJsonObject().asCompactJsonString()
+
+    companion object {
+        fun from(
+            host: String,
+            players: List<PlayerId>,
+            waitingForMorePlayers: Boolean,
+            playerId: PlayerId,
+        ) = Game(
+            host = host,
+            playersJson = players.asJsonObject().asCompactJsonString(),
+            waitingForMorePlayers = waitingForMorePlayers,
+            playerId = playerId.playerId,
+        )
+    }
 }
 
 private data class Index(val errorMessage: String? = null) : ViewModel {
@@ -80,7 +92,7 @@ internal fun httpHandler(
             Response(Status.OK).with(htmlLens of Index.withoutError)
         },
         "/play" bind Method.POST to {
-            val playerId = it.form("playerId") ?: error("playerId not posted!")
+            val playerId = it.form("playerId")?.let(PlayerId::from) ?: error("playerId not posted!")
             logger.info("$playerId is trying to join the game")
 
             try {
@@ -90,7 +102,7 @@ internal fun httpHandler(
                 return@to Response(Status.OK).with(htmlLens of Index.withError(e::class.simpleName!!))
             }
 
-            val model = Game(
+            val model = Game.from(
                 host = host,
                 players = game.players,
                 waitingForMorePlayers = game.state == GameState.WaitingForMorePlayers,

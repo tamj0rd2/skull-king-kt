@@ -20,7 +20,7 @@ import kotlin.concurrent.timerTask
 import kotlin.time.Duration
 
 internal fun wsHandler(game: Game, automateGameMasterCommands: Boolean, automaticGameMasterDelayOverride: Duration?): RoutingWsHandler {
-    val playerIdPath = Path.of("playerId")
+    val playerIdLens = Path.map(::PlayerId, PlayerId::playerId).of("playerId")
     val messageToClientLens = WsMessage.auto<MessageToClient>().toLens()
     val clientMessageLens = WsMessage.auto<MessageFromClient>().toLens()
 
@@ -31,7 +31,7 @@ internal fun wsHandler(game: Game, automateGameMasterCommands: Boolean, automati
     return websockets(
         "/{playerId}" bind { req ->
             WsResponse { ws ->
-                val playerId: PlayerId = playerIdPath(req)
+                val playerId = playerIdLens(req)
                 val logger = LoggerFactory.getLogger("wsHandler pid='$playerId'")
 
                 game.subscribeToGameEvents {

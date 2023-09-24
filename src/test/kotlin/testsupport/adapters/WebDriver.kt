@@ -18,10 +18,10 @@ import testsupport.ApplicationDriver
 private const val debug = true
 
 class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
-    private lateinit var playerId: String
+    private lateinit var playerId: PlayerId
 
     override fun joinGame(playerId: PlayerId) = debugException {
-        driver.findElement(By.name("playerId")).sendKeys(playerId)
+        driver.findElement(By.name("playerId")).sendKeys(playerId.playerId)
         this.playerId = playerId
 
         driver.findElement(By.id("joinGame")).submit().apply {
@@ -65,7 +65,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     override val trickWinner: PlayerId?
         get() = debugException {
-            driver.findElement(By.id("trickWinner")).getAttributeOrNull("data-playerId")
+            driver.findElement(By.id("trickWinner")).getAttributeOrNull("data-playerId")?.let(::PlayerId)
         }
 
     override val trickNumber: Int?
@@ -82,7 +82,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         get() = debugException {
             driver.findElement(By.id("players"))
                 .findElements(By.tagName("li"))
-                .mapNotNull { it.text }
+                .mapNotNull { PlayerId(it.text) }
         }
 
     override val hand: Hand
@@ -96,7 +96,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         get() = debugException {
             driver.findElement(By.id("trick"))
                 .findElements(By.tagName("li"))
-                .map { it.toCard().playedBy(it.getAttribute("player")) }
+                .map { it.toCard().playedBy(PlayerId(it.getAttribute("player"))) }
         }
 
     override val gameState: GameState?
@@ -119,15 +119,16 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 .findElements(By.tagName("li"))
                 .associate {
                     val (name, bid) = it.text.split(":")
-                        .apply { if (size < 2) return@associate this[0] to DeprecatedBid.None }
-                    if (bid == "has bid") return@associate name to DeprecatedBid.IsHidden
-                    name to DeprecatedBid.Placed(bid.toInt())
+                        .apply { if (size < 2) return@associate PlayerId(this[0]) to DeprecatedBid.None }
+                    val playerId = PlayerId(name)
+                    if (bid == "has bid") return@associate playerId to DeprecatedBid.IsHidden
+                    playerId to DeprecatedBid.Placed(bid.toInt())
                 }
         }
 
     override val currentPlayer: PlayerId?
         get() = debugException {
-            driver.findElement(By.id("currentPlayer")).getAttribute("data-playerId")
+            driver.findElement(By.id("currentPlayer")).getAttribute("data-playerId")?.let(::PlayerId)
                 ?: error("no player id for the current player")
         }
 
@@ -143,18 +144,19 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         try {
             return block()
         } catch (e: Exception) {
-            if (debug) printBody()
+            if (debug) printContent()
             throw e
         }
     }
 
     private fun <T> debugAlways(block: () -> T): T {
-        printBody()
+        printContent()
         return block()
     }
 
-    private fun printBody() {
-        val html = driver.findElement(By.tagName("body")).getAttribute("outerHTML")
+    private fun printContent() {
+        val root = driver.findElementOrNull(By.id("root")) ?: driver.findElement(By.tagName("body"))
+        val html = root.getAttribute("outerHTML")
         println(
             """
             |===========$playerId's view===========

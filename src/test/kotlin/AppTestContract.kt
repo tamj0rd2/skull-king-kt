@@ -23,7 +23,6 @@ import testsupport.Actor
 import testsupport.Bid
 import testsupport.Bids
 import testsupport.Ensure
-import testsupport.EnsureActivity
 import testsupport.Ensures
 import testsupport.HerFirstCard
 import testsupport.HisFirstCard
@@ -49,6 +48,7 @@ import testsupport.TheWinnerOfTheTrick
 import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.expectingFailure
+import testsupport.playerId
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -109,7 +109,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         gary(SaysTheTrickCanStart)
         freddy and sally both Ensure {
             that(TheRoundPhase, Is(TrickTaking))
-            that(TheCurrentPlayer, Is(freddy.name))
+            that(TheCurrentPlayer, Is(freddy.playerId))
         }
 
         freddy(
@@ -121,7 +121,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheCurrentTrick, onlyContains(11.blue.playedBy(freddy)))
             that(TheRoundPhase, Is(TrickTaking))
-            that(TheCurrentPlayer, Is(sally.name))
+            that(TheCurrentPlayer, Is(sally.playerId))
         }
     }
 
@@ -139,14 +139,14 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         gary(SaysTheTrickCanStart)
         freddy and sally both Ensure {
             that(TheRoundPhase, Is(TrickTaking))
-            that(TheCurrentPlayer, Is(freddy.name))
+            that(TheCurrentPlayer, Is(freddy.playerId))
         }
 
         freddy and sally both Play.theFirstCardInTheirHand
 
         freddy and sally both Ensure {
             that(TheRoundPhase, Is(TrickCompleted))
-            that(TheWinnerOfTheTrick, Is(sally.name))
+            that(TheWinnerOfTheTrick, Is(sally.playerId))
         }
     }
 
@@ -182,12 +182,12 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         gary(SaysTheTrickCanStart)
 
         // the actual test
-        thePlayers all Ensure(TheCurrentPlayer, Is(freddy.name))
+        thePlayers all Ensure(TheCurrentPlayer, Is(freddy.playerId))
         sally.attemptsTo(Play.theFirstCardInHerHand.expectingFailure<GameException.CannotPlayCard>())
 
         freddy and sally both Play.theFirstCardInTheirHand
 
-        thePlayers all Ensure(TheCurrentPlayer, Is(thirzah.name))
+        thePlayers all Ensure(TheCurrentPlayer, Is(thirzah.playerId))
         sally.attemptsTo(Play.theFirstCardInHerHand.expectingFailure<GameException.CannotPlayCard>())
 
         // recovery
@@ -262,7 +262,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheRoundPhase, Is(TrickTaking))
             that(TheTrickNumber, Is(1))
-            that(TheCurrentPlayer, Is(freddy.name))
+            that(TheCurrentPlayer, Is(freddy.playerId))
         }
 
         val freddysFirstCard = freddy.asksAbout(HisFirstCard)
@@ -295,7 +295,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheRoundPhase, Is(TrickTaking))
             that(TheTrickNumber, Is(1))
-            that(TheCurrentPlayer, Is(freddy.name))
+            that(TheCurrentPlayer, Is(freddy.playerId))
         }
         freddy(Plays.theFirstCardInTheirHand)
         sally(Plays.theFirstCardInTheirHand)
@@ -309,7 +309,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         gary(SaysTheTrickCanStart)
         freddy and sally both Ensure {
             that(TheTrickNumber, Is(2))
-            that(TheCurrentPlayer, Is(freddy.name))
+            that(TheCurrentPlayer, Is(freddy.playerId))
         }
 
         freddy(Plays.theFirstCardInTheirHand)
@@ -343,7 +343,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
                     that(TheRoundPhase, Is(TrickTaking))
                     that(TheTrickNumber, Is(trickNumber))
                     that(TheirHand, sizeIs(roundNumber - trickNumber + 1))
-                    that(TheCurrentPlayer, Is(freddy.name))
+                    that(TheCurrentPlayer, Is(freddy.playerId))
                 }
 
                 freddy and sally both Play.theFirstCardInTheirHand
@@ -364,27 +364,30 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
     }
 }
 
-internal fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.name)
+internal fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.playerId)
 
 internal infix fun Pair<Actor, Actor>.both(activity: Activity) {
     listOf(first, second).all(activity)
 }
 
 internal infix fun List<Actor>.all(activity: Activity) {
-    if (activity is EnsureActivity) {
-        // assertions can safely happen in parallel
-        parallelMap { actor -> actor(activity) }
-        return
-    }
-
     forEach { actor -> actor(activity) }
+}
+
+internal infix fun Pair<Actor, Actor>.bothInParallel(activity: Activity) {
+    listOf(first, second).allInParallel(activity)
+}
+
+internal infix fun List<Actor>.allInParallel(activity: Activity) {
+    parallelMap { actor -> actor(activity) }
+    return
 }
 
 internal infix fun Actor.and(other: Actor) = this to other
 internal infix fun Pair<Actor, Actor>.and(other: Actor) = listOf(first, second, other)
 
 internal fun areOnly(vararg expected: Actor): Matcher<Collection<PlayerId>> =
-    areOnly<PlayerId>(*expected.map { it.name }.toTypedArray())
+    areOnly<PlayerId>(*expected.map { it.playerId }.toTypedArray())
 
 internal fun <T> onlyContains(vararg expected: T): Matcher<Collection<T>> = areOnly(*expected)
 
@@ -402,7 +405,7 @@ fun <T> sizeIs(expected: Int): Matcher<Collection<T>> = has(Collection<T>::size,
 
 // NOTE: if the compiler is randomly failing here after refactors/renaming, just run a gradle clean and it fixes it
 fun where(vararg bids: Pair<Actor, DeprecatedBid>): Matcher<Map<PlayerId, DeprecatedBid>> =
-    equalTo(bids.associate { it.first.name to it.second })
+    equalTo(bids.associate { it.first.playerId to it.second })
 
 infix fun Actor.bid(bid: Int): Pair<Actor, DeprecatedBid> = Pair(this, Placed(bid))
 fun Actor.bidIsHidden(): Pair<Actor, DeprecatedBid> = Pair(this, IsHidden)

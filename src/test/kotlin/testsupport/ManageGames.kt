@@ -13,7 +13,7 @@ val SaysTheTrickCanStart = Interaction { actor -> actor.use<ManageGames>().start
 object RigsTheDeck {
     data class SoThat(private val thePlayer: Actor) {
         fun willEndUpWith(vararg cards: Card) = Interaction { actor ->
-            actor.use<ManageGames>().rigDeck(thePlayer.name, cards.toList())
+            actor.use<ManageGames>().rigDeck(thePlayer.playerId, cards.toList())
         }
     }
 }

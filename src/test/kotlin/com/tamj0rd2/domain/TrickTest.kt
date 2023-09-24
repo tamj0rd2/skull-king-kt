@@ -5,10 +5,10 @@ import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 
 class TrickTest {
-    private val adam: PlayerId = "adam"
-    private val becky: PlayerId = "becky"
-    private val cecil: PlayerId = "cecil"
-    private val danny: PlayerId = "danny"
+    private val adam = PlayerId("adam")
+    private val becky = PlayerId("becky")
+    private val cecil = PlayerId("cecil")
+    private val danny = PlayerId("danny")
 
     @TestFactory
     fun `the winner is determined correctly`(): List<DynamicTest> {

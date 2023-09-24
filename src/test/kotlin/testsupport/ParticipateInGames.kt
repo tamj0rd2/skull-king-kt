@@ -1,6 +1,7 @@
 package testsupport
 
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.PlayerId
 
 class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
 
@@ -25,6 +26,8 @@ fun Bid(bid: Int) = Bids(bid)
 
 
 val SitsAtTheTable = Interaction { actor ->
-    actor.use<ParticipateInGames>().joinGame(actor.name)
+    actor.use<ParticipateInGames>().joinGame(actor.playerId)
 }
 val SitAtTheTable = SitsAtTheTable
+
+val Actor.playerId get() = PlayerId(name)
