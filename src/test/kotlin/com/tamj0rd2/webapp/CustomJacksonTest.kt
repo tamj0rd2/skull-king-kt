@@ -1,5 +1,6 @@
 package com.tamj0rd2.webapp
 
+import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.blue
@@ -33,7 +34,7 @@ class CustomJacksonTest {
 
     @Test
     fun `can serialize and deserialize messages to the client - sanity check`() {
-        val expected = MessageToClient.BiddingCompleted(mapOf(PlayerId("somePlayer") to 1, PlayerId("someOtherPlayer") to 2))
+        val expected = MessageToClient.BiddingCompleted(mapOf(PlayerId("somePlayer") to Bid(1), PlayerId("someOtherPlayer") to Bid(2)))
         val jsonString = expected.asJsonObject().asCompactJsonString()
         println(jsonString)
         jsonString.replace("$", "_") shouldBe """{"type":"MessageToClient_BiddingCompleted","bids":{"somePlayer":1,"someOtherPlayer":2}}"""

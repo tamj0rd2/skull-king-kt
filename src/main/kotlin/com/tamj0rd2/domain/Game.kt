@@ -29,7 +29,7 @@ class Game {
     private var riggedHands: MutableMap<PlayerId, Hand>? = null
 
     private val _bids = Bids()
-    val bids: Map<PlayerId, DeprecatedBid> get() = _bids.forDisplay()
+    val bids: Map<PlayerId, DisplayBid> get() = _bids.forDisplay()
 
     private val roomSizeToStartGame = 2
 
@@ -192,49 +192,48 @@ data class PlayedCard(val playerId: PlayerId, val card: Card) {
 data class Bid(val bid: Int)
 
 private class Bids {
-    private var bids = mutableMapOf<PlayerId, DeprecatedBid>()
+    private var bids = mutableMapOf<PlayerId, DisplayBid>()
 
-    val areComplete get() = bids.none { it.value is DeprecatedBid.None }
+    val areComplete get() = bids.none { it.value is DisplayBid.None }
 
     fun initFor(players: Collection<PlayerId>) {
-        bids = players.associateWith { DeprecatedBid.None }.toMutableMap()
+        bids = players.associateWith { DisplayBid.None }.toMutableMap()
     }
 
-    fun forDisplay(): Map<PlayerId, DeprecatedBid> = when {
+    fun forDisplay(): Map<PlayerId, DisplayBid> = when {
         areComplete -> bids
-        else -> bids.mapValues { if (it.value is DeprecatedBid.Placed) DeprecatedBid.IsHidden else it.value }
+        else -> bids.mapValues { if (it.value is DisplayBid.Placed) DisplayBid.Hidden else it.value }
     }
 
     fun place(playerId: PlayerId, bid: Int) {
-        bids[playerId] = DeprecatedBid.Placed(bid)
+        bids[playerId] = DisplayBid.Placed(bid)
     }
 
     fun hasPlayerAlreadyBid(playerId: PlayerId): Boolean {
-        return bids[playerId] !is DeprecatedBid.None
+        return bids[playerId] !is DisplayBid.None
     }
 
-    fun asCompleted(): Map<PlayerId, Int> {
+    fun asCompleted(): Map<PlayerId, Bid> {
         return bids.mapValues {
-            require(it.value !is DeprecatedBid.None)
+            require(it.value !is DisplayBid.None)
             when (val bid = it.value) {
-                is DeprecatedBid.None -> error("not all players have bid")
-                is DeprecatedBid.IsHidden -> error("this should be impossible. this is just for display")
-                is DeprecatedBid.Placed -> bid.bid
+                is DisplayBid.None -> error("not all players have bid")
+                is DisplayBid.Hidden -> error("this should be impossible. this is just for display")
+                is DisplayBid.Placed -> Bid(bid.bid)
             }
         }
     }
-
 }
 
-sealed class DeprecatedBid {
+sealed class DisplayBid {
     override fun toString(): String = when (this) {
         is None -> "None"
-        is IsHidden -> "Hidden"
+        is Hidden -> "Hidden"
         is Placed -> bid.toString()
     }
 
-    object None : DeprecatedBid()
-    object IsHidden : DeprecatedBid()
+    object None : DisplayBid()
+    object Hidden : DisplayBid()
 
-    data class Placed(val bid: Int) : DeprecatedBid()
+    data class Placed(val bid: Int) : DisplayBid()
 }

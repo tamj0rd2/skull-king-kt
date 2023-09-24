@@ -1,7 +1,7 @@
 package testsupport
 
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.DeprecatedBid
+import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
 import com.tamj0rd2.domain.PlayedCard
@@ -24,7 +24,7 @@ interface ApplicationDriver {
     val gameState: GameState?
     val playersInRoom: List<PlayerId>
     val hand: Hand
-    val bids: Map<PlayerId, DeprecatedBid>
+    val bids: Map<PlayerId, DisplayBid>
 }
 
 interface GameMasterDriver {

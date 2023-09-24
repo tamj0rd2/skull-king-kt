@@ -1,5 +1,6 @@
 package com.tamj0rd2.webapp
 
+import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.PlayerId
 
@@ -12,7 +13,7 @@ internal sealed class MessageToClient {
 
     data class BidPlaced(val playerId: PlayerId) : MessageToClient()
 
-    data class BiddingCompleted(val bids: Map<PlayerId, Int>) : MessageToClient()
+    data class BiddingCompleted(val bids: Map<PlayerId, Bid>) : MessageToClient()
 
     data class CardPlayed(val playerId: PlayerId, val card: Card, val nextPlayer: PlayerId?) : MessageToClient()
 

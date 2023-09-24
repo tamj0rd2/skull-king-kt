@@ -1,7 +1,7 @@
 package testsupport.adapters
 
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.DeprecatedBid
+import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
@@ -44,7 +44,7 @@ class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver
     override val trick: List<PlayedCard> get() = game.currentTrick
     override val gameState: GameState? get() = game.state
     override val roundPhase: RoundPhase? get() = game.phase
-    override val bids: Map<PlayerId, DeprecatedBid> get() = game.bids
+    override val bids: Map<PlayerId, DisplayBid> get() = game.bids
     override val trickNumber: Int? get() = game.trickNumber
     override val roundNumber: Int? get() = game.roundNumber
     override val currentPlayer: PlayerId? get() = game.currentPlayersTurn

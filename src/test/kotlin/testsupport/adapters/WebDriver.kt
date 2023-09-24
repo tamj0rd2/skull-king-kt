@@ -1,7 +1,7 @@
 package testsupport.adapters
 
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.DeprecatedBid
+import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.Hand
@@ -113,16 +113,16 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 ?.let(RoundPhase::from)
         }
 
-    override val bids: Map<PlayerId, DeprecatedBid>
+    override val bids: Map<PlayerId, DisplayBid>
         get() = debugException {
             driver.findElement(By.id("bids"))
                 .findElements(By.tagName("li"))
                 .associate {
                     val (name, bid) = it.text.split(":")
-                        .apply { if (size < 2) return@associate PlayerId(this[0]) to DeprecatedBid.None }
+                        .apply { if (size < 2) return@associate PlayerId(this[0]) to DisplayBid.None }
                     val playerId = PlayerId(name)
-                    if (bid == "has bid") return@associate playerId to DeprecatedBid.IsHidden
-                    playerId to DeprecatedBid.Placed(bid.toInt())
+                    if (bid == "has bid") return@associate playerId to DisplayBid.Hidden
+                    playerId to DisplayBid.Placed(bid.toInt())
                 }
         }
 

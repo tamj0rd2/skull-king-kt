@@ -6,8 +6,8 @@ import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
 import com.natpryce.hamkrest.isEmpty
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.DeprecatedBid
-import com.tamj0rd2.domain.DeprecatedBid.*
+import com.tamj0rd2.domain.DisplayBid
+import com.tamj0rd2.domain.DisplayBid.*
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
@@ -404,12 +404,12 @@ internal fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> = object : 
 fun <T> sizeIs(expected: Int): Matcher<Collection<T>> = has(Collection<T>::size, equalTo(expected))
 
 // NOTE: if the compiler is randomly failing here after refactors/renaming, just run a gradle clean and it fixes it
-fun where(vararg bids: Pair<Actor, DeprecatedBid>): Matcher<Map<PlayerId, DeprecatedBid>> =
+fun where(vararg bids: Pair<Actor, DisplayBid>): Matcher<Map<PlayerId, DisplayBid>> =
     equalTo(bids.associate { it.first.playerId to it.second })
 
-infix fun Actor.bid(bid: Int): Pair<Actor, DeprecatedBid> = Pair(this, Placed(bid))
-fun Actor.bidIsHidden(): Pair<Actor, DeprecatedBid> = Pair(this, IsHidden)
-fun Actor.hasNotBid(): Pair<Actor, DeprecatedBid> = Pair(this, None)
+infix fun Actor.bid(bid: Int): Pair<Actor, DisplayBid> = Pair(this, Placed(bid))
+fun Actor.bidIsHidden(): Pair<Actor, DisplayBid> = Pair(this, Hidden)
+fun Actor.hasNotBid(): Pair<Actor, DisplayBid> = Pair(this, None)
 
 private fun <A, B>List<A>.parallelMap(f: suspend (A) -> B): List<B> = runBlocking {
     map { async(Dispatchers.Default) { f(it) } }.map { it.await() }
