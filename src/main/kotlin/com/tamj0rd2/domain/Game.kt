@@ -111,8 +111,8 @@ class Game {
 
         if (trick.isComplete) {
             _phase = TrickCompleted
-            _trickWinner = determineTrickWinner()
-            recordEvent(GameEvent.TrickCompleted)
+            _trickWinner = trick.winner
+            recordEvent(GameEvent.TrickCompleted(trick.winner))
 
             if (roundNumber == 10) {
                 _state = GameState.Complete
@@ -146,10 +146,6 @@ class Game {
 
     private fun recordEvent(event: GameEvent) {
         eventListeners.forEach { it.handle(event) }
-    }
-
-    private fun determineTrickWinner(): PlayerId? {
-        return "Sally Second"
     }
 }
 

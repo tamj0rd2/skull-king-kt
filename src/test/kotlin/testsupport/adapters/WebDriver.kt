@@ -30,6 +30,7 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 when (val errorMessage = errorElements.single().text) {
                     GameException.PlayerWithSameNameAlreadyJoined::class.simpleName!! ->
                         throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
+
                     else -> error("unknown error message: $errorMessage")
                 }
             }
@@ -63,7 +64,9 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     }
 
     override val trickWinner: PlayerId?
-        get() = TODO("Not yet implemented")
+        get() = debugException {
+            driver.findElement(By.id("trickWinner")).getAttributeOrNull("data-playerId")
+        }
 
     override val trickNumber: Int?
         get() = debugException {
@@ -124,8 +127,9 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     override val currentPlayer: PlayerId?
         get() = debugException {
-        driver.findElement(By.id("currentPlayer")).getAttribute("data-playerId") ?: error("no player id for the current player")
-    }
+            driver.findElement(By.id("currentPlayer")).getAttribute("data-playerId")
+                ?: error("no player id for the current player")
+        }
 
     private fun WebElement.getAttributeOrNull(attributeName: String): String? = getAttribute(attributeName)
 
@@ -151,11 +155,13 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     private fun printBody() {
         val html = driver.findElement(By.tagName("body")).getAttribute("outerHTML")
-        println("""
+        println(
+            """
             |===========$playerId's view===========
             |$html
             |===========end of $playerId's view===========
-        """.trimMargin())
+        """.trimMargin()
+        )
     }
 
     private fun WebElement.toCard() = Card.from(this.getAttribute("suit"), this.getAttribute("number")?.toInt())

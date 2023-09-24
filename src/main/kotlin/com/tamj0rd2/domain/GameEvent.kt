@@ -20,6 +20,7 @@ sealed class GameEvent {
 
     data class CardPlayed(val playerId: PlayerId, val card: Card) : GameEvent()
 
-    object TrickCompleted : GameEvent()
+    data class TrickCompleted(val winner: PlayerId) : GameEvent()
+
     object GameCompleted : GameEvent()
 }

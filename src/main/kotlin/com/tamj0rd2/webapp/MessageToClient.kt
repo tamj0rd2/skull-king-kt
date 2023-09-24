@@ -18,6 +18,6 @@ internal sealed class MessageToClient {
 
     data class TrickStarted(val trickNumber: Int, val firstPlayer: PlayerId) : MessageToClient()
 
-    object TrickCompleted : MessageToClient()
+    data class TrickCompleted(val winner: PlayerId) : MessageToClient()
     object GameCompleted : MessageToClient()
 }

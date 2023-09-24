@@ -48,7 +48,6 @@ import testsupport.TheTrickNumber
 import testsupport.TheWinnerOfTheTrick
 import testsupport.TheirHand
 import testsupport.TheySeeBids
-import testsupport.Wip
 import testsupport.expectingFailure
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -66,9 +65,8 @@ interface TestConfiguration : AbilityFactory {
 }
 
 // things for the future:
-// turn order
-// scoring
-// using actual cards lol
+// TODO: turn order
+// TODO: scoring
 
 sealed class AppTestContract(protected val c: TestConfiguration) {
     protected val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
@@ -128,7 +126,6 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
     }
 
     @Test
-    @Wip
     fun `winning a trick`() {
         freddy and sally both SitAtTheTable
         gary(

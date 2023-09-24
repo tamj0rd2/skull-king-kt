@@ -57,7 +57,7 @@ internal fun wsHandler(game: Game, automateGameMasterCommands: Boolean, automati
                             it.roundNumber
                         )
 
-                        is GameEvent.TrickCompleted -> MessageToClient.TrickCompleted
+                        is GameEvent.TrickCompleted -> MessageToClient.TrickCompleted(it.winner)
                         is GameEvent.TrickStarted -> MessageToClient.TrickStarted(
                             it.trickNumber,
                             game.currentPlayersTurn ?: error("currentPlayer is null")

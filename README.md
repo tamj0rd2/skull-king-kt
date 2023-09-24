@@ -1,5 +1,7 @@
 # Skull king
 
+- [Live](https://skull-king-kt.fly.dev/play)
+
 ## Deployment
 
 - [Install flyctl](https://fly.io/docs/hands-on/install-flyctl/)
