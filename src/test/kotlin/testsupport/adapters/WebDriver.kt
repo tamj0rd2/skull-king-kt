@@ -63,6 +63,18 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
+    // TODO: this is potentially slower than a method that just gets you the first playable card...
+    // since we have to iterate over the entire hand up to 10 times potentially
+    override fun isCardPlayable(card: Card) = debugException {
+        val li = driver.findElement(By.id("hand"))
+            .findElements(By.tagName("li"))
+            .ifEmpty { error("$playerId has no cards") }
+            .find { it.toCard().name == card.name }
+            .let { it ?: error("$playerId does not have card $card") }
+
+        li.findElementOrNull(By.tagName("button")) != null
+    }
+
     override val trickWinner: PlayerId?
         get() = debugException {
             driver.findElement(By.id("trickWinner")).getAttributeOrNull("data-playerId")?.let(::PlayerId)
@@ -139,6 +151,13 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
     } catch (e: NoSuchElementException) {
         null
     }
+
+    private fun WebElement.findElementOrNull(by: By): WebElement? = try {
+        findElement(by)
+    } catch (e: NoSuchElementException) {
+        null
+    }
+
 
     private fun <T> debugException(block: () -> T): T {
         try {

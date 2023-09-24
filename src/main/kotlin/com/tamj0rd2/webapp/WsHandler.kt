@@ -19,7 +19,11 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.timerTask
 import kotlin.time.Duration
 
-internal fun wsHandler(game: Game, automateGameMasterCommands: Boolean, automaticGameMasterDelayOverride: Duration?): RoutingWsHandler {
+internal fun wsHandler(
+    game: Game,
+    automateGameMasterCommands: Boolean,
+    automaticGameMasterDelayOverride: Duration?
+): RoutingWsHandler {
     val playerIdLens = Path.map(::PlayerId, PlayerId::playerId).of("playerId")
     val messageToClientLens = WsMessage.auto<MessageToClient>().toLens()
     val clientMessageLens = WsMessage.auto<MessageFromClient>().toLens()
@@ -35,33 +39,62 @@ internal fun wsHandler(game: Game, automateGameMasterCommands: Boolean, automati
                 val logger = LoggerFactory.getLogger("wsHandler pid='$playerId'")
 
                 game.subscribeToGameEvents {
-                    val messageToClient = when (it) {
+                    val messageToClient: MessageToClient = when (it) {
                         is GameEvent.BidPlaced -> MessageToClient.BidPlaced(it.playerId)
                         is GameEvent.BiddingCompleted -> MessageToClient.BiddingCompleted(it.bids)
-                        is GameEvent.CardPlayed -> MessageToClient.CardPlayed(
-                            it.playerId,
-                            it.card,
-                            game.currentPlayersTurn
-                        )
+                        is GameEvent.CardPlayed -> {
+                            val messages = mutableListOf<MessageToClient>(
+                                MessageToClient.CardPlayed(
+                                    playerId = it.playerId,
+                                    card = it.card,
+                                    nextPlayer = game.currentPlayersTurn
+                                ),
+                            )
+
+                            if (game.currentPlayersTurn == playerId) {
+                                // TODO: make a new method called: "cardsWithPlayability" or something
+                                val cardsWithPlayability = game.getCardsInHand(playerId)
+                                    .map { it.name to game.isCardPlayable(playerId, it) }
+                                    .toMap()
+                                messages.add(MessageToClient.YourTurn(cardsWithPlayability))
+                            }
+
+                            MessageToClient.Multi(messages)
+                        }
 
                         is GameEvent.CardsDealt -> TODO("add cards dealt event")
                         is GameEvent.GameCompleted -> MessageToClient.GameCompleted
                         is GameEvent.GameStarted -> MessageToClient.GameStarted(it.players)
                         is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(
-                            it.playerId,
-                            game.isInState(GameState.WaitingForMorePlayers)
-                        )
+                                it.playerId,
+                                game.isInState(GameState.WaitingForMorePlayers)
+                            )
 
                         is GameEvent.RoundStarted -> MessageToClient.RoundStarted(
-                            game.getCardsInHand(playerId),
-                            it.roundNumber
-                        )
+                                game.getCardsInHand(playerId),
+                                it.roundNumber
+                            )
+
 
                         is GameEvent.TrickCompleted -> MessageToClient.TrickCompleted(it.winner)
-                        is GameEvent.TrickStarted -> MessageToClient.TrickStarted(
-                            it.trickNumber,
-                            game.currentPlayersTurn ?: error("currentPlayer is null")
-                        )
+                        is GameEvent.TrickStarted -> {
+                            val messages = mutableListOf<MessageToClient>(
+                                MessageToClient.TrickStarted(
+                                    it.trickNumber,
+                                    game.currentPlayersTurn ?: error("currentPlayer is null")
+                                )
+                            )
+
+                            if (game.currentPlayersTurn == playerId) {
+                                // TODO: make a new method called: "cardsWithPlayability" or something
+                                val cardsWithPlayability = game.getCardsInHand(playerId)
+                                    .map { it.name to game.isCardPlayable(playerId, it) }
+                                    .toMap()
+                                messages.add(MessageToClient.YourTurn(cardsWithPlayability))
+                            }
+
+                            MessageToClient.Multi(messages)
+                        }
                     }
 
                     logger.info("sending message to $playerId: ${messageToClient.asJsonObject()}")
@@ -101,10 +134,10 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
     fun start() {
         val timer = Timer()
 
-        game.subscribeToGameEvents {event ->
+        game.subscribeToGameEvents { event ->
             allGameEvents.add(event)
 
-            when(event) {
+            when (event) {
                 is GameEvent.PlayerJoined -> {
                     if (game.state != GameState.WaitingToStart) return@subscribeToGameEvents
                     timer.schedule(timerTask {
@@ -112,8 +145,9 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
 
                         logger.info("Starting the game")
                         game.start()
-                    }, delayOverride?.inWholeMilliseconds ?: 5000)
+                    }, delayOverride?.inWholeMilliseconds ?: 500)
                 }
+
                 is GameEvent.BiddingCompleted -> {
                     timer.schedule(timerTask {
                         val lastEvent = allGameEvents.last()
@@ -123,6 +157,7 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
                         game.startNextTrick()
                     }, delayOverride?.inWholeMilliseconds ?: 3000)
                 }
+
                 is GameEvent.TrickCompleted -> {
                     timer.schedule(timerTask {
                         val lastEvent = allGameEvents.last()
@@ -132,13 +167,13 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
                         if (game.roundNumber == game.trickNumber) {
                             logger.info("Starting the next round")
                             game.startNextRound()
-                        }
-                        else {
+                        } else {
                             logger.info("Starting the next trick")
                             game.startNextTrick()
                         }
-                    }, delayOverride?.inWholeMilliseconds ?: 5000)
+                    }, delayOverride?.inWholeMilliseconds ?: 3000)
                 }
+
                 else -> {}
             }
         }

@@ -8,9 +8,11 @@ export enum MessageToClient {
     TrickCompleted = "MessageToClient$TrickCompleted",
     TrickStarted = "MessageToClient$TrickStarted",
     GameCompleted = "MessageToClient$GameCompleted",
+    YourTurn = "MessageToClient$YourTurn",
+    Multi = "MessageToClient$Multi",
 }
 
-const knownMessagesToClient = Object.values(MessageToClient)
+const knownMessagesToClient = Object.values(MessageToClient).filter((v) => v != MessageToClient.Multi)
 
 export enum MessageFromClient {
     BidPlaced = "MessageFromClient$BidPlaced",
@@ -19,6 +21,7 @@ export enum MessageFromClient {
     Error = "MessageFromClient$Error",
 }
 
+// TODO: bad naming
 export interface GameEvent {
     type: MessageToClient
     [key: string]: any
@@ -32,16 +35,21 @@ export function listenToGameEvents(gameEventCallbacks: GameEventListeners): Disc
     function listener(this: WebSocket, event: MessageEvent<any>) {
         try {
             const data = JSON.parse(event.data) as GameEvent
-            const callback = gameEventCallbacks[data.type]
-            if (callback) return callback(data)
+            const messages: GameEvent[] = data.type === MessageToClient.Multi ? data.messages : [data]
 
-            if (!knownMessagesToClient.includes(data.type)) {
-                socket.send(JSON.stringify({
-                    type: MessageFromClient.UnhandledServerMessage,
-                    offender: data.type,
-                }))
-                console.error(`Unknown message from server: ${data.type}`)
-            }
+            messages.forEach((message) => {
+                const callback = gameEventCallbacks[message.type]
+                if (callback) return callback(message)
+
+                if (!knownMessagesToClient.includes(message.type)) {
+                    socket.send(JSON.stringify({
+                        type: MessageFromClient.UnhandledServerMessage,
+                        offender: message.type,
+                    }))
+                    console.error(`Unknown message from server: ${message.type}`)
+                    socket.close(4000, `Unknown message from server: ${message.type}`)
+                }
+            })
         } catch (e) {
             socket.send(JSON.stringify({
                 stackTrace: (e as Error).stack,

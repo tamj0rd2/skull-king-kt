@@ -14,6 +14,7 @@ interface ApplicationDriver {
     fun joinGame(playerId: PlayerId)
     fun bid(bid: Int)
     fun playCard(card: Card)
+    fun isCardPlayable(card: Card): Boolean
 
     val trickWinner: PlayerId?
     val currentPlayer: PlayerId?

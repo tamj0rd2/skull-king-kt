@@ -2,6 +2,7 @@ package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.PlayerId
 
 internal sealed class MessageToClient {
@@ -19,6 +20,11 @@ internal sealed class MessageToClient {
 
     data class TrickStarted(val trickNumber: Int, val firstPlayer: PlayerId) : MessageToClient()
 
+    data class YourTurn(val cards: Map<CardName, Boolean>) : MessageToClient()
+
     data class TrickCompleted(val winner: PlayerId) : MessageToClient()
+
     object GameCompleted : MessageToClient()
+
+    data class Multi(val messages: List<MessageToClient>) : MessageToClient()
 }

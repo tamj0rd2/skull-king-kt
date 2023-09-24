@@ -9,6 +9,7 @@ val SaysTheGameCanStart = Interaction { actor -> actor.use<ManageGames>().startG
 val SaysTheRoundCanStart = Interaction { actor -> actor.use<ManageGames>().startNextRound() }
 
 val SaysTheTrickCanStart = Interaction { actor -> actor.use<ManageGames>().startNextTrick() }
+val SaysTheNextTrickCanStart = Interaction { actor -> actor.use<ManageGames>().startNextTrick() }
 
 object RigsTheDeck {
     data class SoThat(private val thePlayer: Actor) {

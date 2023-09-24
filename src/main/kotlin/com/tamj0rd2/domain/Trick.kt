@@ -17,7 +17,7 @@ class Trick(private val size: Int) {
     private val hasMermaid get() = specialsPlayed.contains(Mermaid)
     private val hasPirate get() = specialsPlayed.contains(Pirate)
 
-    val winner: PlayerId get() {
+    internal val winner: PlayerId get() {
         require(isComplete) { "trick is not complete" }
 
         var winnerSoFar: PlayedCard = _playedCards.first()
@@ -37,7 +37,7 @@ class Trick(private val size: Int) {
         return winnerSoFar.playerId
     }
 
-    fun add(playedCard: PlayedCard) {
+    internal fun add(playedCard: PlayedCard) {
         _playedCards.add(playedCard)
 
         if (playedCard.card is NumberedCard && suit == null) {
@@ -46,6 +46,18 @@ class Trick(private val size: Int) {
 
         if (playedCard.card is SpecialCard) {
             specialsPlayed.add(playedCard.card.suit)
+        }
+    }
+
+    internal fun isCardPlayable(card: Card, restOfHand: List<Card>): Boolean {
+        if (restOfHand.isEmpty() || suit == null) return true
+
+        when(card) {
+            is NumberedCard -> {
+                if (card.suit == suit) return true
+                return restOfHand.none { it is NumberedCard && it.suit == suit }
+            }
+            is SpecialCard -> return true
         }
     }
 
@@ -63,21 +75,7 @@ private data class TrickContext(
     val hasMermaid: Boolean,
     val hasPirate: Boolean
 ) {
-    operator fun plus(suit: Suit): TrickContext {
-        require(this.suit == null) { "suit is already set to $suit" }
-        return copy(suit = suit)
-    }
-
     fun suitIs(suit: Suit) = this.suit == suit
-
-    companion object {
-        val empty get() = TrickContext(
-            null,
-            false,
-            false,
-            false
-        )
-    }
 }
 
 private fun Card.beats(other: Card, context: TrickContext): Boolean {

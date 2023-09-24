@@ -20,10 +20,16 @@ export const enum GamePhase {
     TrickCompleted = "TrickCompleted",
 }
 
+export const enum CardType {
+    NumberedCard = "Card$NumberedCard",
+    SpecialCard = "Card$SpecialCard",
+}
+
 export interface Card {
     suit: string
     number?: number
     name: string
+    type: CardType
 }
 
 export type PlayerId = string

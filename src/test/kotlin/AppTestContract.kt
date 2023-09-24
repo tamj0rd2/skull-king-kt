@@ -1,4 +1,7 @@
 
+import TestHelpers.playUpTo
+import TestHelpers.playUpToStartOf
+import TestHelpers.skipToTrickTaking
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.describe
@@ -15,6 +18,7 @@ import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase.*
 import com.tamj0rd2.domain.Suit.*
 import com.tamj0rd2.domain.blue
+import com.tamj0rd2.domain.red
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -25,6 +29,7 @@ import testsupport.Bids
 import testsupport.Ensure
 import testsupport.Ensures
 import testsupport.HerFirstCard
+import testsupport.HerHand
 import testsupport.HisFirstCard
 import testsupport.HisHand
 import testsupport.ManageGames
@@ -33,6 +38,7 @@ import testsupport.Play
 import testsupport.Plays
 import testsupport.RigsTheDeck
 import testsupport.SaysTheGameCanStart
+import testsupport.SaysTheNextTrickCanStart
 import testsupport.SaysTheRoundCanStart
 import testsupport.SaysTheTrickCanStart
 import testsupport.SitAtTheTable
@@ -125,6 +131,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         }
     }
 
+    // TODO next - winning a round
     @Test
     fun `winning a trick`() {
         freddy and sally both SitAtTheTable
@@ -142,7 +149,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
             that(TheCurrentPlayer, Is(freddy.playerId))
         }
 
-        freddy and sally both Play.theFirstCardInTheirHand
+        freddy and sally both Play.theirFirstPlayableCard
 
         freddy and sally both Ensure {
             that(TheRoundPhase, Is(TrickCompleted))
@@ -157,41 +164,72 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
 
         freddy(Bids(1))
         freddy and sally both Ensure(TheRoundPhase, Is(Bidding))
-        freddy and sally both Play.theFirstCardInTheirHand.expectingFailure<GameException.CannotPlayCard>()
+        freddy and sally both Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>()
 
         sally(Bids(1))
         freddy and sally both Ensure(TheRoundPhase, Is(BiddingCompleted))
-        freddy and sally both Play.theFirstCardInTheirHand.expectingFailure<GameException.CannotPlayCard>()
+        freddy and sally both Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>()
+    }
+
+    @Test
+    fun `cannot play a card that would break suit rules`() {
+        val thePlayers = listOf(freddy, sally)
+        val theGameMaster = gary
+
+        playUpTo(endOfRound = 1, theGameMaster = theGameMaster, thePlayers = thePlayers)
+
+        theGameMaster(
+            RigsTheDeck.SoThat(freddy).willEndUpWith(1.blue, 2.blue),
+            RigsTheDeck.SoThat(sally).willEndUpWith(3.blue, 4.red),
+        )
+        skipToTrickTaking(theGameMaster = theGameMaster, thePlayers = thePlayers)
+
+        freddy(Plays(1.blue))
+        sally.attemptsTo(Play(4.red).expectingFailure<GameException.CannotPlayCard>())
+
+        // recovery
+        sally(Ensures(HerHand, sizeIs(2)))
+        sally(Plays(3.blue))
+
+        theGameMaster(SaysTheNextTrickCanStart)
+        freddy(Plays(2.blue))
+        sally(Plays(4.red))
+    }
+
+    @Test
+    fun `can play special cards when you have a card for the correct suit - sanity check`() {
+        val thePlayers = listOf(freddy, sally)
+        val theGameMaster = gary
+
+        playUpTo(endOfRound = 1, theGameMaster = theGameMaster, thePlayers = thePlayers)
+
+        theGameMaster(
+            RigsTheDeck.SoThat(freddy).willEndUpWith(1.blue, 2.blue),
+            RigsTheDeck.SoThat(sally).willEndUpWith(3.blue, Card.SpecialCard.escape),
+        )
+        skipToTrickTaking(theGameMaster = theGameMaster, thePlayers = thePlayers)
+
+        freddy(Plays(1.blue))
+        sally(Plays(Card.SpecialCard.escape))
+        thePlayers each Ensure(TheRoundPhase, Is(TrickCompleted))
     }
 
     @Test
     fun `cannot play a card when it is not their turn`() {
         val thirzah = Actor("Thirzah Third").whoCan(c.participateInGames())
         val thePlayers = listOf(freddy, sally, thirzah)
+        playUpToStartOf(round = 2, trick = 1, theGameMaster = gary, thePlayers = thePlayers)
 
-        thePlayers all SitAtTheTable
+        thePlayers each Ensure(TheCurrentPlayer, Is(freddy.playerId))
+        sally.attemptsTo(Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>())
 
-        // advancing straight to round 2
-        gary(SaysTheGameCanStart)
-        thePlayers all Bid(1)
-        gary(SaysTheTrickCanStart)
-        thePlayers all Play.theFirstCardInTheirHand
-        thePlayers all Ensure(TheRoundPhase, Is(TrickCompleted))
-        gary(SaysTheRoundCanStart)
-        thePlayers all Bid(1)
-        gary(SaysTheTrickCanStart)
+        freddy and sally both Play.theirFirstPlayableCard
 
-        // the actual test
-        thePlayers all Ensure(TheCurrentPlayer, Is(freddy.playerId))
-        sally.attemptsTo(Play.theFirstCardInHerHand.expectingFailure<GameException.CannotPlayCard>())
-
-        freddy and sally both Play.theFirstCardInTheirHand
-
-        thePlayers all Ensure(TheCurrentPlayer, Is(thirzah.playerId))
-        sally.attemptsTo(Play.theFirstCardInHerHand.expectingFailure<GameException.CannotPlayCard>())
+        thePlayers each Ensure(TheCurrentPlayer, Is(thirzah.playerId))
+        sally.attemptsTo(Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>())
 
         // recovery
-        thirzah(Plays.theFirstCardInTheirHand)
+        thirzah(Plays.theirFirstPlayableCard)
     }
 
     @Test
@@ -267,8 +305,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
 
         val freddysFirstCard = freddy.asksAbout(HisFirstCard)
         val sallysFirstCard = sally.asksAbout(HerFirstCard)
-        freddy(Plays.theFirstCardInHisHand)
-        sally(Plays.theFirstCardInHerHand)
+        freddy and sally both Play.theirFirstPlayableCard
         freddy and sally both Ensure {
             that(TheCurrentTrick, onlyContains(freddysFirstCard.playedBy(freddy), sallysFirstCard.playedBy(sally)))
             that(TheRoundPhase, Is(TrickCompleted))
@@ -297,8 +334,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
             that(TheTrickNumber, Is(1))
             that(TheCurrentPlayer, Is(freddy.playerId))
         }
-        freddy(Plays.theFirstCardInTheirHand)
-        sally(Plays.theFirstCardInTheirHand)
+        freddy and sally both Play.theirFirstPlayableCard
         freddy and sally both Ensure {
             that(TheCurrentTrick, sizeIs(2))
             that(TheRoundPhase, Is(TrickCompleted))
@@ -312,8 +348,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
             that(TheCurrentPlayer, Is(freddy.playerId))
         }
 
-        freddy(Plays.theFirstCardInTheirHand)
-        sally(Plays.theFirstCardInTheirHand)
+        freddy and sally both Play.theirFirstPlayableCard
         freddy and sally both Ensure {
             that(TheCurrentTrick, sizeIs(2))
             that(TheRoundPhase, Is(TrickCompleted))
@@ -346,7 +381,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
                     that(TheCurrentPlayer, Is(freddy.playerId))
                 }
 
-                freddy and sally both Play.theFirstCardInTheirHand
+                freddy and sally both Play.theirFirstPlayableCard
                 freddy and sally both Ensure {
                     that(TheCurrentTrick, sizeIs(2))
                     that(TheRoundPhase, Is(TrickCompleted))
@@ -364,21 +399,110 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
     }
 }
 
+internal object TestHelpers {
+    fun playUpToStartOf(round: Int, trick: Int, theGameMaster: Actor, thePlayers: List<Actor>) {
+        require(round != 1) { "playing to round 1 not implemented" }
+        require(trick == 1) { "trick greater than 1 not implemented" }
+
+        playUpTo(round - 1, theGameMaster, thePlayers)
+        theGameMaster(SaysTheRoundCanStart)
+        thePlayers each Ensure {
+            that(TheRoundNumber, Is(round))
+            that(TheRoundPhase, Is(Bidding))
+        }
+
+        thePlayers each Bid(1)
+        playUpToAndIncluding(trick - 1, theGameMaster, thePlayers)
+        theGameMaster(SaysTheNextTrickCanStart)
+
+        thePlayers each Ensure {
+            that(TheRoundNumber, Is(round))
+            that(TheRoundPhase, Is(TrickTaking))
+            that(TheTrickNumber, Is(trick))
+        }
+    }
+
+    fun skipToTrickTaking(theGameMaster: Actor, thePlayers: List<Actor>) {
+        val gameState = thePlayers.first().asksAbout(TheGameState)
+        require(gameState == InProgress) { "cannot skip to trick taking when the game is $gameState" }
+
+        when (thePlayers.first().asksAbout(TheRoundPhase)) {
+            Bidding -> {
+                thePlayers each Bid(1)
+                theGameMaster(SaysTheTrickCanStart)
+            }
+            BiddingCompleted -> theGameMaster(SaysTheTrickCanStart)
+            TrickTaking -> error("already in the trick taking phase")
+            TrickCompleted -> {
+                val trickNumber = thePlayers.first().asksAbout(TheTrickNumber)
+                val roundNumber = thePlayers.first().asksAbout(TheRoundNumber)
+                if (trickNumber == roundNumber) theGameMaster(SaysTheRoundCanStart)
+                thePlayers each Ensure(TheRoundPhase, Is(Bidding))
+                thePlayers each Bid(1)
+                theGameMaster(SaysTheTrickCanStart)
+            }
+            null -> error("the game probably hasn't started yet")
+        }
+
+        thePlayers each Ensure {
+            that(TheRoundPhase, Is(TrickTaking))
+            that(TheTrickNumber, Is(1))
+        }
+    }
+
+    fun playUpTo(endOfRound: Int, theGameMaster: Actor, thePlayers: List<Actor>) {
+        thePlayers each SitAtTheTable
+        theGameMaster(SaysTheGameCanStart)
+
+        (1..endOfRound).forEach {roundNumber ->
+            if (roundNumber != 1) {
+                theGameMaster(SaysTheRoundCanStart)
+            }
+
+            thePlayers each Ensure {
+                that(TheRoundNumber, Is(roundNumber))
+                that(TheRoundPhase, Is(Bidding))
+            }
+            thePlayers each Bid(1)
+            playUpToAndIncluding(trick = roundNumber, theGameMaster = theGameMaster, thePlayers = thePlayers)
+        }
+    }
+
+    fun playUpToAndIncluding(trick: Int, theGameMaster: Actor, thePlayers: List<Actor>) {
+        require(thePlayers.first().asksAbout(TheRoundPhase) == BiddingCompleted) { "must start from bidding completion" }
+        if (trick < 1) return
+
+        (1..trick).forEach { trickNumber ->
+            theGameMaster(SaysTheTrickCanStart)
+            thePlayers each Ensure {
+                that(TheRoundPhase, Is(TrickTaking))
+                that(TheTrickNumber, Is(trickNumber))
+            }
+
+            thePlayers each Play.theirFirstPlayableCard
+            thePlayers each Ensure {
+                that(TheRoundPhase, Is(TrickCompleted))
+            }
+        }
+    }
+}
+
+
 internal fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.playerId)
 
 internal infix fun Pair<Actor, Actor>.both(activity: Activity) {
-    listOf(first, second).all(activity)
+    listOf(first, second).each(activity)
 }
 
-internal infix fun List<Actor>.all(activity: Activity) {
+internal infix fun List<Actor>.each(activity: Activity) {
     forEach { actor -> actor(activity) }
 }
 
 internal infix fun Pair<Actor, Actor>.bothInParallel(activity: Activity) {
-    listOf(first, second).allInParallel(activity)
+    listOf(first, second).eachInParallel(activity)
 }
 
-internal infix fun List<Actor>.allInParallel(activity: Activity) {
+internal infix fun List<Actor>.eachInParallel(activity: Activity) {
     parallelMap { actor -> actor(activity) }
     return
 }
@@ -414,3 +538,5 @@ fun Actor.hasNotBid(): Pair<Actor, DisplayBid> = Pair(this, None)
 private fun <A, B>List<A>.parallelMap(f: suspend (A) -> B): List<B> = runBlocking {
     map { async(Dispatchers.Default) { f(it) } }.map { it.await() }
 }
+
+

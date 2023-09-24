@@ -146,7 +146,7 @@ class WebAppTestWithAutomatedGameMasterCommands {
         Thread.sleep((gmDelay / 4).inWholeMilliseconds)
         thirzah(SitsAtTheTable)
 
-        freddy and sally and thirzah allInParallel Ensure(within = expectedDelay) {
+        freddy and sally and thirzah eachInParallel Ensure(within = expectedDelay) {
             that(ThePlayersAtTheTable, areOnly(freddy, sally, thirzah))
             that(TheGameState, Is(GameState.InProgress))
             that(TheRoundNumber, Is(1))
@@ -189,7 +189,7 @@ class WebAppTestWithAutomatedGameMasterCommands {
             that(TheRoundState, Is(RoundState(round = 1, phase = RoundPhase.TrickTaking, trick = 1)))
         }
 
-        freddy and sally both Play.theFirstCardInTheirHand
+        freddy and sally both Play.theirFirstPlayableCard
         freddy and sally bothInParallel Ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.Bidding)))
         }
@@ -199,12 +199,12 @@ class WebAppTestWithAutomatedGameMasterCommands {
             that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.TrickTaking, trick = 1)))
         }
 
-        freddy and sally both Play.theFirstCardInTheirHand
+        freddy and sally both Play.theirFirstPlayableCard
         freddy and sally bothInParallel Ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.TrickTaking, trick = 2)))
         }
 
-        freddy and sally both Play.theFirstCardInTheirHand
+        freddy and sally both Play.theirFirstPlayableCard
         freddy and sally bothInParallel Ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 3, phase = RoundPhase.Bidding)))
         }

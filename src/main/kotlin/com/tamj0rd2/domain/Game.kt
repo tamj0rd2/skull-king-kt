@@ -35,8 +35,8 @@ class Game {
 
     private val waitingForMorePlayers get() = players.size < roomSizeToStartGame
 
-    private lateinit var trick: Trick
-    val currentTrick: List<PlayedCard> get() = trick.playedCards
+    private var trick: Trick = Trick(0)
+    val currentTrick: Trick get() = trick
 
     private var roundTurnOrder = mutableListOf<PlayerId>()
     val currentPlayersTurn get(): PlayerId? = roundTurnOrder.firstOrNull()
@@ -103,10 +103,14 @@ class Game {
         val card = hand.find { it.name == cardName }
         requireNotNull(card) { "card $cardName not in $playerId's hand" }
 
+        if (!trick.isCardPlayable(card, hand.excluding(card))) {
+            throw GameException.CannotPlayCard("$card does not match suit of trick")
+        }
+
         hand.remove(card)
         trick.add(PlayedCard(playerId, card))
-        roundTurnOrder.removeFirst()
 
+        roundTurnOrder.removeFirst()
         recordEvent(GameEvent.CardPlayed(playerId, card))
 
         if (trick.isComplete) {
@@ -147,6 +151,17 @@ class Game {
     private fun recordEvent(event: GameEvent) {
         eventListeners.forEach { it.handle(event) }
     }
+
+    fun isCardPlayable(playerId: PlayerId, card: Card): Boolean {
+        val hand = getHandFor(playerId)
+        return trick.isCardPlayable(card, hand.excluding(card))
+    }
+}
+
+private fun <E> List<E>.excluding(element: E): List<E> {
+    val indexOfCard = indexOfFirst { it == element }
+    require(indexOfCard != -1) { "element $element not in $this" }
+    return toMutableList().apply { removeAt(indexOfCard) }
 }
 
 data class PlayerId(val playerId: String) {
