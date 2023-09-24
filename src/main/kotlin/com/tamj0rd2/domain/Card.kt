@@ -1,11 +1,9 @@
 package com.tamj0rd2.domain
 
+import com.tamj0rd2.domain.Suit.*
 import java.util.*
 
 sealed class Card(val name: CardName) {
-    override fun toString(): String {
-        return name.lowercase(Locale.getDefault())
-    }
 
     fun playedBy(playerId: PlayerId): PlayedCard = PlayedCard(playerId, this)
 
@@ -19,9 +17,17 @@ sealed class Card(val name: CardName) {
         init {
             require(number in 1..13) { "number must be between 1 and 13" }
         }
+
+        override fun toString(): String {
+            return name.lowercase(Locale.getDefault())
+        }
     }
 
     data class SpecialCard(val suit: SpecialSuit) : Card(suit.name) {
+        override fun toString(): String {
+            return name.lowercase(Locale.getDefault())
+        }
+
         companion object {
             val escape get(): SpecialCard = SpecialCard(SpecialSuit.Escape)
             val pirate get(): SpecialCard = SpecialCard(SpecialSuit.Pirate)
@@ -48,10 +54,10 @@ enum class Suit() {
     }
 }
 
-val Int.blue get() = Card.NumberedCard(Suit.Blue, this)
-val Int.yellow get() = Card.NumberedCard(Suit.Yellow, this)
-val Int.red get() = Card.NumberedCard(Suit.Red, this)
-val Int.black get() = Card.NumberedCard(Suit.Black, this)
+val Int.blue get() = Card.NumberedCard(Blue, this)
+val Int.yellow get() = Card.NumberedCard(Yellow, this)
+val Int.red get() = Card.NumberedCard(Red, this)
+val Int.black get() = Card.NumberedCard(Black, this)
 
 
 enum class SpecialSuit() {

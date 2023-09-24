@@ -35,8 +35,8 @@ class Game {
 
     private val waitingForMorePlayers get() = players.size < roomSizeToStartGame
 
-    private lateinit var trickManager: TrickManager
-    val currentTrick: List<PlayedCard> get() = trickManager.cards
+    private lateinit var trick: Trick
+    val currentTrick: List<PlayedCard> get() = trick.playedCards
 
     private var roundTurnOrder = mutableListOf<PlayerId>()
     val currentPlayersTurn get(): PlayerId? = roundTurnOrder.firstOrNull()
@@ -61,7 +61,6 @@ class Game {
 
         _state = GameState.InProgress
         players.forEach { hands[it] = mutableListOf() }
-        trickManager = TrickManager(players.size)
         recordEvent(GameEvent.GameStarted(players))
         startNextRound()
     }
@@ -105,12 +104,12 @@ class Game {
         requireNotNull(card) { "card $cardName not in $playerId's hand" }
 
         hand.remove(card)
-        trickManager.add(PlayedCard(playerId, card))
+        trick.add(PlayedCard(playerId, card))
         roundTurnOrder.removeFirst()
 
         recordEvent(GameEvent.CardPlayed(playerId, card))
 
-        if (trickManager.isComplete) {
+        if (trick.isComplete) {
             _phase = TrickCompleted
             _trickWinner = determineTrickWinner()
             recordEvent(GameEvent.TrickCompleted)
@@ -131,7 +130,6 @@ class Game {
         _roundNumber += 1
         _trickNumber = 0
 
-        trickManager.clear()
         _bids.initFor(players)
         _phase = Bidding
         roundTurnOrder = (1..roundNumber).flatMap { players }.toMutableList()
@@ -141,7 +139,7 @@ class Game {
 
     fun startNextTrick() {
         _trickNumber += 1
-        trickManager.clear()
+        trick = Trick(players.size)
         _phase = TrickTaking
         recordEvent(GameEvent.TrickStarted(trickNumber))
     }
@@ -186,7 +184,7 @@ typealias Hand = List<Card>
 
 data class PlayedCard(val playerId: PlayerId, val card: Card) {
     override fun toString(): String {
-        return "$card played by $playerId"
+        return "${card.name} played by $playerId"
     }
 }
 
