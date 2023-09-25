@@ -76,7 +76,17 @@ internal fun wsHandler(
                             )
 
 
-                        is GameEvent.TrickCompleted -> MessageToClient.TrickCompleted(it.winner)
+                        is GameEvent.TrickCompleted -> {
+                            val messages = mutableListOf<MessageToClient>(
+                                MessageToClient.TrickCompleted(it.winner)
+                            )
+
+                            if (game.trickNumber == game.roundNumber) {
+                                messages += MessageToClient.RoundCompleted(game.winsOfTheRound)
+                            }
+
+                            MessageToClient.Multi(messages)
+                        }
                         is GameEvent.TrickStarted -> {
                             val messages = mutableListOf<MessageToClient>(
                                 MessageToClient.TrickStarted(
@@ -145,7 +155,7 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
 
                         logger.info("Starting the game")
                         game.start()
-                    }, delayOverride?.inWholeMilliseconds ?: 500)
+                    }, delayOverride?.inWholeMilliseconds ?: 5000)
                 }
 
                 is GameEvent.BiddingCompleted -> {

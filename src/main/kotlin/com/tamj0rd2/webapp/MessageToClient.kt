@@ -24,6 +24,8 @@ internal sealed class MessageToClient {
 
     data class TrickCompleted(val winner: PlayerId) : MessageToClient()
 
+    data class RoundCompleted(val wins: Map<PlayerId, Int>) : MessageToClient()
+
     object GameCompleted : MessageToClient()
 
     data class Multi(val messages: List<MessageToClient>) : MessageToClient()

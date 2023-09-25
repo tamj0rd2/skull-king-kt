@@ -6,6 +6,7 @@ export {GameStateElement} from "./components/GameStateElement";
 export {GamePhaseElement} from "./components/GamePhaseElement";
 export {PlayersElement} from "./components/PlayersElement";
 export {TrickElement} from "./components/TrickElement";
+export {WinsElement} from "./components/WinsElement";
 
 declare global {
     var socket: WebSocket

@@ -61,6 +61,10 @@ val TheySeeBids = Question.about("the bids that have been made") { actor ->
     actor.use<ParticipateInGames>().bids
 }
 
+val TheySeeWinsOfTheRound = Question.about("the actual wins during the round") { actor ->
+    actor.use<ParticipateInGames>().winsOfTheRound
+}
+
 val TheCurrentTrick = Question.about("the current trick") { actor ->
     actor.use<ParticipateInGames>().trick
 }

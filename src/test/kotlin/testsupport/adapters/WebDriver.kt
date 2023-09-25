@@ -75,6 +75,17 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         li.findElementOrNull(By.tagName("button")) != null
     }
 
+    override val winsOfTheRound: Map<PlayerId, Int>
+        get() = debugException {
+            driver.findElement(By.id("wins"))
+                .findElements(By.tagName("li"))
+                .associate {
+                    val playerId = it.getAttribute("data-playerId").let(::PlayerId)
+                    val wins = it.getAttribute("data-wins").toInt()
+                    playerId to wins
+                }
+        }
+
     override val trickWinner: PlayerId?
         get() = debugException {
             driver.findElement(By.id("trickWinner")).getAttributeOrNull("data-playerId")?.let(::PlayerId)

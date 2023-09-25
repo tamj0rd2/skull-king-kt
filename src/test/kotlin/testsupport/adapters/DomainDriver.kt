@@ -41,6 +41,9 @@ class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver
         return game.isCardPlayable(playerId, card)
     }
 
+    override val winsOfTheRound: Map<PlayerId, Int>
+        get() = game.winsOfTheRound
+
     override val trickWinner: PlayerId? get() = game.trickWinner
 
     override val playersInRoom get() = game.players

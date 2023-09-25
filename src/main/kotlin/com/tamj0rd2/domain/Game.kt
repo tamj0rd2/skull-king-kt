@@ -7,6 +7,9 @@ fun interface GameEventListener {
 }
 
 class Game {
+    private val _winsOfTheRound = mutableMapOf<PlayerId, Int>()
+    val winsOfTheRound: Map<PlayerId, Int> get() = _winsOfTheRound
+
     private var _trickWinner: PlayerId? = null
     val trickWinner: PlayerId? get() = _trickWinner
 
@@ -60,7 +63,10 @@ class Game {
         require(!waitingForMorePlayers) { "not enough players to start the game - ${players.size}/$roomSizeToStartGame" }
 
         _state = GameState.InProgress
-        players.forEach { hands[it] = mutableListOf() }
+        players.forEach {
+            hands[it] = mutableListOf()
+            _winsOfTheRound[it] = 0
+        }
         recordEvent(GameEvent.GameStarted(players))
         startNextRound()
     }
@@ -116,6 +122,7 @@ class Game {
         if (trick.isComplete) {
             _phase = TrickCompleted
             _trickWinner = trick.winner
+            _winsOfTheRound[_trickWinner!!] = _winsOfTheRound[_trickWinner!!]!! + 1
             recordEvent(GameEvent.TrickCompleted(trick.winner))
 
             if (roundNumber == 10) {

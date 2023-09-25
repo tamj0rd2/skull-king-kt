@@ -9,6 +9,7 @@ export enum MessageToClient {
     TrickStarted = "MessageToClient$TrickStarted",
     GameCompleted = "MessageToClient$GameCompleted",
     YourTurn = "MessageToClient$YourTurn",
+    RoundCompleted = "MessageToClient$RoundCompleted",
     Multi = "MessageToClient$Multi",
 }
 

@@ -16,6 +16,7 @@ interface ApplicationDriver {
     fun playCard(card: Card)
     fun isCardPlayable(card: Card): Boolean
 
+    val winsOfTheRound: Map<PlayerId, Int>
     val trickWinner: PlayerId?
     val currentPlayer: PlayerId?
     val trickNumber: Int?

@@ -53,6 +53,7 @@ import testsupport.TheTrickNumber
 import testsupport.TheWinnerOfTheTrick
 import testsupport.TheirHand
 import testsupport.TheySeeBids
+import testsupport.TheySeeWinsOfTheRound
 import testsupport.expectingFailure
 import testsupport.playerId
 import kotlin.test.AfterTest
@@ -131,7 +132,6 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         }
     }
 
-    // TODO next - winning a round
     @Test
     fun `winning a trick`() {
         freddy and sally both SitAtTheTable
@@ -154,6 +154,8 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheRoundPhase, Is(TrickCompleted))
             that(TheWinnerOfTheTrick, Is(sally.playerId))
+            // TODO add a test to make sure that the round scores get reset before the next round starts
+            that(TheySeeWinsOfTheRound, where(freddy won 0, sally won 1))
         }
     }
 
@@ -399,6 +401,8 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
     }
 }
 
+private infix fun Actor.won(count: Int) = Pair(this, count)
+
 internal object TestHelpers {
     fun playUpToStartOf(round: Int, trick: Int, theGameMaster: Actor, thePlayers: List<Actor>) {
         require(round != 1) { "playing to round 1 not implemented" }
@@ -528,8 +532,8 @@ internal fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> = object : 
 fun <T> sizeIs(expected: Int): Matcher<Collection<T>> = has(Collection<T>::size, equalTo(expected))
 
 // NOTE: if the compiler is randomly failing here after refactors/renaming, just run a gradle clean and it fixes it
-fun where(vararg bids: Pair<Actor, DisplayBid>): Matcher<Map<PlayerId, DisplayBid>> =
-    equalTo(bids.associate { it.first.playerId to it.second })
+fun <T> where(vararg data: Pair<Actor, T>): Matcher<Map<PlayerId, T>> =
+    equalTo(data.associate { it.first.playerId to it.second })
 
 infix fun Actor.bid(bid: Int): Pair<Actor, DisplayBid> = Pair(this, Placed(bid))
 fun Actor.bidIsHidden(): Pair<Actor, DisplayBid> = Pair(this, Hidden)
