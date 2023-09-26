@@ -59,7 +59,7 @@ private object Config {
         }
 }
 
-private class WebAppTestConfiguration(automaticGameMasterCommandDelay: Duration?) : TestConfiguration {
+private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Duration?) : TestConfiguration {
     private val port = ServerSocket(0).run {
         close()
         localPort
@@ -111,13 +111,13 @@ private class WebAppTestConfiguration(automaticGameMasterCommandDelay: Duration?
 
 @SkipWip
 @Execution(ExecutionMode.CONCURRENT)
-class WebAppTest : AppTestContract(WebAppTestConfiguration(automaticGameMasterCommandDelay = null))
+class BrowserAppTest : AppTestContract(BrowserAppTestConfiguration(automaticGameMasterCommandDelay = null))
 
 @Execution(ExecutionMode.CONCURRENT)
-class WebAppTestWithAutomatedGameMasterCommands {
+class BrowserAppTestWithAutomatedGameMasterCommands {
     private val gmDelay = 1.seconds
     private val expectedDelay = gmDelay * 2
-    private val c = WebAppTestConfiguration(automaticGameMasterCommandDelay = gmDelay)
+    private val c = BrowserAppTestConfiguration(automaticGameMasterCommandDelay = gmDelay)
 
     private val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
     private val sally by lazy { Actor("Sally Second").whoCan(c.participateInGames()) }

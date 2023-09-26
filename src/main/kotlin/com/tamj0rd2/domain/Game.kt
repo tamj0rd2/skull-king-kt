@@ -75,9 +75,7 @@ class Game {
         }
     }
 
-    fun getCardsInHand(playerId: PlayerId): List<Card> = getHandFor(playerId)
-
-    private fun getHandFor(playerId: PlayerId): MutableList<Card> {
+    fun getCardsInHand(playerId: PlayerId): List<Card> {
         val hand = hands[playerId]
         requireNotNull(hand) { "player $playerId somehow doesn't have a hand" }
         return hand
@@ -102,7 +100,7 @@ class Game {
         if (phase != TrickTaking) throw GameException.CannotPlayCard("not in trick taking phase - phase is $phase")
         if (currentPlayersTurn != playerId) throw GameException.CannotPlayCard("it is not $playerId's turn to play a card")
 
-        val hand = getHandFor(playerId)
+        val hand = hands[playerId] ?: error("player $playerId somehow doesn't have a hand")
         val card = hand.find { it.name == cardName }
         requireNotNull(card) { "card $cardName not in $playerId's hand" }
 
@@ -159,15 +157,13 @@ class Game {
     }
 
     fun isCardPlayable(playerId: PlayerId, card: Card): Boolean {
-        val hand = getHandFor(playerId)
+        val hand = getCardsInHand(playerId)
         return trick.isCardPlayable(card, hand.excluding(card))
     }
 }
 
 private fun <E> List<E>.excluding(element: E): List<E> {
-    val indexOfCard = indexOfFirst { it == element }
-    require(indexOfCard != -1) { "element $element not in $this" }
-    return toMutableList().apply { removeAt(indexOfCard) }
+    return filter { it != element }
 }
 
 data class PlayerId(val playerId: String) {
