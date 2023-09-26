@@ -70,7 +70,7 @@ class GameWsHandler(
                                 if (!hasConnected) {
                                     hasConnected = true
                                     heldMessages.forEach { heldMessage ->
-                                        logger.info("sending message to $playerId: ${message.asJsonObject()}")
+                                        logger.info("sending held message to $playerId: ${heldMessage.asJsonObject()}")
                                         ws.send(messageToClientLens(heldMessage))
                                     }
                                 }
@@ -117,6 +117,7 @@ class GameWsHandler(
             is GameEvent.GameStarted -> MessageToClient.GameStarted(event.players)
             is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(
                 event.playerId,
+                game.players,
                 game.isInState(GameState.WaitingForMorePlayers)
             )
 

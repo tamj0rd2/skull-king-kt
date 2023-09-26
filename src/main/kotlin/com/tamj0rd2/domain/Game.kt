@@ -105,7 +105,7 @@ class Game {
         requireNotNull(card) { "card $cardName not in $playerId's hand" }
 
         if (!trick.isCardPlayable(card, hand.excluding(card))) {
-            throw GameException.CannotPlayCard("$card does not match suit of trick")
+            throw GameException.CannotPlayCard("$card does not match suit ${trick.suit}")
         }
 
         hand.remove(card)
@@ -243,14 +243,20 @@ private class Bids {
 }
 
 sealed class DisplayBid {
-    override fun toString(): String = when (this) {
-        is None -> "None"
-        is Hidden -> "Hidden"
-        is Placed -> bid.toString()
+    object None : DisplayBid() {
+        override fun toString(): String {
+            return "None"
+        }
+    }
+    object Hidden : DisplayBid() {
+        override fun toString(): String {
+            return "Hidden"
+        }
     }
 
-    object None : DisplayBid()
-    object Hidden : DisplayBid()
-
-    data class Placed(val bid: Int) : DisplayBid()
+    data class Placed(val bid: Int) : DisplayBid() {
+        override fun toString(): String {
+            return bid.toString()
+        }
+    }
 }

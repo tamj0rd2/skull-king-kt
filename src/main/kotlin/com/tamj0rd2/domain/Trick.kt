@@ -11,7 +11,9 @@ class Trick(private val size: Int) {
 
     private val _playedCards = mutableListOf<PlayedCard>()
 
-    private var suit: Suit? = null
+    private var _suit: Suit? = null
+    val suit: Suit? get() = _suit
+
     private val specialsPlayed = mutableSetOf<SpecialSuit>()
     private val hasSkullKing get() = specialsPlayed.contains(SkullKing)
     private val hasMermaid get() = specialsPlayed.contains(Mermaid)
@@ -40,8 +42,8 @@ class Trick(private val size: Int) {
     internal fun add(playedCard: PlayedCard) {
         _playedCards.add(playedCard)
 
-        if (playedCard.card is NumberedCard && suit == null) {
-            suit = playedCard.card.suit
+        if (playedCard.card is NumberedCard && _suit == null) {
+            _suit = playedCard.card.suit
         }
 
         if (playedCard.card is SpecialCard) {
@@ -50,19 +52,19 @@ class Trick(private val size: Int) {
     }
 
     internal fun isCardPlayable(card: Card, restOfHand: List<Card>): Boolean {
-        if (restOfHand.isEmpty() || suit == null) return true
+        if (restOfHand.isEmpty() || _suit == null) return true
 
         when(card) {
             is NumberedCard -> {
-                if (card.suit == suit) return true
-                return restOfHand.none { it is NumberedCard && it.suit == suit }
+                if (card.suit == _suit) return true
+                return restOfHand.none { it is NumberedCard && it.suit == _suit }
             }
             is SpecialCard -> return true
         }
     }
 
     private val context get (): TrickContext = TrickContext(
-        suit = suit,
+        suit = _suit,
         hasSkullKing = hasSkullKing,
         hasMermaid = hasMermaid,
         hasPirate = hasPirate

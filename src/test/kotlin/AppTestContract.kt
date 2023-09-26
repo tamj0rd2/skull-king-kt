@@ -295,6 +295,9 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure<GameException.PlayerWithSameNameAlreadyJoined>())
     }
 
+    // TODO: remove hamkrest... I can add an overload for `that` which takes lamda for assertions
+    // e.g that(TheirHand, { size shouldBe 1 })
+    // the lamda will have the thing under test (e.g the hand) set to `this`
     @Test
     fun `playing a game from start to finish`() {
         freddy and sally both SitAtTheTable
