@@ -154,8 +154,29 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddy and sally both Ensure {
             that(TheRoundPhase, Is(TrickCompleted))
             that(TheWinnerOfTheTrick, Is(sally.playerId))
-            // TODO add a test to make sure that the round scores get reset before the next round starts
             that(TheySeeWinsOfTheRound, where(freddy won 0, sally won 1))
+        }
+
+        // testing for round 2
+        gary(
+            RigsTheDeck.SoThat(freddy).willEndUpWith(11.blue, 12.blue),
+            RigsTheDeck.SoThat(sally).willEndUpWith(1.blue, 2.blue),
+        )
+        skipToTrickTaking(theGameMaster = gary, thePlayers = listOf(freddy, sally))
+
+        freddy and sally both Ensure {
+            that(TheRoundNumber, Is(2))
+            that(TheRoundPhase, Is(TrickTaking))
+            that(TheCurrentPlayer, Is(freddy.playerId))
+        }
+
+        freddy and sally both Play.theirFirstPlayableCard
+        gary(SaysTheNextTrickCanStart)
+        freddy and sally both Play.theirFirstPlayableCard
+
+        freddy and sally both Ensure {
+            that(TheRoundPhase, Is(TrickCompleted))
+            that(TheySeeWinsOfTheRound, where(freddy won 2, sally won 0))
         }
     }
 

@@ -63,10 +63,7 @@ class Game {
         require(!waitingForMorePlayers) { "not enough players to start the game - ${players.size}/$roomSizeToStartGame" }
 
         _state = GameState.InProgress
-        players.forEach {
-            hands[it] = mutableListOf()
-            _winsOfTheRound[it] = 0
-        }
+        players.forEach { hands[it] = mutableListOf() }
         recordEvent(GameEvent.GameStarted(players))
         startNextRound()
     }
@@ -144,6 +141,8 @@ class Game {
         _bids.initFor(players)
         _phase = Bidding
         roundTurnOrder = (1..roundNumber).flatMap { players }.toMutableList()
+        players.forEach { _winsOfTheRound[it] = 0 }
+
         dealCards()
         recordEvent(GameEvent.RoundStarted(roundNumber))
     }
