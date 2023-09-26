@@ -31,4 +31,4 @@ val SitsAtTheTable = Interaction { actor ->
 }
 val SitAtTheTable = SitsAtTheTable
 
-val Actor.playerId get() = PlayerId(name)
+val Actor.playerId get() = PlayerId(name.lowercase().replace(" ", "_"))

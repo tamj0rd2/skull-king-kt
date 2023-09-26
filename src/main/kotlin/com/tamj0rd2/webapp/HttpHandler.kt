@@ -1,7 +1,6 @@
 package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.webapp.CustomJackson.asCompactJsonString
@@ -93,14 +92,6 @@ internal fun httpHandler(
         },
         "/play" bind Method.POST to {
             val playerId = it.form("playerId")?.let(PlayerId::from) ?: error("playerId not posted!")
-            logger.info("$playerId is trying to join the game")
-
-            try {
-                game.addPlayer(playerId)
-                logger.info("$playerId joined the game")
-            } catch (e: GameException.PlayerWithSameNameAlreadyJoined) {
-                return@to Response(Status.OK).with(htmlLens of Index.withError(e::class.simpleName!!))
-            }
 
             val model = Game.from(
                 host = host,

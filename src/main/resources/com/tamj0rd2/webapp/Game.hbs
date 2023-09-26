@@ -1,23 +1,31 @@
 <html>
 <head>
     <link href="/style.css" rel="stylesheet" type="text/css"/>
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
 <div id="root" class="content">
-    <h1>Game Page - {{playerId}}</h1>
-    <sk-gamestate></sk-gamestate>
-    <h2 id="roundNumber"></h2>
-    <sk-gamephase></sk-gamephase>
-    <h2 id="trickNumber"></h2>
-    <h3 id="currentPlayer"></h3>
-    <h3 id="trickWinner"></h3>
+    <main class="hidden">
+        <h1>Game Page - {{playerId}}</h1>
+        <sk-gamestate></sk-gamestate>
+        <h2 id="roundNumber"></h2>
+        <sk-gamephase></sk-gamephase>
+        <h2 id="trickNumber"></h2>
+        <h3 id="currentPlayer"></h3>
+        <h3 id="trickWinner"></h3>
 
-    <sk-players></sk-players>
-    <sk-hand></sk-hand>
-    <sk-biddingform></sk-biddingform>
-    <sk-bids></sk-bids>
-    <sk-trick></sk-trick>
-    <sk-wins></sk-wins>
+        <sk-players></sk-players>
+        <sk-hand></sk-hand>
+        <sk-biddingform></sk-biddingform>
+        <sk-bids></sk-bids>
+        <sk-trick></sk-trick>
+        <sk-wins></sk-wins>
+    </main>
+    <span id="loading">Loading...</span>
 </div>
 <script>
     window.INITIAL_STATE = {
@@ -30,8 +38,43 @@
     if (location.protocol === "https:") wsProtocol += "s"
 
     window.socket = new WebSocket(`${wsProtocol}://{{host}}:${location.port}/{{playerId}}`)
+
+    window.socket.addEventListener("open", () => {
+        setTimeout(() => {
+            document.querySelector("#loading").remove()
+
+            if (window.socket.readyState === WebSocket.CLOSED || window.socket.readyState === WebSocket.CLOSING) {
+                return
+            }
+
+            console.log("sending connection handshake")
+            document.querySelector("main").classList.remove("hidden")
+            socket.send(JSON.stringify({type: "MessageFromClient$Connected"}))
+        }, 25)
+    })
+
     window.socket.addEventListener("message", (event) => {
         console.log(`{{playerId}} received`, event.data)
+    })
+
+    socket.addEventListener("close", (event) => {
+        if (event.code === 1003) {
+            console.error("ws connection rejected")
+            document.querySelector("main").remove()
+
+            const errorMessageEl = document.createElement("h2")
+            errorMessageEl.id = "errorMessage"
+            errorMessageEl.innerText = "Failed to join game"
+            errorMessageEl.classList.remove("hidden")
+            document.querySelector("#root").append(errorMessageEl)
+            return
+        }
+
+        console.error("disconnected from ws", event)
+    })
+
+    socket.addEventListener("error", (event) => {
+        console.error("error from ws", event)
     })
 
     const gameScript = document.createElement('script')

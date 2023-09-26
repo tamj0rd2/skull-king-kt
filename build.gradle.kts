@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    val http4kVersion = "5.6.3.0"
+    val http4kVersion = "5.8.1.0"
     val seleniumVersion = "4.12.0"
     val chromeVersion = "v114"
 
@@ -25,11 +25,14 @@ dependencies {
     implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
 
     testImplementation(kotlin("test"))
+    testImplementation(platform("org.http4k:http4k-bom:$http4kVersion"))
+    testImplementation("org.http4k:http4k-client-jetty")
+    testImplementation("org.http4k:http4k-client-websocket")
+    testImplementation("org.http4k:http4k-core")
     testImplementation("org.seleniumhq.selenium:selenium-devtools-$chromeVersion:$seleniumVersion")
     testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion")
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
     testImplementation("com.natpryce:hamkrest:1.8.0.1")
-    testImplementation("org.http4k:http4k-client-jetty:$http4kVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.7.2")
 }

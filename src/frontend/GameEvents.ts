@@ -20,6 +20,7 @@ export enum MessageFromClient {
     CardPlayed = "MessageFromClient$CardPlayed",
     UnhandledServerMessage = "MessageFromClient$UnhandledServerMessage",
     Error = "MessageFromClient$Error",
+    Connected = "MessageFromClient$Connected",
 }
 
 // TODO: bad naming

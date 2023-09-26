@@ -1,4 +1,4 @@
-import {MessageToClient, listenToGameEvents} from "./GameEvents";
+import {MessageToClient, listenToGameEvents, MessageFromClient} from "./GameEvents";
 export {BiddingElement} from "./components/BiddingElement";
 export {BidsElement} from "./components/BidsElement";
 export {HandElement} from "./components/HandElement";
@@ -16,6 +16,7 @@ const roundNumberEl = document.querySelector("#roundNumber") as HTMLHeadingEleme
 const trickNumberEl = document.querySelector("#trickNumber") as HTMLHeadingElement
 const playerWhoseTurnItIsEl = document.querySelector("#currentPlayer") as HTMLHeadingElement
 const trickWinnerEl = document.querySelector("#trickWinner") as HTMLHeadingElement
+
 listenToGameEvents({
     [MessageToClient.RoundStarted]: ({roundNumber}) => {
         roundNumberEl.innerText = `Round ${roundNumber}`
@@ -45,8 +46,4 @@ listenToGameEvents({
         trickWinnerEl.innerText = `Winner: ${winner}`
         trickWinnerEl.setAttribute("data-playerId", winner)
     }
-})
-
-socket.addEventListener("close", (event) => {
-    console.error("disconnected from ws")
 })

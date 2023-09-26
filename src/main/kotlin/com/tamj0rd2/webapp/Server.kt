@@ -6,6 +6,7 @@ import org.http4k.server.PolyHandler
 import org.http4k.server.Undertow
 import org.http4k.server.asServer
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 object Server {
     fun make(
@@ -23,7 +24,7 @@ object Server {
             automateGameMasterCommands = automateGameMasterCommands,
         )
 
-        val ws = wsHandler(game, automateGameMasterCommands, automaticGameMasterDelayOverride)
+        val ws = GameWsHandler(game, automateGameMasterCommands, automaticGameMasterDelayOverride).handler
         return PolyHandler(http, ws).asServer(Undertow(port))
     }
 }
@@ -35,6 +36,7 @@ fun main() {
         port = port,
         host = host,
         hotReload = true,
-        automateGameMasterCommands = true
+        automateGameMasterCommands = true,
+        automaticGameMasterDelayOverride = 10.seconds,
     ).start().apply { println("Server started on port $host:$port") }
 }
