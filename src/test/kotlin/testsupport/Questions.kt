@@ -69,44 +69,45 @@ val TheCurrentTrick = Question.about("the current trick") { actor ->
     actor.use<ParticipateInGames>().trick
 }
 
-val Ensures = Ensure
+private val defaultDelay = 1.seconds
 
-object Ensure {
-    private val defDelay = 1.seconds
+fun <T> waitUntil(question: Question<T>, matcher: Matcher<T>, within: Duration = defaultDelay) = ensure(question, matcher, within)
 
-    interface That {
-        fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration? = null)
-        fun <T> Is(expected: T?): Matcher<T>
-    }
-
-    operator fun invoke(within: Duration = defDelay, block: That.() -> Unit) = Activity { actor ->
-        val outerWithin = within
-
-        object : That {
-            override fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration?) {
-                actor.invoke(Ensure(
-                    question = question,
-                    matcher = matcher,
-                    within = within ?: outerWithin
-                ))
-            }
-
-            override fun <T> Is(expected: T?): Matcher<T> = equalTo(expected)
-        }.apply(block)
-    }
-
-    operator fun <T> invoke(question: Question<T>, matcher: Matcher<T>, within: Duration = defDelay) = Activity { actor ->
-        val mustEndBy = now().plus(within.toJavaDuration())
-
-        do {
-            try {
-                val answer = question.answeredBy(actor)
-                assertThat(answer, matcher) { "$actor asked a $question" }
-                break
-            } catch (e: AssertionError) {
-                if (now() > mustEndBy) throw e
-                Thread.sleep(50)
-            }
-        } while (true)
-    }
+interface Ensure {
+    fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration? = null)
+    fun <T> Is(expected: T?): Matcher<T>
 }
+
+fun ensure(within: Duration = defaultDelay, block: Ensure.() -> Unit) = Activity { actor ->
+    val outerWithin = within
+
+    object : Ensure {
+        override fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration?) {
+            actor.invoke(ensure(
+                question = question,
+                matcher = matcher,
+                within = within ?: outerWithin
+            ))
+        }
+
+        override fun <T> Is(expected: T?): Matcher<T> = equalTo(expected)
+    }.apply(block)
+}
+fun ensures(within: Duration = defaultDelay, block: Ensure.() -> Unit) = ensure(within, block)
+
+fun <T> ensure(question: Question<T>, matcher: Matcher<T>, within: Duration = defaultDelay) = Activity { actor ->
+    val mustEndBy = now().plus(within.toJavaDuration())
+
+    do {
+        try {
+            val answer = question.answeredBy(actor)
+            assertThat(answer, matcher) { "$actor asked a $question" }
+            break
+        } catch (e: AssertionError) {
+            if (now() > mustEndBy) throw e
+            Thread.sleep(50)
+        }
+    } while (true)
+}
+
+fun <T> ensures(question: Question<T>, matcher: Matcher<T>, within: Duration = defaultDelay) = ensure(question, matcher, within)

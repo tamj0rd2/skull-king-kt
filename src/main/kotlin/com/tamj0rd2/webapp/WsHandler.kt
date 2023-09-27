@@ -35,7 +35,8 @@ class GameWsHandler(
         "/{playerId}" bind { req ->
             WsResponse { ws ->
                 val playerId = playerIdLens(req)
-                val logger = LoggerFactory.getLogger("wsHandler pid='$playerId'")
+                val logger = LoggerFactory.getLogger("wsHandler:$playerId")
+                logger.info("$playerId is trying to join")
 
                 if (game.players.contains(playerId)) {
                     logger.error("player with id '$playerId' already joined")
@@ -59,7 +60,7 @@ class GameWsHandler(
 
                 ws.onMessage {
                     synchronized(lock) {
-                        logger.info("received client message from $playerId: ${it.bodyString()}")
+                        logger.info("server received: ${it.bodyString()}")
 
                         when (val message = clientMessageLens(it)) {
                             is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
@@ -80,7 +81,6 @@ class GameWsHandler(
                 }
 
                 game.addPlayer(playerId)
-                logger.info("$playerId joined the game")
             }
         }
     )

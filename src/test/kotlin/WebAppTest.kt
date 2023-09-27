@@ -5,12 +5,17 @@ import org.eclipse.jetty.client.HttpClient
 import org.http4k.client.WebsocketClient
 import org.http4k.core.Uri
 import org.http4k.websocket.Websocket
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
+import testsupport.SkipWip
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WsDriver
 import java.net.ServerSocket
 
+@SkipWip
+@Execution(ExecutionMode.SAME_THREAD)
 class WebAppTest : AppTestContract(object : TestConfiguration {
     private val port = ServerSocket(0).apply { close() }.localPort
     private val server = Server.make(port, hotReload = false)

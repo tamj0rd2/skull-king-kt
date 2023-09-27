@@ -3,19 +3,17 @@ package testsupport
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.PlayerId
-import java.time.Instant.now
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
 
 val Play = Plays
 object Plays {
-    operator fun invoke(card: Card) = Interaction {actor ->
+    operator fun invoke(card: Card) = Activity("playing ${card.name}") {actor ->
         actor.use<ParticipateInGames>().playCard(card)
     }
 
-    val theirFirstPlayableCard = Interaction { actor ->
+    val theirFirstPlayableCard = Activity("playing their first playable card") { actor ->
         val ability = actor.use<ParticipateInGames>()
         val hand = actor.asksAbout(TheirHand)
 
@@ -26,28 +24,13 @@ object Plays {
     }
 }
 
-fun <T> retry(total: Duration, block: () -> T): T {
-    val endTime = now().plusMillis(total.inWholeMilliseconds)
-    var lastError: Throwable?
-
-    do {
-        try {
-            return block()
-        } catch (e: Throwable) {
-            lastError = e
-        }
-    } while (now() < endTime)
-
-    throw lastError!!
-}
-
-fun Bids(bid: Int) = Interaction { actor ->
+fun Bids(bid: Int) = Activity("bidding $bid") { actor ->
     actor.use<ParticipateInGames>().bid(bid)
 }
 fun Bid(bid: Int) = Bids(bid)
 
 
-val SitsAtTheTable = Interaction { actor ->
+val SitsAtTheTable = Activity("joining the game") { actor ->
     actor.use<ParticipateInGames>().joinGame(actor.playerId)
 }
 val SitAtTheTable = SitsAtTheTable

@@ -1,20 +1,15 @@
 package testsupport
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.throws
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 
-fun interface Activity {
-    operator fun invoke(actor: Actor)
+class Activity(private val name: String = "AnonymousActivity", private val fn: (Actor) -> Unit) {
+    override fun toString(): String  = name
+    operator fun invoke(actor: Actor) = fn(actor)
 }
 
-inline fun <reified T : Throwable> Activity.expectingFailure() = Activity { actor ->
-    assertThat({ actor.invoke(this) }, throws<T>())
-}
-
-fun interface Interaction: Activity
-
-class Task(private vararg val activities: Activity): Activity {
-    override fun invoke(actor: Actor) {
-        actor.invoke(*activities)
+inline fun <reified T : Throwable> Activity.expectingFailure() = Activity("Expecting Failure") { actor ->
+    withClue("$actor expected activity '$this' to fail") {
+        shouldThrow<T> { actor.invoke(this@expectingFailure) }
     }
 }
