@@ -56,6 +56,7 @@ class Game {
 
         _players += playerId
         if (!waitingForMorePlayers) _state = GameState.WaitingToStart
+
         recordEvent(GameEvent.PlayerJoined(playerId))
     }
 

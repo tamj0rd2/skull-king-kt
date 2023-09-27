@@ -8,10 +8,9 @@ import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
-import com.tamj0rd2.webapp.CustomJackson.asCompactJsonString
-import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 import com.tamj0rd2.webapp.CustomJackson.auto
 import com.tamj0rd2.webapp.MessageFromClient
+import com.tamj0rd2.webapp.MessageId
 import com.tamj0rd2.webapp.MessageToClient
 import org.http4k.websocket.Websocket
 import org.http4k.websocket.WsMessage
@@ -20,7 +19,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import testsupport.ApplicationDriver
 import testsupport.retry
-import kotlin.time.Duration.Companion.milliseconds
+import java.time.Instant.now
+import kotlin.time.Duration.Companion.seconds
 
 class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver {
     private val messageToClientLens = WsMessage.auto<MessageToClient>().toLens()
@@ -30,7 +30,6 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
     private lateinit var ws: Websocket
     private lateinit var playerId: PlayerId
     private var playableCards: MutableMap<CardName, Boolean> = mutableMapOf()
-    private var hasJoinedGame: Boolean = false
 
     override fun joinGame(playerId: PlayerId) {
         logger = LoggerFactory.getLogger("wsClient:$playerId")
@@ -39,20 +38,17 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
         ws = makeWs(playerId)
         ws.onClose { logger.warn("websocket closed") }
         ws.onError { logger.error("websocket error", it) }
-        ws.onMessage { synchronized(this) { handleIncomingMessage(messageToClientLens(it)) } }
+        ws.onMessage {
+            synchronized(syncObject) {
+                val message = messageToClientLens(it)
+                logger.info("received: $message")
 
-        // needed otherwise there can be a race condition between the server opening the socket and the client sending the connected message
-        // TODO: find a better way to do this
-        Thread.sleep(10)
-        sendMessage(MessageFromClient.Connected)
-
-        // this makes sure we're in the game before we continue
-        retry(500.milliseconds, backoffMs = 50) {
-            // TODO: this is weird and difficult...
-            if (!hasJoinedGame) {
-                error("player $playerId hasn't joined the game yet")
+                handleIncomingMessage(message)
+                if (message.needsAck) sendMessage(message.ack())
             }
         }
+
+        sendMessage(MessageFromClient.JoinGame())
     }
 
     override fun bid(bid: Int) {
@@ -106,25 +102,49 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
 
     override var bids: MutableMap<PlayerId, DisplayBid> = mutableMapOf()
 
-    private fun sendMessage(message: MessageFromClient) {
-        logger.info("sending: ${message.asJsonObject().asCompactJsonString()}")
-        try {
-            ws.send(messageFromClientLens(message))
-        } catch (e: WebsocketNotConnectedException) {
-            if (hasJoinedGame) {
-                throw e
-            }
+    private val messageAcknowledgements = mutableMapOf<MessageId, Boolean>()
 
-            // TODO: this is weird and difficult...
-            throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
+    private val syncObject = Object()
+
+    private fun sendMessage(message: MessageFromClient) {
+        logger.info("sending: $message")
+        retry(
+            1.seconds,
+            100,
+            listOf(WebsocketNotConnectedException::class)
+        ) { ws.send(messageFromClientLens(message)) }
+
+        if (!message.needsAck) return
+
+        messageAcknowledgements[message.id] = false
+
+        synchronized(syncObject) {
+            val mustFinishBy = now().plusMillis(250)
+
+            do {
+                if (messageAcknowledgements[message.id] == true) return
+                syncObject.wait(50)
+            } while (now() < mustFinishBy)
+
+            error("message '${message::class.simpleName}' not acked by server")
         }
     }
 
     private fun handleIncomingMessage(message: MessageToClient) {
-        logger.info("client received: $message")
-
         when (message) {
-            is MessageToClient.BidPlaced -> bids[message.playerId] = DisplayBid.Hidden
+            is MessageToClient.Ack -> {
+                val messageId = message.acked.id
+                require(messageAcknowledgements.contains(messageId)) { "message $messageId doesn't exist in acknowledgements map" }
+                require(messageAcknowledgements[messageId] == false) { "message $messageId has already been acknowledged" }
+
+                messageAcknowledgements[messageId] = true
+                syncObject.notify()
+            }
+
+            is MessageToClient.BidPlaced -> {
+                bids[message.playerId] = DisplayBid.Hidden
+            }
+
             is MessageToClient.BiddingCompleted -> {
                 bids = message.bids.map { it.key to DisplayBid.Placed(it.value.bid) }.toMap().toMutableMap()
                 roundPhase = RoundPhase.BiddingCompleted
@@ -138,19 +158,21 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
                 currentPlayer = message.nextPlayer
             }
 
-            is MessageToClient.GameCompleted -> gameState = GameState.Complete
+            is MessageToClient.GameCompleted -> {
+                gameState = GameState.Complete
+            }
+
             is MessageToClient.GameStarted -> {
                 playersInRoom = message.players
                 gameState = GameState.InProgress
                 roundPhase = RoundPhase.Bidding
             }
 
-            is MessageToClient.Multi -> message.messages.forEach(::handleIncomingMessage)
-            is MessageToClient.PlayerJoined -> {
-                if (message.playerId == playerId) {
-                    hasJoinedGame = true
-                }
+            is MessageToClient.Multi -> {
+                message.messages.forEach(::handleIncomingMessage)
+            }
 
+            is MessageToClient.PlayerJoined -> {
                 playersInRoom = message.players
                 gameState = if (message.waitingForMorePlayers) {
                     GameState.WaitingForMorePlayers
@@ -184,7 +206,19 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
                 trick.clear()
             }
 
-            is MessageToClient.YourTurn -> playableCards = message.cards.toMutableMap()
+            is MessageToClient.YourTurn -> {
+                playableCards = message.cards.toMutableMap()
+            }
         }
     }
 }
+
+// TODO: get back here
+//internal data class AckOrNack(val ack: MessageToClient.Ack?, val nack: MessageToClient.Nack?) {
+//    val isAck = ack != null
+//    val isNack = nack != null
+//
+//    init {
+//        require(isAck xor isNack) { "AckOrNack must be either an Ack or a Nack" }
+//    }
+//}

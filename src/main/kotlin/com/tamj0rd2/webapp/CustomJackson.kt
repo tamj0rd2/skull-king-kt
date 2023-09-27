@@ -19,6 +19,7 @@ object CustomJackson : ConfigurableJackson(
         .withStandardMappings()
         .text(::PlayerId, PlayerId::playerId)
         .int(::Bid, Bid::bid)
+        .int(::MessageId, MessageId::messageId)
         .done()
         .addMixIn<MessageToClient, DefaultMixin>()
         .addMixIn<GameMasterCommand, DefaultMixin>()

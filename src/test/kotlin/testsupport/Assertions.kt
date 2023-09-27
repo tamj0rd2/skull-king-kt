@@ -8,13 +8,13 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
-private val defaultDelay = 1.seconds
+private val defaultDelay = Duration.ZERO
 
 fun interface Assertion<T> {
     fun T?.assert()
 }
 
-fun <T> waitUntil(question: Question<T>, assertion: Assertion<T>, within: Duration = defaultDelay) = ensure(question, assertion, within)
+fun <T> waitUntil(question: Question<T>, assertion: Assertion<T>, within: Duration) = ensure(question, assertion, within)
 fun <T> Is(expected: T) = Assertion<T> { this shouldBe expected }
 fun <T> sizeIs(expected: Int) = Assertion<List<T>> { this?.size shouldBe expected }
 fun <T> onlyContains(vararg expected: T) = Assertion<List<T>> { this shouldBe expected.toList() }

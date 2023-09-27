@@ -4,9 +4,20 @@ import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.webapp.CustomJackson.asCompactJsonString
+import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 
 internal sealed class MessageToClient {
-    data class PlayerJoined(val playerId: PlayerId, val players: List<PlayerId>, val waitingForMorePlayers: Boolean) : MessageToClient()
+    val id = MessageId.next
+
+    open val needsAck = true
+
+    data class PlayerJoined(
+        val playerId: PlayerId,
+        val players: List<PlayerId>,
+        val waitingForMorePlayers: Boolean,
+        override val needsAck: Boolean,
+    ) : MessageToClient()
 
     data class GameStarted(val players: List<PlayerId>) : MessageToClient()
 
@@ -26,11 +37,25 @@ internal sealed class MessageToClient {
 
     data class RoundCompleted(val wins: Map<PlayerId, Int>) : MessageToClient()
 
-    object GameCompleted : MessageToClient()
+    class GameCompleted : MessageToClient()
 
     data class Multi(val messages: List<MessageToClient>) : MessageToClient()
 
+    data class Ack(val acked: MessageFromClient) : MessageToClient() {
+        override val needsAck = false
+
+        init {
+            require(acked !is MessageFromClient.Ack)
+        }
+    }
+
+    fun ack() = MessageFromClient.Ack(this)
+
     companion object {
+        fun multi(vararg messages: MessageToClient) = multi(messages.toList())
         fun multi(messages: List<MessageToClient>) = if (messages.size > 1) Multi(messages.toList()) else messages.single()
     }
+
+    fun json() = this.asJsonObject().asCompactJsonString()
 }
+

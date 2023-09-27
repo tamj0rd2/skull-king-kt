@@ -5,7 +5,6 @@ import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameEventListener
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
-import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 import com.tamj0rd2.webapp.CustomJackson.auto
 import org.http4k.lens.Path
 import org.http4k.routing.websockets
@@ -14,6 +13,7 @@ import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsResponse
 import org.http4k.websocket.WsStatus
 import org.slf4j.LoggerFactory
+import java.time.Instant
 import kotlin.time.Duration
 
 class GameWsHandler(
@@ -36,7 +36,30 @@ class GameWsHandler(
             WsResponse { ws ->
                 val playerId = playerIdLens(req)
                 val logger = LoggerFactory.getLogger("wsHandler:$playerId")
-                logger.info("$playerId is trying to join")
+                ws.onError { logger.error("websocket error", it) }
+                logger.info("$playerId is connecting")
+
+                val syncObject = Object()
+                val messageAcknowledgements = mutableMapOf<MessageId, Boolean>()
+
+                val sendMessage = { message: MessageToClient ->
+                    logger.info("sending: $message")
+                    ws.send(messageToClientLens(message))
+
+                    if (message.needsAck) {
+                        messageAcknowledgements[message.id] = false
+                        synchronized(syncObject) {
+                            val mustFinishBy = Instant.now().plusMillis(1000)
+
+                            do {
+                                if (messageAcknowledgements[message.id] == true) return@synchronized
+                                syncObject.wait(100)
+                            } while (Instant.now() < mustFinishBy)
+
+                            error("message '${message::class.simpleName}' not acked by client")
+                        }
+                    }
+                }
 
                 if (game.players.contains(playerId)) {
                     logger.error("player with id '$playerId' already joined")
@@ -44,44 +67,33 @@ class GameWsHandler(
                     return@WsResponse
                 }
 
-                var hasConnected = false
-                val heldMessages = mutableListOf<MessageToClient>()
-                val lock = Any()
-
-                game.subscribeToGameEvents(listenerFor(playerId) { message ->
-                    if (!hasConnected) {
-                        heldMessages.add(message)
-                        return@listenerFor
-                    }
-
-                    logger.info("sending message to $playerId: ${message.asJsonObject()}")
-                    ws.send(messageToClientLens(message))
-                })
+                game.subscribeToGameEvents(listenerFor(playerId, sendMessage))
 
                 ws.onMessage {
-                    val message = clientMessageLens(it)
-                    logger.info("server received: $it")
+                    synchronized(syncObject) {
+                        val message = clientMessageLens(it)
+                        logger.info("received: $message")
 
-                    synchronized(lock) {
                         when (message) {
                             is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
-                            is MessageFromClient.UnhandledServerMessage -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
-                            is MessageFromClient.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
+                            is MessageFromClient.UnhandledServerMessage -> error("CLIENT ERROR: unhandled game event: ${message.offender}")
+                            is MessageFromClient.Error -> error("CLIENT ERROR: ${message.stackTrace}")
                             is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
-                            is MessageFromClient.Connected -> {
-                                if (!hasConnected) {
-                                    hasConnected = true
-                                    heldMessages.forEach { heldMessage ->
-                                        logger.info("sending held message to $playerId: ${heldMessage.asJsonObject()}")
-                                        ws.send(messageToClientLens(heldMessage))
-                                    }
-                                }
+                            is MessageFromClient.JoinGame -> game.addPlayer(playerId)
+                            is MessageFromClient.Ack -> {
+                                val messageId = message.acked.id
+                                require(messageAcknowledgements.contains(messageId)) { "message $messageId doesn't exist in acknowledgements map" }
+                                require(messageAcknowledgements[messageId] == false) { "message $messageId has already been acknowledged" }
+
+                                messageAcknowledgements[messageId] = true
+                                syncObject.notify()
+                                return@onMessage
                             }
                         }
+
+                        if (message.needsAck) sendMessage(message.ack())
                     }
                 }
-
-                game.addPlayer(playerId)
             }
         }
     )
@@ -111,12 +123,14 @@ class GameWsHandler(
             }
 
             is GameEvent.CardsDealt -> TODO("add cards dealt event")
-            is GameEvent.GameCompleted -> MessageToClient.GameCompleted
+            is GameEvent.GameCompleted -> MessageToClient.GameCompleted()
             is GameEvent.GameStarted -> MessageToClient.GameStarted(event.players)
+            //is GameEvent.PlayerJoined -> TODO("not managed here anymore. check the message receiver")
             is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(
-                event.playerId,
-                game.players,
-                game.isInState(GameState.WaitingForMorePlayers)
+                playerId = event.playerId,
+                players = game.players,
+                waitingForMorePlayers = game.isInState(GameState.WaitingForMorePlayers),
+                needsAck = event.playerId != playerId,
             )
 
             is GameEvent.RoundStarted -> MessageToClient.RoundStarted(

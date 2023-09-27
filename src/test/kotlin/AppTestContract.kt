@@ -57,6 +57,7 @@ import java.lang.management.ManagementFactory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.time.Duration
 
 interface AbilityFactory {
     fun participateInGames(): ParticipateInGames
@@ -112,7 +113,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
             SaysTheGameCanStart
         )
 
-        freddy and sally both waitUntil(TheRoundPhase, Is(Bidding))
+        freddy and sally both waitUntil(TheRoundPhase, Is(Bidding), within = Duration.ZERO)
         freddy and sally both Bid(1)
         freddy and sally both ensure(TheRoundPhase, Is(BiddingCompleted))
 
@@ -143,7 +144,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
             RigsTheDeck.SoThat(sally).willEndUpWith(12.blue),
             SaysTheGameCanStart
         )
-        freddy and sally both waitUntil(TheRoundPhase, Is(Bidding))
+        freddy and sally both waitUntil(TheRoundPhase, Is(Bidding), within = Duration.ZERO)
 
         freddy and sally both Bid(1)
         freddy and sally both ensure(TheRoundPhase, Is(BiddingCompleted))
@@ -300,9 +301,23 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure<GameException.PlayerWithSameNameAlreadyJoined>())
     }
 
-    // TODO: remove hamkrest... I can add an overload for `that` which takes lamda for assertions
-    // e.g that(TheirHand, { size shouldBe 1 })
-    // the lamda will have the thing under test (e.g the hand) set to `this`
+    @Test
+    fun `joining a game with both players`() {
+        freddy(
+            SitsAtTheTable,
+            ensures(within = Duration.ZERO) {
+                that(ThePlayersAtTheTable, are(freddy))
+                that(TheGameState, Is(WaitingForMorePlayers))
+            },
+        )
+
+        sally(SitsAtTheTable)
+        freddy and sally both ensure(within = Duration.ZERO) {
+            that(ThePlayersAtTheTable, are(freddy, sally))
+            that(TheGameState, Is(WaitingToStart))
+        }
+    }
+
     @Test
     fun `playing a game from start to finish`() {
         freddy and sally both SitAtTheTable
