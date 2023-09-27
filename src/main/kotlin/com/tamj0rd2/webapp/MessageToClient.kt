@@ -29,4 +29,8 @@ internal sealed class MessageToClient {
     object GameCompleted : MessageToClient()
 
     data class Multi(val messages: List<MessageToClient>) : MessageToClient()
+
+    companion object {
+        fun multi(messages: List<MessageToClient>) = if (messages.size > 1) Multi(messages.toList()) else messages.single()
+    }
 }

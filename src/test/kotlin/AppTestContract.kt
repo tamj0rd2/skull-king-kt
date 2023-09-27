@@ -8,23 +8,17 @@ import com.tamj0rd2.domain.DisplayBid.*
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
-import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase.*
-import com.tamj0rd2.domain.Suit.*
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.domain.red
-import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import testsupport.Activity
 import testsupport.Actor
-import testsupport.Assertion
 import testsupport.Bid
 import testsupport.Bids
-import testsupport.Ensure
-import testsupport.ensure
-import testsupport.ensures
+import testsupport.EnsureActivity
 import testsupport.HerFirstCard
 import testsupport.HerHand
 import testsupport.HisFirstCard
@@ -52,12 +46,14 @@ import testsupport.TheWinnerOfTheTrick
 import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
-import testsupport.waitUntil
+import testsupport.ensure
+import testsupport.ensures
 import testsupport.expectingFailure
 import testsupport.isEmpty
-import testsupport.onlyContains
 import testsupport.playerId
 import testsupport.sizeIs
+import testsupport.waitUntil
+import java.lang.management.ManagementFactory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -147,6 +143,8 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
             RigsTheDeck.SoThat(sally).willEndUpWith(12.blue),
             SaysTheGameCanStart
         )
+        freddy and sally both waitUntil(TheRoundPhase, Is(Bidding))
+
         freddy and sally both Bid(1)
         freddy and sally both ensure(TheRoundPhase, Is(BiddingCompleted))
 
@@ -458,8 +456,7 @@ internal object TestHelpers {
     }
 
     fun skipToTrickTaking(theGameMaster: Actor, thePlayers: List<Actor>) {
-        val gameState = thePlayers.first().asksAbout(TheGameState)
-        require(gameState == InProgress) { "cannot skip to trick taking when the game is $gameState" }
+        thePlayers each ensure(TheGameState, Is(InProgress))
 
         when (thePlayers.first().asksAbout(TheRoundPhase)) {
             Bidding -> {
@@ -504,7 +501,7 @@ internal object TestHelpers {
     }
 
     fun playUpToAndIncluding(trick: Int, theGameMaster: Actor, thePlayers: List<Actor>) {
-        require(thePlayers.first().asksAbout(TheRoundPhase) == BiddingCompleted) { "must start from bidding completion" }
+        thePlayers each ensure(TheRoundPhase, Is(BiddingCompleted))
         if (trick < 1) return
 
         (1..trick).forEach { trickNumber ->
@@ -529,17 +526,17 @@ internal infix fun Pair<Actor, Actor>.both(activity: Activity) {
     listOf(first, second).each(activity)
 }
 
+val isInDebugMode = ManagementFactory.getRuntimeMXBean().inputArguments.none { it.contains("jdwp") }
 internal infix fun List<Actor>.each(activity: Activity) {
+    if (activity is EnsureActivity && !isInDebugMode) {
+        parallelMap { actor -> actor(activity) }
+            .firstOrNull { it.isFailure }
+            ?.onFailure { throw Error("activity '$activity' failed", it) }
+
+        return
+    }
+
     forEach { actor -> actor(activity) }
-}
-
-internal infix fun Pair<Actor, Actor>.bothInParallel(activity: Activity) {
-    listOf(first, second).eachInParallel(activity)
-}
-
-internal infix fun List<Actor>.eachInParallel(activity: Activity) {
-    parallelMap { actor -> actor(activity) }
-    return
 }
 
 internal infix fun Actor.and(other: Actor) = this to other
@@ -554,6 +551,8 @@ infix fun Actor.bid(bid: Int): Pair<Actor, DisplayBid> = Pair(this, Placed(bid))
 fun Actor.bidIsHidden(): Pair<Actor, DisplayBid> = Pair(this, Hidden)
 fun Actor.hasNotBid(): Pair<Actor, DisplayBid> = Pair(this, None)
 
-private fun <A, B>List<A>.parallelMap(f: suspend (A) -> B): List<B> = runBlocking {
-    map { async(Dispatchers.Default) { f(it) } }.map { it.await() }
+private fun <A, B>List<A>.parallelMap(f: suspend (A) -> B): List<Result<B>> = runBlocking {
+    map { async(Dispatchers.Default) {
+        runCatching { f(it) }
+    } }.map { it.await() }
 }

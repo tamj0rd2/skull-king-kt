@@ -59,10 +59,11 @@ class GameWsHandler(
                 })
 
                 ws.onMessage {
-                    synchronized(lock) {
-                        logger.info("server received: ${it.bodyString()}")
+                    val message = clientMessageLens(it)
+                    logger.info("server received: $it")
 
-                        when (val message = clientMessageLens(it)) {
+                    synchronized(lock) {
+                        when (message) {
                             is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
                             is MessageFromClient.UnhandledServerMessage -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
                             is MessageFromClient.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
@@ -93,23 +94,20 @@ class GameWsHandler(
             is GameEvent.BidPlaced -> MessageToClient.BidPlaced(event.playerId)
             is GameEvent.BiddingCompleted -> MessageToClient.BiddingCompleted(event.bids)
             is GameEvent.CardPlayed -> {
-                val messages = mutableListOf<MessageToClient>(
+                MessageToClient.multi(listOfNotNull(
                     MessageToClient.CardPlayed(
                         playerId = event.playerId,
                         card = event.card,
                         nextPlayer = game.currentPlayersTurn
                     ),
-                )
-
-                if (game.currentPlayersTurn == playerId) {
-                    // TODO: make a new method called: "cardsWithPlayability" or something
-                    val cardsWithPlayability = game.getCardsInHand(playerId)
-                        .map { it.name to game.isCardPlayable(playerId, it) }
-                        .toMap()
-                    messages.add(MessageToClient.YourTurn(cardsWithPlayability))
-                }
-
-                MessageToClient.Multi(messages)
+                    ifTrue(game.currentPlayersTurn == playerId) {
+                        // TODO: make a new method called: "cardsWithPlayability" or something
+                        val playableCards = game.getCardsInHand(playerId)
+                            .map { it.name to game.isCardPlayable(playerId, it) }
+                            .toMap()
+                        MessageToClient.YourTurn(playableCards)
+                    },
+                ))
             }
 
             is GameEvent.CardsDealt -> TODO("add cards dealt event")
@@ -140,23 +138,24 @@ class GameWsHandler(
             }
 
             is GameEvent.TrickStarted -> {
-                val messages = mutableListOf<MessageToClient>(
+                MessageToClient.multi(listOfNotNull(
                     MessageToClient.TrickStarted(
                         event.trickNumber,
                         game.currentPlayersTurn ?: error("currentPlayer is null")
-                    )
-                )
-
-                if (game.currentPlayersTurn == playerId) {
-                    // TODO: make a new method called: "cardsWithPlayability" or something
-                    val cardsWithPlayability = game.getCardsInHand(playerId)
-                        .map { it.name to game.isCardPlayable(playerId, it) }
-                        .toMap()
-                    messages.add(MessageToClient.YourTurn(cardsWithPlayability))
-                }
-
-                MessageToClient.Multi(messages)
+                    ),
+                    ifTrue(game.currentPlayersTurn == playerId) {
+                        // TODO: make a new method called: "cardsWithPlayability" or something
+                        val playableCards = game.getCardsInHand(playerId)
+                            .map { it.name to game.isCardPlayable(playerId, it) }
+                            .toMap()
+                        MessageToClient.YourTurn(playableCards)
+                    },
+                ))
             }
         })
     }
+}
+
+fun <T> ifTrue(condition: Boolean, block: () -> T): T? {
+    return if (condition) block() else null
 }

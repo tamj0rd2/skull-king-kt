@@ -130,7 +130,7 @@ class BrowserAppTestWithAutomatedGameMasterCommands {
     @Test
     fun `the game automatically starts after a delay when the minimum table size is reached`() {
         freddy and sally both SitAtTheTable
-        freddy and sally bothInParallel ensure(within = expectedDelay) {
+        freddy and sally both ensure(within = expectedDelay) {
             that(ThePlayersAtTheTable, are(freddy, sally))
             that(TheGameState, Is(GameState.InProgress))
             that(TheRoundNumber, Is(1))
@@ -147,7 +147,7 @@ class BrowserAppTestWithAutomatedGameMasterCommands {
         Thread.sleep((gmDelay / 4).inWholeMilliseconds)
         thirzah(SitsAtTheTable)
 
-        freddy and sally and thirzah eachInParallel ensure(within = expectedDelay) {
+        freddy and sally and thirzah each ensure(within = expectedDelay) {
             that(ThePlayersAtTheTable, are(freddy, sally, thirzah))
             that(TheGameState, Is(GameState.InProgress))
             that(TheRoundNumber, Is(1))
@@ -159,10 +159,10 @@ class BrowserAppTestWithAutomatedGameMasterCommands {
     @Test
     fun `when all players have bid, the trick automatically begins after a delay`() {
         freddy and sally both SitAtTheTable
-        freddy and sally bothInParallel ensure(TheRoundPhase, Is(RoundPhase.Bidding), within = expectedDelay)
+        freddy and sally both ensure(TheRoundPhase, Is(RoundPhase.Bidding), within = expectedDelay)
 
         freddy and sally both Bid(1)
-        freddy and sally bothInParallel ensure(within = expectedDelay) {
+        freddy and sally both ensure(within = expectedDelay) {
             that(TheRoundPhase, Is(RoundPhase.TrickTaking))
             that(TheTrickNumber, Is(1))
             that(TheCurrentPlayer, Is(freddy.playerId))
@@ -181,32 +181,32 @@ class BrowserAppTestWithAutomatedGameMasterCommands {
         }
 
         freddy and sally both SitAtTheTable
-        freddy and sally bothInParallel ensure(within=expectedDelay) {
+        freddy and sally both ensure(within=expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 1, phase = RoundPhase.Bidding)))
         }
 
         freddy and sally both Bid(1)
-        freddy and sally bothInParallel ensure(within = expectedDelay) {
+        freddy and sally both ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 1, phase = RoundPhase.TrickTaking, trick = 1)))
         }
 
         freddy and sally both Play.theirFirstPlayableCard
-        freddy and sally bothInParallel ensure(within = expectedDelay) {
+        freddy and sally both ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.Bidding)))
         }
 
         freddy and sally both Bid(1)
-        freddy and sally bothInParallel ensure(within = expectedDelay) {
+        freddy and sally both ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.TrickTaking, trick = 1)))
         }
 
         freddy and sally both Play.theirFirstPlayableCard
-        freddy and sally bothInParallel ensure(within = expectedDelay) {
+        freddy and sally both ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 2, phase = RoundPhase.TrickTaking, trick = 2)))
         }
 
         freddy and sally both Play.theirFirstPlayableCard
-        freddy and sally bothInParallel ensure(within = expectedDelay) {
+        freddy and sally both ensure(within = expectedDelay) {
             that(TheRoundState, Is(RoundState(round = 3, phase = RoundPhase.Bidding)))
         }
     }

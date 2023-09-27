@@ -39,14 +39,14 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
         ws = makeWs(playerId)
         ws.onClose { logger.warn("websocket closed") }
         ws.onError { logger.error("websocket error", it) }
-        ws.onMessage {
-            logger.info("client received: ${it.bodyString()}")
-            handleIncomingMessage(messageToClientLens(it))
-        }
+        ws.onMessage { synchronized(this) { handleIncomingMessage(messageToClientLens(it)) } }
 
         // needed otherwise there can be a race condition between the server opening the socket and the client sending the connected message
+        // TODO: find a better way to do this
         Thread.sleep(10)
         sendMessage(MessageFromClient.Connected)
+
+        // this makes sure we're in the game before we continue
         retry(500.milliseconds, backoffMs = 50) {
             // TODO: this is weird and difficult...
             if (!hasJoinedGame) {
@@ -57,14 +57,19 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
 
     override fun bid(bid: Int) {
         logger.info("bidding $bid")
-        requireNotNull(roundNumber) { "round number is null" }
+        if (roundPhase != RoundPhase.Bidding)
+            throw GameException.CannotBid("not in ${RoundPhase.Bidding} phase. currently in the $roundPhase phase")
 
-        if (bid > roundNumber!!) throw GameException.CannotBid("bid $bid is greater than the round number $roundNumber")
+        val currentRoundNumber = roundNumber ?: error("$playerId cannot bid because round number is null")
+        if (bid > currentRoundNumber)
+            throw GameException.CannotBid("bid $bid is greater than the round number $currentRoundNumber")
 
         val currentBid = this.bids[playerId]
         requireNotNull(currentBid) { "$playerId is not in the bidding map" }
 
-        if (currentBid != DisplayBid.None) throw GameException.CannotBid("$playerId has already bid")
+        if (currentBid != DisplayBid.None)
+            throw GameException.CannotBid("$playerId has already bid")
+
         sendMessage(MessageFromClient.BidPlaced(bid))
     }
 
@@ -74,6 +79,8 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
     }
 
     override fun isCardPlayable(card: Card): Boolean {
+        if (playableCards.isEmpty()) throw GameException.CannotPlayCard("no cards are playable")
+        if (currentPlayer != playerId) throw GameException.CannotPlayCard("it is $currentPlayer's turn")
         return playableCards[card.name] ?: error("card $card not in $playerId's hand")
     }
 
@@ -114,12 +121,15 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
     }
 
     private fun handleIncomingMessage(message: MessageToClient) {
-        when(message) {
+        logger.info("client received: $message")
+
+        when (message) {
             is MessageToClient.BidPlaced -> bids[message.playerId] = DisplayBid.Hidden
             is MessageToClient.BiddingCompleted -> {
                 bids = message.bids.map { it.key to DisplayBid.Placed(it.value.bid) }.toMap().toMutableMap()
                 roundPhase = RoundPhase.BiddingCompleted
             }
+
             is MessageToClient.CardPlayed -> {
                 if (message.playerId == playerId) {
                     hand.remove(message.card)
@@ -127,8 +137,14 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
                 trick.add(message.card.playedBy(message.playerId))
                 currentPlayer = message.nextPlayer
             }
+
             is MessageToClient.GameCompleted -> gameState = GameState.Complete
-            is MessageToClient.GameStarted -> playersInRoom = message.players
+            is MessageToClient.GameStarted -> {
+                playersInRoom = message.players
+                gameState = GameState.InProgress
+                roundPhase = RoundPhase.Bidding
+            }
+
             is MessageToClient.Multi -> message.messages.forEach(::handleIncomingMessage)
             is MessageToClient.PlayerJoined -> {
                 if (message.playerId == playerId) {
@@ -136,25 +152,30 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
                 }
 
                 playersInRoom = message.players
-                gameState = if(message.waitingForMorePlayers) {
+                gameState = if (message.waitingForMorePlayers) {
                     GameState.WaitingForMorePlayers
                 } else {
                     GameState.WaitingToStart
                 }
             }
+
             is MessageToClient.RoundCompleted -> {
                 winsOfTheRound = message.wins
             }
+
             is MessageToClient.RoundStarted -> {
                 roundNumber = message.roundNumber
                 bids = playersInRoom.associateWith { DisplayBid.None }.toMutableMap()
                 hand = message.cardsDealt.toMutableList()
                 roundPhase = RoundPhase.Bidding
+                winsOfTheRound = emptyMap()
             }
+
             is MessageToClient.TrickCompleted -> {
                 roundPhase = RoundPhase.TrickCompleted
                 trickWinner = message.winner
             }
+
             is MessageToClient.TrickStarted -> {
                 roundPhase = RoundPhase.TrickTaking
                 trickNumber = message.trickNumber
@@ -162,6 +183,7 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
                 playableCards.clear()
                 trick.clear()
             }
+
             is MessageToClient.YourTurn -> playableCards = message.cards.toMutableMap()
         }
     }

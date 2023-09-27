@@ -32,7 +32,9 @@ interface Ensure {
     fun <T> isEmpty() = testsupport.isEmpty<T>()
 }
 
-fun ensure(within: Duration = defaultDelay, block: Ensure.() -> Unit) = Activity { actor ->
+class EnsureActivity(fn: (Actor) -> Unit) : Activity("assertion", fn)
+
+fun ensure(within: Duration = defaultDelay, block: Ensure.() -> Unit) = EnsureActivity { actor ->
     val outerWithin = within
 
     object : Ensure {
@@ -49,7 +51,7 @@ fun ensure(within: Duration = defaultDelay, block: Ensure.() -> Unit) = Activity
 }
 
 fun ensures(within: Duration = defaultDelay, block: Ensure.() -> Unit) = ensure(within, block)
-fun <T> ensure(question: Question<T>, assertion: Assertion<T>, within: Duration = defaultDelay) = Activity { actor ->
+fun <T> ensure(question: Question<T>, assertion: Assertion<T>, within: Duration = defaultDelay) = EnsureActivity { actor ->
     val mustEndBy = Instant.now().plus(within.toJavaDuration())
 
     do {

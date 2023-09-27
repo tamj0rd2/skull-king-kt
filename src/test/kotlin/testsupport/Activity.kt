@@ -3,7 +3,7 @@ package testsupport
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 
-class Activity(private val name: String = "AnonymousActivity", private val fn: (Actor) -> Unit) {
+open class Activity(private val name: String = "AnonymousActivity", private val fn: (Actor) -> Unit) {
     override fun toString(): String  = name
     operator fun invoke(actor: Actor) = fn(actor)
 }
