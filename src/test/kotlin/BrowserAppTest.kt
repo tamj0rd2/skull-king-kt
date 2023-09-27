@@ -13,6 +13,7 @@ import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import testsupport.Actor
 import testsupport.Bid
+import testsupport.Is
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.Play
@@ -31,12 +32,12 @@ import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebDriver
 import testsupport.ensure
 import testsupport.playerId
+import testsupport.sizeIs
 import java.net.ServerSocket
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-import com.natpryce.hamkrest.equalTo as Is
 
 private object Config {
     // this needs to manually be kept in line with the version in gradle.build.kts
@@ -130,7 +131,7 @@ class BrowserAppTestWithAutomatedGameMasterCommands {
     fun `the game automatically starts after a delay when the minimum table size is reached`() {
         freddy and sally both SitAtTheTable
         freddy and sally bothInParallel ensure(within = expectedDelay) {
-            that(ThePlayersAtTheTable, areOnly(freddy, sally))
+            that(ThePlayersAtTheTable, are(freddy, sally))
             that(TheGameState, Is(GameState.InProgress))
             that(TheRoundNumber, Is(1))
             that(TheirHand, sizeIs(1))
@@ -147,7 +148,7 @@ class BrowserAppTestWithAutomatedGameMasterCommands {
         thirzah(SitsAtTheTable)
 
         freddy and sally and thirzah eachInParallel ensure(within = expectedDelay) {
-            that(ThePlayersAtTheTable, areOnly(freddy, sally, thirzah))
+            that(ThePlayersAtTheTable, are(freddy, sally, thirzah))
             that(TheGameState, Is(GameState.InProgress))
             that(TheRoundNumber, Is(1))
             that(TheirHand, sizeIs(1))

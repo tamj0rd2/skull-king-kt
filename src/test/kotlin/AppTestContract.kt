@@ -2,12 +2,6 @@
 import TestHelpers.playUpTo
 import TestHelpers.playUpToStartOf
 import TestHelpers.skipToTrickTaking
-import com.natpryce.hamkrest.MatchResult
-import com.natpryce.hamkrest.Matcher
-import com.natpryce.hamkrest.describe
-import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.has
-import com.natpryce.hamkrest.isEmpty
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.DisplayBid.*
@@ -19,19 +13,23 @@ import com.tamj0rd2.domain.RoundPhase.*
 import com.tamj0rd2.domain.Suit.*
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.domain.red
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import testsupport.Activity
 import testsupport.Actor
+import testsupport.Assertion
 import testsupport.Bid
 import testsupport.Bids
+import testsupport.Ensure
 import testsupport.ensure
 import testsupport.ensures
 import testsupport.HerFirstCard
 import testsupport.HerHand
 import testsupport.HisFirstCard
 import testsupport.HisHand
+import testsupport.Is
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.Play
@@ -56,11 +54,13 @@ import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
 import testsupport.waitUntil
 import testsupport.expectingFailure
+import testsupport.isEmpty
+import testsupport.onlyContains
 import testsupport.playerId
+import testsupport.sizeIs
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import com.natpryce.hamkrest.equalTo as Is
 
 interface AbilityFactory {
     fun participateInGames(): ParticipateInGames
@@ -90,7 +90,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddy(
             SitsAtTheTable,
             ensures {
-                that(ThePlayersAtTheTable, areOnly(freddy))
+                that(ThePlayersAtTheTable, are(freddy))
                 that(TheGameState, Is(WaitingForMorePlayers))
             },
         )
@@ -129,7 +129,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddy(
             ensures(HisHand, sizeIs(1)),
             Plays(11.blue),
-            ensures(HisHand, isEmpty),
+            ensures(HisHand, isEmpty()),
         )
 
         freddy and sally both ensure {
@@ -309,7 +309,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
     fun `playing a game from start to finish`() {
         freddy and sally both SitAtTheTable
         freddy and sally both ensure {
-            that(ThePlayersAtTheTable, areOnly(freddy, sally))
+            that(ThePlayersAtTheTable, are(freddy, sally))
             that(TheGameState, Is(WaitingToStart))
         }
 
@@ -342,7 +342,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddy and sally both ensure {
             that(TheCurrentTrick, onlyContains(freddysFirstCard.playedBy(freddy), sallysFirstCard.playedBy(sally)))
             that(TheRoundPhase, Is(TrickCompleted))
-            that(TheirHand, isEmpty)
+            that(TheirHand, isEmpty())
         }
 
         // round 2
@@ -385,7 +385,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddy and sally both ensure {
             that(TheCurrentTrick, sizeIs(2))
             that(TheRoundPhase, Is(TrickCompleted))
-            that(TheirHand, isEmpty)
+            that(TheirHand, isEmpty())
         }
 
         // rounds 3 - 10
@@ -426,7 +426,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddy and sally both ensure {
             that(TheRoundNumber, Is(10))
             that(TheTrickNumber, Is(10))
-            that(TheirHand, isEmpty)
+            that(TheirHand, isEmpty())
             that(TheGameState, Is(Complete))
         }
     }
@@ -545,26 +545,10 @@ internal infix fun List<Actor>.eachInParallel(activity: Activity) {
 internal infix fun Actor.and(other: Actor) = this to other
 internal infix fun Pair<Actor, Actor>.and(other: Actor) = listOf(first, second, other)
 
-internal fun areOnly(vararg expected: Actor): Matcher<Collection<PlayerId>> =
-    areOnly<PlayerId>(*expected.map { it.playerId }.toTypedArray())
-
-internal fun <T> onlyContains(vararg expected: T): Matcher<Collection<T>> = areOnly(*expected)
-
-internal fun <T> areOnly(vararg expected: T): Matcher<Collection<T>> = object : Matcher<Collection<T>?> {
-    override fun invoke(actual: Collection<T>?): MatchResult {
-        if (actual?.toSet() != expected.toSet()) return MatchResult.Mismatch("was: ${describe(actual)}")
-        return MatchResult.Match
-    }
-
-    override val description: String get() = "contains exactly the same items as ${describe(expected.toList())}"
-    override val negatedDescription: String get() = "does not $description"
-}
-
-fun <T> sizeIs(expected: Int): Matcher<Collection<T>> = has(Collection<T>::size, equalTo(expected))
-
 // NOTE: if the compiler is randomly failing here after refactors/renaming, just run a gradle clean and it fixes it
-fun <T> where(vararg data: Pair<Actor, T>): Matcher<Map<PlayerId, T>> =
-    equalTo(data.associate { it.first.playerId to it.second })
+// TODO: delete this
+//fun <T> where(vararg data: Pair<Actor, T>): Matcher<Map<PlayerId, T>> =
+//    equalTo(data.associate { it.first.playerId to it.second })
 
 infix fun Actor.bid(bid: Int): Pair<Actor, DisplayBid> = Pair(this, Placed(bid))
 fun Actor.bidIsHidden(): Pair<Actor, DisplayBid> = Pair(this, Hidden)
@@ -573,5 +557,3 @@ fun Actor.hasNotBid(): Pair<Actor, DisplayBid> = Pair(this, None)
 private fun <A, B>List<A>.parallelMap(f: suspend (A) -> B): List<B> = runBlocking {
     map { async(Dispatchers.Default) { f(it) } }.map { it.await() }
 }
-
-
