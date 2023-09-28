@@ -119,14 +119,18 @@ class WsDriver(private val makeWs: (PlayerId) -> Websocket) : ApplicationDriver 
         messageAcknowledgements[message.id] = false
 
         synchronized(syncObject) {
-            val mustFinishBy = now().plusMillis(250)
+            logger.info("waiting for ack of '${message::class.simpleName}'")
+            val mustFinishBy = now().plusMillis(3000)
 
             do {
-                if (messageAcknowledgements[message.id] == true) return
+                if (messageAcknowledgements[message.id] == true) {
+                    logger.info("got ack of '${message::class.simpleName}'")
+                    return@synchronized
+                }
                 syncObject.wait(50)
             } while (now() < mustFinishBy)
 
-            error("message '${message::class.simpleName}' not acked by server")
+            error("wsClient error for $playerId - message '${message::class.simpleName}' not acked by server")
         }
     }
 

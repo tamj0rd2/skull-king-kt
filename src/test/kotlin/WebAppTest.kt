@@ -5,6 +5,7 @@ import org.eclipse.jetty.client.HttpClient
 import org.http4k.client.WebsocketClient
 import org.http4k.core.Uri
 import org.http4k.websocket.Websocket
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import testsupport.ManageGames

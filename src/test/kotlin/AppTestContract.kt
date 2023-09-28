@@ -14,6 +14,7 @@ import com.tamj0rd2.domain.red
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.RepeatedTest
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.Bid
@@ -301,7 +302,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
         freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure<GameException.PlayerWithSameNameAlreadyJoined>())
     }
 
-    @Test
+    @RepeatedTest(30)
     fun `joining a game with both players`() {
         freddy(
             SitsAtTheTable,
@@ -311,6 +312,7 @@ sealed class AppTestContract(protected val c: TestConfiguration) {
             },
         )
 
+        // TODO: there's occasionally a race condition here...
         sally(SitsAtTheTable)
         freddy and sally both ensure(within = Duration.ZERO) {
             that(ThePlayersAtTheTable, are(freddy, sally))

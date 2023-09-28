@@ -33,14 +33,14 @@ class GameWsHandler(
 
     val handler = websockets(
         "/{playerId}" bind { req ->
+            val syncObject = Object()
+            val messageAcknowledgements = mutableMapOf<MessageId, Boolean>()
+
             WsResponse { ws ->
                 val playerId = playerIdLens(req)
                 val logger = LoggerFactory.getLogger("wsHandler:$playerId")
                 ws.onError { logger.error("websocket error", it) }
                 logger.info("$playerId is connecting")
-
-                val syncObject = Object()
-                val messageAcknowledgements = mutableMapOf<MessageId, Boolean>()
 
                 val sendMessage = { message: MessageToClient ->
                     logger.info("sending: $message")
@@ -49,14 +49,18 @@ class GameWsHandler(
                     if (message.needsAck) {
                         messageAcknowledgements[message.id] = false
                         synchronized(syncObject) {
-                            val mustFinishBy = Instant.now().plusMillis(1000)
+                            logger.info("waiting for ack of '${message::class.simpleName}'")
+                            val mustFinishBy = Instant.now().plusMillis(3000)
 
                             do {
-                                if (messageAcknowledgements[message.id] == true) return@synchronized
-                                syncObject.wait(100)
+                                if (messageAcknowledgements[message.id] == true) {
+                                    logger.info("got ack of '${message::class.simpleName}'")
+                                    return@synchronized
+                                }
+                                syncObject.wait(50)
                             } while (Instant.now() < mustFinishBy)
 
-                            error("message '${message::class.simpleName}' not acked by client")
+                            error("message '${message::class.simpleName}' not acked by $playerId")
                         }
                     }
                 }
@@ -125,7 +129,6 @@ class GameWsHandler(
             is GameEvent.CardsDealt -> TODO("add cards dealt event")
             is GameEvent.GameCompleted -> MessageToClient.GameCompleted()
             is GameEvent.GameStarted -> MessageToClient.GameStarted(event.players)
-            //is GameEvent.PlayerJoined -> TODO("not managed here anymore. check the message receiver")
             is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(
                 playerId = event.playerId,
                 players = game.players,
