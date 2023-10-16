@@ -18,6 +18,7 @@ import testsupport.Activity
 import testsupport.Actor
 import testsupport.Bid
 import testsupport.Bids
+import testsupport.EnsureActivity
 import testsupport.HerFirstCard
 import testsupport.HerHand
 import testsupport.HisFirstCard
@@ -51,6 +52,7 @@ import testsupport.expectingFailure
 import testsupport.isEmpty
 import testsupport.playerId
 import testsupport.sizeIs
+import java.lang.management.ManagementFactory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -69,7 +71,7 @@ interface TestConfiguration : AbilityFactory {
 // TODO: turn order
 // TODO: scoring
 
-sealed class AppTestContract(protected val c: TestConfiguration) {
+sealed class AppTestContract(private val c: TestConfiguration) {
     protected val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
     protected val sally by lazy { Actor("Sally Second").whoCan(c.participateInGames()) }
     protected val gary by lazy { Actor("Gary GameMaster").whoCan(c.manageGames()) }
@@ -506,24 +508,29 @@ internal object TestHelpers {
     }
 }
 
-
 internal fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.playerId)
 
 internal infix fun Pair<Actor, Actor>.both(activity: Activity) {
     listOf(first, second).each(activity)
 }
 
+val isInDebugMode = ManagementFactory.getRuntimeMXBean().inputArguments.none { it.contains("jdwp") }
 internal infix fun List<Actor>.each(activity: Activity) {
+    if (activity is EnsureActivity && !isInDebugMode) {
+        parallelMap { actor -> actor(activity) }
+            .firstOrNull { it.isFailure }
+            ?.onFailure { throw Error("activity '$activity' failed", it) }
+
+        return
+    }
+
     forEach { actor -> actor(activity) }
 }
 
-internal infix fun Pair<Actor, Actor>.bothInParallel(activity: Activity) {
-    listOf(first, second).eachInParallel(activity)
-}
-
-internal infix fun List<Actor>.eachInParallel(activity: Activity) {
-    parallelMap { actor -> actor(activity) }
-    return
+private fun <A, B>List<A>.parallelMap(f: suspend (A) -> B): List<Result<B>> = runBlocking {
+    map { async(Dispatchers.Default) {
+        runCatching { f(it) }
+    } }.map { it.await() }
 }
 
 internal infix fun Actor.and(other: Actor) = this to other
@@ -532,9 +539,3 @@ internal infix fun Pair<Actor, Actor>.and(other: Actor) = listOf(first, second, 
 infix fun Actor.bid(bid: Int): Pair<Actor, DisplayBid> = Pair(this, Placed(bid))
 fun Actor.bidIsHidden(): Pair<Actor, DisplayBid> = Pair(this, Hidden)
 fun Actor.hasNotBid(): Pair<Actor, DisplayBid> = Pair(this, None)
-
-private fun <A, B>List<A>.parallelMap(f: suspend (A) -> B): List<B> = runBlocking {
-    map { async(Dispatchers.Default) { f(it) } }.map { it.await() }
-}
-
-

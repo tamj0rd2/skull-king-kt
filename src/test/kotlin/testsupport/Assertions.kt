@@ -65,7 +65,14 @@ fun <T> ensure(question: Question<T>, assertion: Assertion<T>, within: Duration 
             }
             break
         } catch (e: AssertionError) {
-            if (Instant.now() > mustEndBy) throw e
+            if (Instant.now() > mustEndBy) {
+                val ignoredClasses = listOf("testsupport.", "org.junit.", "jdk.internal.reflect")
+
+                e.stackTrace = e.stackTrace
+                    .filterNot { ignoredClasses.any { ignored -> it.className.startsWith(ignored) } }
+                    .toTypedArray()
+                throw e
+            }
             Thread.sleep(50)
         }
     } while (true)
