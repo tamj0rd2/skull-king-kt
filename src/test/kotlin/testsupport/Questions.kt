@@ -1,13 +1,5 @@
 package testsupport
 
-import com.natpryce.hamkrest.Matcher
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
-import java.time.Instant.now
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
-
 open class Question<T>(private val description: String, private val answer: (Actor) -> T) {
     fun answeredBy(actor: Actor): T = answer(actor)
     override fun toString(): String  = "question about $description"
@@ -67,46 +59,4 @@ val TheySeeWinsOfTheRound = Question.about("the actual wins during the round") {
 
 val TheCurrentTrick = Question.about("the current trick") { actor ->
     actor.use<ParticipateInGames>().trick
-}
-
-val Ensures = Ensure
-
-object Ensure {
-    private val defDelay = 1.seconds
-
-    interface That {
-        fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration? = null)
-        fun <T> Is(expected: T?): Matcher<T>
-    }
-
-    operator fun invoke(within: Duration = defDelay, block: That.() -> Unit) = Activity { actor ->
-        val outerWithin = within
-
-        object : That {
-            override fun <T> that(question: Question<T>, matcher: Matcher<T>, within: Duration?) {
-                actor.invoke(Ensure(
-                    question = question,
-                    matcher = matcher,
-                    within = within ?: outerWithin
-                ))
-            }
-
-            override fun <T> Is(expected: T?): Matcher<T> = equalTo(expected)
-        }.apply(block)
-    }
-
-    operator fun <T> invoke(question: Question<T>, matcher: Matcher<T>, within: Duration = defDelay) = Activity { actor ->
-        val mustEndBy = now().plus(within.toJavaDuration())
-
-        do {
-            try {
-                val answer = question.answeredBy(actor)
-                assertThat(answer, matcher) { "$actor asked a $question" }
-                break
-            } catch (e: AssertionError) {
-                if (now() > mustEndBy) throw e
-                Thread.sleep(50)
-            }
-        } while (true)
-    }
 }
