@@ -31,9 +31,9 @@ import java.net.ServerSocket
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
-class WebsocketTest : AppTestContract(WebsocketTestConfiguration())
+class WebAppTest : AppTestContract(WebAppTestConfiguration())
 
-class WebsocketTestConfiguration : TestConfiguration {
+class WebAppTestConfiguration : TestConfiguration {
     private val port = ServerSocket(0).run {
         close()
         localPort

@@ -13,6 +13,7 @@ import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import testsupport.Actor
 import testsupport.Bid
+import testsupport.Ensurer
 import testsupport.Is
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
@@ -30,7 +31,7 @@ import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebDriver
-import testsupport.ensure
+import testsupport.ensurer
 import testsupport.playerId
 import java.net.ServerSocket
 import kotlin.test.AfterTest
@@ -60,6 +61,8 @@ private object Config {
 }
 
 private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Duration?) : TestConfiguration {
+    override val assertionTimeout get() = 1.seconds
+
     private val port = ServerSocket(0).run {
         close()
         localPort
@@ -114,7 +117,7 @@ private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Durat
 class BrowserAppTest : AppTestContract(BrowserAppTestConfiguration(automaticGameMasterCommandDelay = null))
 
 @Execution(ExecutionMode.CONCURRENT)
-class BrowserAppTestWithAutomatedGameMasterCommands {
+class BrowserAppTestWithAutomatedGameMasterCommands : Ensurer by ensurer(1.seconds) {
     private val gmDelay = 1.seconds
     private val expectedDelay = gmDelay * 2
     private val c = BrowserAppTestConfiguration(automaticGameMasterCommandDelay = gmDelay)
