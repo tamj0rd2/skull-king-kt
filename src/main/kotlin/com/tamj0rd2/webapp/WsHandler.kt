@@ -5,7 +5,6 @@ import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
-import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 import com.tamj0rd2.webapp.CustomJackson.auto
 import org.http4k.lens.Path
 import org.http4k.routing.RoutingWsHandler
@@ -25,7 +24,6 @@ internal fun wsHandler(
     automaticGameMasterDelayOverride: Duration?
 ): RoutingWsHandler {
     val playerIdLens = Path.map(::PlayerId, PlayerId::playerId).of("playerId")
-    val messageToClientLens = WsMessage.auto<MessageToClient>().toLens()
     val clientMessageLens = WsMessage.auto<MessageFromClient>().toLens()
 
     if (automateGameMasterCommands) {
@@ -34,10 +32,10 @@ internal fun wsHandler(
 
     return websockets(
         "/{playerId}" bind { req ->
-            WsResponse { ws ->
-                val playerId = playerIdLens(req)
-                val logger = LoggerFactory.getLogger("wsHandler pid='$playerId'")
+            val playerId = playerIdLens(req)
+            val logger = LoggerFactory.getLogger("$playerId:wsHandler")
 
+            WsResponse { ws ->
                 game.subscribeToGameEvents {
                     val messageToClient: MessageToClient = when (it) {
                         is GameEvent.BidPlaced -> MessageToClient.BidPlaced(it.playerId)
@@ -107,7 +105,7 @@ internal fun wsHandler(
                         }
                     }
 
-                    logger.info("sending message to $playerId: ${messageToClient.asJsonObject()}")
+                    logger.info("sending message to $playerId: $messageToClient")
                     ws.send(messageToClientLens(messageToClient))
                 }
 
@@ -121,6 +119,9 @@ internal fun wsHandler(
                         is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
                     }
                 }
+
+                logger.info("connected")
+                ws.send(messageToClientLens(MessageToClient.YouJoined(game.players, game.isInState(GameState.WaitingForMorePlayers))))
             }
         }
     )

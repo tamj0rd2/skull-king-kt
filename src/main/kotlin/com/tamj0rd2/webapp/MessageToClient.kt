@@ -26,6 +26,8 @@ internal sealed class MessageToClient {
 
     data class RoundCompleted(val wins: Map<PlayerId, Int>) : MessageToClient()
 
+    data class YouJoined(val players: List<PlayerId>, val waitingForMorePlayers: Boolean) : MessageToClient()
+
     object GameCompleted : MessageToClient()
 
     data class Multi(val messages: List<MessageToClient>) : MessageToClient()

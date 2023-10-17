@@ -93,7 +93,6 @@ internal fun httpHandler(
         },
         "/play" bind Method.POST to {
             val playerId = it.form("playerId")?.let(PlayerId::from) ?: error("playerId not posted!")
-            logger.info("$playerId is trying to join the game")
 
             try {
                 game.addPlayer(playerId)

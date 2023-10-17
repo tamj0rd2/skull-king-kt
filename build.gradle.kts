@@ -29,6 +29,7 @@ dependencies {
     testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion")
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
     testImplementation("org.http4k:http4k-client-jetty:$http4kVersion")
+    testImplementation("org.http4k:http4k-client-websocket:$http4kVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.7.2")
 }

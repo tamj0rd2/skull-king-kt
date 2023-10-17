@@ -16,7 +16,7 @@ fun interface Assertion<T> {
 
 fun <T> waitUntil(question: Question<T>, assertion: Assertion<T>, within: Duration) = ensure(question, assertion, within)
 fun <T> Is(expected: T) = Assertion<T> { this shouldBe expected }
-fun <T> sizeIs(expected: Int) = Assertion<List<T>> { this?.size shouldBe expected }
+fun <T> sizeIs(expected: Int) = Assertion<List<T>> { withClue("checking size") { this?.size shouldBe expected } }
 fun <T> onlyContains(vararg expected: T) = Assertion<List<T>> { this shouldBe expected.toList() }
 fun <T> isEmpty() = Assertion<List<T>> { this shouldBe emptyList() }
 fun are(vararg expected: Actor) = Assertion<List<PlayerId>> { this shouldBe expected.map { it.playerId }.toList() }
