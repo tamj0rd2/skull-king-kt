@@ -13,6 +13,7 @@ import org.http4k.routing.ws.bind
 import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsResponse
 import org.slf4j.LoggerFactory
+import java.time.Instant.now
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.timerTask
@@ -34,6 +35,8 @@ internal fun wsHandler(
         "/{playerId}" bind { req ->
             val playerId = playerIdLens(req)
             val logger = LoggerFactory.getLogger("$playerId:wsHandler")
+            val syncObject = Object()
+            val acknowledgements = mutableSetOf<UUID>()
 
             WsResponse { ws ->
                 game.subscribeToGameEvents {
@@ -52,8 +55,7 @@ internal fun wsHandler(
                             if (game.currentPlayersTurn == playerId) {
                                 // TODO: make a new method called: "cardsWithPlayability" or something
                                 val cardsWithPlayability = game.getCardsInHand(playerId)
-                                    .map { it.name to game.isCardPlayable(playerId, it) }
-                                    .toMap()
+                                    .associate { it.name to game.isCardPlayable(playerId, it) }
                                 messages.add(MessageToClient.YourTurn(cardsWithPlayability))
                             }
 
@@ -72,7 +74,6 @@ internal fun wsHandler(
                                 game.getCardsInHand(playerId),
                                 it.roundNumber
                             )
-
 
                         is GameEvent.TrickCompleted -> {
                             val messages = mutableListOf<MessageToClient>(
@@ -96,8 +97,7 @@ internal fun wsHandler(
                             if (game.currentPlayersTurn == playerId) {
                                 // TODO: make a new method called: "cardsWithPlayability" or something
                                 val cardsWithPlayability = game.getCardsInHand(playerId)
-                                    .map { it.name to game.isCardPlayable(playerId, it) }
-                                    .toMap()
+                                    .associate { it.name to game.isCardPlayable(playerId, it) }
                                 messages.add(MessageToClient.YourTurn(cardsWithPlayability))
                             }
 
@@ -107,16 +107,35 @@ internal fun wsHandler(
 
                     logger.info("sending message to $playerId: $messageToClient")
                     ws.send(messageToClientLens(messageToClient))
+
+                    if (messageToClient !is MessageToClient.MessageRequiringAcknowledgement) return@subscribeToGameEvents
+
+                    synchronized(syncObject) {
+                        logger.info("waiting for acknowledgement of $messageToClient ${messageToClient.messageId}")
+                        val mustEndBy = now().plusSeconds(1)
+                        val messageHasBeenAcknowledged = { acknowledgements.contains(messageToClient.messageId) }
+
+                        do { syncObject.wait(100) } while (now() < mustEndBy && !messageHasBeenAcknowledged())
+                        if (messageHasBeenAcknowledged())
+                            acknowledgements.remove(messageToClient.messageId)
+                        else
+                            error("$messageToClient to $playerId was not acknowledged within the timeout. acknowledged messages: $acknowledgements")
+                    }
                 }
 
                 ws.onMessage {
-                    logger.info("received client message from $playerId: ${it.bodyString()}")
+                    val message = clientMessageLens(it)
+                    logger.info("received $message")
 
-                    when (val message = clientMessageLens(it)) {
+                    when (message) {
                         is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
                         is MessageFromClient.UnhandledServerMessage -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
                         is MessageFromClient.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
                         is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
+                        is MessageFromClient.Acknowledgement -> synchronized(syncObject){
+                            acknowledgements.add(message.id)
+                            syncObject.notify()
+                        }
                     }
                 }
 
@@ -135,6 +154,8 @@ internal sealed class MessageFromClient {
     data class UnhandledServerMessage(val offender: String) : MessageFromClient()
 
     data class Error(val stackTrace: String) : MessageFromClient()
+
+    data class Acknowledgement(val id: UUID) : MessageFromClient()
 }
 
 

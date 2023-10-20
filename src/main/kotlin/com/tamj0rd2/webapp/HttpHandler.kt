@@ -69,10 +69,11 @@ internal fun httpHandler(
     fun gameMasterCommandHandler(req: Request): Response {
         if (automateGameMasterCommands) return Response(Status.FORBIDDEN)
 
-        logger.info("received command: ${req.bodyString()}")
+        val command = gameMasterCommandLens(req)
+        logger.info("received command: $command")
 
         try {
-            when (val command = gameMasterCommandLens(req)) {
+            when (command) {
                 is GameMasterCommand.StartGame -> game.start().respondOK()
                 is GameMasterCommand.RigDeck -> game.rigDeck(command.playerId, command.cards).respondOK()
                 is GameMasterCommand.StartNextRound -> game.startNextRound().respondOK()
@@ -116,10 +117,22 @@ internal fun httpHandler(
 private fun Any.respondOK() = this.let { Response(Status.OK) }
 
 sealed class GameMasterCommand {
-    object StartGame : GameMasterCommand()
+    object StartGame : GameMasterCommand() {
+        override fun toString(): String {
+            return this::class.simpleName!!
+        }
+    }
     data class RigDeck(val playerId: PlayerId, val cards: List<Card>) : GameMasterCommand()
-    object StartNextRound : GameMasterCommand()
-    object StartNextTrick : GameMasterCommand()
+    object StartNextRound : GameMasterCommand() {
+        override fun toString(): String {
+            return this::class.simpleName!!
+        }
+    }
+    object StartNextTrick : GameMasterCommand() {
+        override fun toString(): String {
+            return this::class.simpleName!!
+        }
+    }
 }
 
 private fun buildResourceLoaders(hotReload: Boolean) = when {

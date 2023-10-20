@@ -78,6 +78,7 @@ fun ensurer(within: Duration): Ensurer {
 
         override fun <T> ensure(question: Question<T>, assertion: Assertion<T>, within: Duration?) = EnsureActivity { actor ->
             val mustEndBy = Instant.now().plus((within ?: outerWithin).toJavaDuration())
+            logger.info("${actor.playerId} - Running assertion for $question")
 
             do {
                 try {
@@ -91,11 +92,13 @@ fun ensurer(within: Duration): Ensurer {
                     break
                 } catch (e: AssertionError) {
                     if (Instant.now() > mustEndBy) {
-                        val ignoredClasses = listOf("testsupport.", "org.junit.", "jdk.internal.reflect")
+                        logger.error("${actor.playerId} - Assertion failed for $question")
 
+                        val ignoredClasses = listOf("testsupport.", "org.junit.", "jdk.internal.reflect")
                         e.stackTrace = e.stackTrace
                             .filterNot { ignoredClasses.any { ignored -> it.className.startsWith(ignored) } }
                             .toTypedArray()
+
                         throw e
                     }
                     Thread.sleep(50)

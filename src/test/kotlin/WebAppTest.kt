@@ -97,6 +97,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             val message = messageToClientLens(it)
             logger.info("received message: $message")
             handleMessage(message)
+            logger.info("processed message: $message")
         }
 
         synchronized(syncObject) { syncObject.wait() }
@@ -163,20 +164,31 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
                 cardPlayability = message.cards
             }
         }
+
+        if (message is MessageToClient.MessageRequiringAcknowledgement) {
+            sendMessage(message.acknowledge())
+        }
     }
 
     override fun bid(bid: Int) {
         synchronized(syncObject) {
-            ws.send(messageToServerLens(MessageFromClient.BidPlaced(bid)))
+            sendMessage(MessageFromClient.BidPlaced(bid))
             syncObject.wait()
+            logger.info("bidded")
         }
     }
 
     override fun playCard(card: Card) {
         synchronized(syncObject) {
-            ws.send(messageToServerLens(MessageFromClient.CardPlayed(card.name)))
+            sendMessage(MessageFromClient.CardPlayed(card.name))
             syncObject.wait()
+            logger.info("played card")
         }
+    }
+
+    private fun sendMessage(message: MessageFromClient) {
+        logger.info("sending $message")
+        ws.send(messageToServerLens(message))
     }
 
     override fun isCardPlayable(card: Card): Boolean {

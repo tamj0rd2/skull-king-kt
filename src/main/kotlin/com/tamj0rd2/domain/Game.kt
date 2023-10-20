@@ -46,12 +46,11 @@ class Game {
 
     fun isInState(state: GameState) = this.state == state
 
-    private val eventListeners = mutableListOf<GameEventListener>()
     fun subscribeToGameEvents(listener: GameEventListener) {
         this.eventListeners += listener
     }
 
-    fun addPlayer(playerId: PlayerId) {
+    fun addPlayer(playerId: PlayerId) = command {
         if (_players.contains(playerId)) throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
 
         _players += playerId
@@ -59,29 +58,15 @@ class Game {
         recordEvent(GameEvent.PlayerJoined(playerId))
     }
 
-    fun start() {
+    fun start() = command {
         require(!waitingForMorePlayers) { "not enough players to start the game - ${players.size}/$roomSizeToStartGame" }
 
         _state = GameState.InProgress
         players.forEach { hands[it] = mutableListOf() }
         recordEvent(GameEvent.GameStarted(players))
-        startNextRound()
     }
 
-    private fun dealCards() {
-        val deck = Deck.new()
-        hands.replaceAll { playerId, _ ->
-            riggedHands?.get(playerId)?.toMutableList() ?: deck.takeCards(roundNumber).toMutableList()
-        }
-    }
-
-    fun getCardsInHand(playerId: PlayerId): List<Card> {
-        val hand = hands[playerId]
-        requireNotNull(hand) { "player $playerId somehow doesn't have a hand" }
-        return hand
-    }
-
-    fun bid(playerId: PlayerId, bid: Int) {
+    fun bid(playerId: PlayerId, bid: Int) = command {
         if (state != GameState.InProgress) throw GameException.CannotBid("game not in progress")
         if (phase != Bidding) throw GameException.CannotBid("not in bidding phase")
         if (bid < 0 || bid > roundNumber) throw GameException.CannotBid("bid $bid is greater than the round number ($roundNumber)")
@@ -96,7 +81,7 @@ class Game {
         }
     }
 
-    fun playCard(playerId: PlayerId, cardName: CardName) {
+    fun playCard(playerId: PlayerId, cardName: CardName) = command {
         if (phase != TrickTaking) throw GameException.CannotPlayCard("not in trick taking phase - phase is $phase")
         if (currentPlayersTurn != playerId) throw GameException.CannotPlayCard("it is not $playerId's turn to play a card")
 
@@ -127,12 +112,12 @@ class Game {
         }
     }
 
-    fun rigDeck(playerId: PlayerId, cards: List<Card>) {
+    fun rigDeck(playerId: PlayerId, cards: List<Card>) = command {
         if (riggedHands == null) riggedHands = players.associateWith { emptyList<Card>() }.toMutableMap()
         riggedHands!![playerId] = cards
     }
 
-    fun startNextRound() {
+    fun startNextRound() = command {
         _roundNumber += 1
         _trickNumber = 0
 
@@ -145,20 +130,45 @@ class Game {
         recordEvent(GameEvent.RoundStarted(roundNumber))
     }
 
-    fun startNextTrick() {
+    fun startNextTrick() = command {
         _trickNumber += 1
         trick = Trick(players.size)
         _phase = TrickTaking
         recordEvent(GameEvent.TrickStarted(trickNumber))
     }
 
-    private fun recordEvent(event: GameEvent) {
-        eventListeners.forEach { it.handle(event) }
+    fun getCardsInHand(playerId: PlayerId): List<Card> {
+        val hand = hands[playerId]
+        requireNotNull(hand) { "player $playerId somehow doesn't have a hand" }
+        return hand
     }
 
     fun isCardPlayable(playerId: PlayerId, card: Card): Boolean {
         val hand = getCardsInHand(playerId)
         return trick.isCardPlayable(card, hand.excluding(card))
+    }
+
+    private fun dealCards() {
+        val deck = Deck.new()
+        hands.replaceAll { playerId, _ ->
+            riggedHands?.get(playerId)?.toMutableList() ?: deck.takeCards(roundNumber).toMutableList()
+        }
+    }
+
+    private val eventListeners = mutableListOf<GameEventListener>()
+
+    private fun command(block: () -> Unit): List<GameEvent> {
+        block()
+        val events = eventsBuffer.toList()
+        eventsBuffer.forEach { eventListeners.forEach { listener -> listener.handle(it) } }
+        eventsBuffer.clear()
+        return events
+    }
+
+    private val eventsBuffer = mutableListOf<GameEvent>()
+
+    private fun recordEvent(event: GameEvent) {
+        eventsBuffer.add(event)
     }
 }
 

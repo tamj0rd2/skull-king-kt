@@ -21,8 +21,9 @@ dependencies {
     implementation("org.http4k:http4k-template-handlebars:$http4kVersion")
     implementation("org.http4k:http4k-format-jackson:$http4kVersion")
     implementation("org.http4k:http4k-server-undertow:$http4kVersion")
-    implementation("ch.qos.logback:logback-classic:1.4.11")
     implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
+
+    implementation("ch.qos.logback:logback-classic:1.4.11")
 
     testImplementation(kotlin("test"))
     testImplementation("org.seleniumhq.selenium:selenium-devtools-$chromeVersion:$seleniumVersion")
@@ -40,6 +41,7 @@ tasks.test {
     systemProperty("junit.jupiter.execution.parallel.mode.classes.default", "concurrent")
     systemProperty("junit.platform.output.capture.stdout", "true")
     systemProperty("junit.platform.output.capture.stderr", "true")
+
     useJUnitPlatform()
 }
 

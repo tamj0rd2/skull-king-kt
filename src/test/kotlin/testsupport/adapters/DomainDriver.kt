@@ -21,7 +21,9 @@ class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver
     override fun startGame() {
         game.start()
     }
-    override fun rigDeck(playerId: PlayerId, cards: List<Card>) = game.rigDeck(playerId, cards)
+    override fun rigDeck(playerId: PlayerId, cards: List<Card>) {
+        game.rigDeck(playerId, cards)
+    }
     override fun startNextRound() {
         game.startNextRound()
     }

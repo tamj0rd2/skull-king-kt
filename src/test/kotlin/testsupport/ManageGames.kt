@@ -4,7 +4,10 @@ import com.tamj0rd2.domain.Card
 
 class ManageGames(driver: GameMasterDriver): Ability, GameMasterDriver by driver
 
-val SaysTheGameCanStart = Activity("start the game") { actor -> actor.use<ManageGames>().startGame() }
+val SaysTheGameCanStart = Activity("start the game") { actor ->
+    actor.use<ManageGames>().startGame()
+    actor.use<ManageGames>().startNextRound()
+}
 
 val SaysTheRoundCanStart = Activity("start the round") { actor -> actor.use<ManageGames>().startNextRound() }
 

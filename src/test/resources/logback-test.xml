@@ -1,14 +1,49 @@
 <configuration>
+<!--    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />-->
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- encoders are assigned the type
-             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <!-- deny ERROR level -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>DENY</onMatch>
+        </filter>
+        <!-- deny WARN level -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>DENY</onMatch>
+        </filter>
+        <target>System.out</target>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} -%kvp- %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS}%ms %-5level %logger{36} -- %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS}%ms %-5level %logger{36} -- %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="stderr" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- deny all events with a level below WARN, that is INFO, DEBUG and TRACE -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+        <target>System.err</target>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS}%ms %-5level %logger{36} -- %msg%n</pattern>
         </encoder>
     </appender>
 
     <root level="info">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="STDERR" />
     </root>
 </configuration>
