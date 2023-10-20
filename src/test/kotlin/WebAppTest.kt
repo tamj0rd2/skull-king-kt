@@ -203,7 +203,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             if (messageHasBeenAcknowledged())
                 acknowledgements.remove(message.messageId)
             else
-                error("$message ${message.messageId} from $playerId was not acknowledged within the timeout. acknowledged messages: $acknowledgements")
+                error("$message ${message.messageId} from $playerId was not acknowledged within the timeout")
         }
     }
 

@@ -48,7 +48,7 @@ internal fun wsHandler(
                     if (messageHasBeenAcknowledged())
                         acknowledgements.remove(message.messageId)
                     else
-                        error("$message ${message.messageId} to $playerId was not acknowledged within the timeout. acknowledged messages: $acknowledgements")
+                        error("$message ${message.messageId} to $playerId was not acknowledged within the timeout")
                 }
             }
 
