@@ -1,9 +1,9 @@
 package testsupport
 
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameState
-import com.tamj0rd2.domain.Hand
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
@@ -14,7 +14,6 @@ interface ApplicationDriver {
     fun joinGame(playerId: PlayerId)
     fun bid(bid: Int)
     fun playCard(card: Card)
-    fun isCardPlayable(card: Card): Boolean
 
     val winsOfTheRound: Map<PlayerId, Int>
     val trickWinner: PlayerId?
@@ -25,7 +24,7 @@ interface ApplicationDriver {
     val roundPhase: RoundPhase?
     val gameState: GameState?
     val playersInRoom: List<PlayerId>
-    val hand: Hand
+    val hand: List<CardWithPlayability>
     val bids: Map<PlayerId, DisplayBid>
 }
 

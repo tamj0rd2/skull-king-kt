@@ -2,7 +2,7 @@ package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.CardName
+import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.PlayerId
 import java.util.*
 
@@ -15,7 +15,7 @@ sealed class MessageToClient {
 
     data class CardPlayed(val playerId: PlayerId, val card: Card, val nextPlayer: PlayerId?) : MessageToClient()
 
-    data class YourTurn(val cards: Map<CardName, Boolean>) : MessageToClient()
+    data class YourTurn(val cards: List<CardWithPlayability>) : MessageToClient()
 
     data class TrickCompleted(val winner: PlayerId) : MessageToClient()
 
@@ -33,7 +33,7 @@ sealed class MessageToClient {
 
     data class GameStarted(val players: List<PlayerId>) : MessageRequiringAcknowledgement()
 
-    data class RoundStarted(val cardsDealt: List<Card>, val roundNumber: Int) : MessageRequiringAcknowledgement()
+    data class RoundStarted(val cardsDealt: List<CardWithPlayability>, val roundNumber: Int) : MessageRequiringAcknowledgement()
 
     data class TrickStarted(val trickNumber: Int, val firstPlayer: PlayerId) : MessageRequiringAcknowledgement()
 

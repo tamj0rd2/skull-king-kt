@@ -3,6 +3,7 @@ import TestHelpers.playUpTo
 import TestHelpers.playUpToStartOf
 import TestHelpers.skipToTrickTaking
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.DisplayBid.*
 import com.tamj0rd2.domain.GameException
@@ -419,6 +420,8 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 }
+
+private fun CardWithPlayability.playedBy(actor: Actor): PlayedCard = playedBy(actor.playerId)
 
 private infix fun Actor.won(count: Int) = Pair(this, count)
 

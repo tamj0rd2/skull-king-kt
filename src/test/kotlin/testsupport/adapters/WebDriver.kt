@@ -1,10 +1,10 @@
 package testsupport.adapters
 
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
-import com.tamj0rd2.domain.Hand
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
@@ -63,18 +63,6 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    // TODO: this is potentially slower than a method that just gets you the first playable card...
-    // since we have to iterate over the entire hand up to 10 times potentially
-    override fun isCardPlayable(card: Card) = debugException {
-        val li = driver.findElement(By.id("hand"))
-            .findElements(By.tagName("li"))
-            .ifEmpty { error("$playerId has no cards") }
-            .find { it.toCard().name == card.name }
-            .let { it ?: error("$playerId does not have card $card") }
-
-        li.findElementOrNull(By.tagName("button")) != null
-    }
-
     override val winsOfTheRound: Map<PlayerId, Int>
         get() = debugException {
             driver.findElement(By.id("wins"))
@@ -108,12 +96,15 @@ class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 .mapNotNull { PlayerId(it.text) }
         }
 
-    override val hand: Hand
-        get() = debugException {
-            driver.findElement(By.id("hand"))
-                .findElements(By.tagName("li"))
-                .map { it.toCard() }
-        }
+    override val hand: List<CardWithPlayability>
+        get() = TODO("Not yet implemented - getting cards with playability")
+
+    //override val hand: Hand
+    //    get() = debugException {
+    //        driver.findElement(By.id("hand"))
+    //            .findElements(By.tagName("li"))
+    //            .map { it.toCard() }
+    //    }
 
     override val trick: List<PlayedCard>
         get() = debugException {

@@ -114,10 +114,7 @@ fun GameEvent.asMessageToClient(game: Game, thisPlayerId: PlayerId): MessageToCl
             )
 
             if (game.currentPlayersTurn == thisPlayerId) {
-                // TODO: make a new method called: "cardsWithPlayability" or something
-                val cardsWithPlayability = game.getCardsInHand(thisPlayerId)
-                    .associate { it.name to game.isCardPlayable(thisPlayerId, it) }
-                messages.add(MessageToClient.YourTurn(cardsWithPlayability))
+                messages.add(MessageToClient.YourTurn(game.getCardsInHand(thisPlayerId)))
             }
 
             MessageToClient.Multi(messages)
@@ -157,10 +154,7 @@ fun GameEvent.asMessageToClient(game: Game, thisPlayerId: PlayerId): MessageToCl
             )
 
             if (game.currentPlayersTurn == thisPlayerId) {
-                // TODO: make a new method called: "cardsWithPlayability" or something
-                val cardsWithPlayability = game.getCardsInHand(thisPlayerId)
-                    .associate { it.name to game.isCardPlayable(thisPlayerId, it) }
-                messages.add(MessageToClient.YourTurn(cardsWithPlayability))
+                messages.add(MessageToClient.YourTurn(game.getCardsInHand(thisPlayerId)))
             }
 
             MessageToClient.Multi(messages)

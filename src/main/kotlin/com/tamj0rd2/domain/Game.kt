@@ -137,15 +137,10 @@ class Game {
         recordEvent(GameEvent.TrickStarted(trickNumber))
     }
 
-    fun getCardsInHand(playerId: PlayerId): List<Card> {
+    fun getCardsInHand(playerId: PlayerId): List<CardWithPlayability> {
         val hand = hands[playerId]
         requireNotNull(hand) { "player $playerId somehow doesn't have a hand" }
-        return hand
-    }
-
-    fun isCardPlayable(playerId: PlayerId, card: Card): Boolean {
-        val hand = getCardsInHand(playerId)
-        return trick.isCardPlayable(card, hand.excluding(card))
+        return hand.map { card -> CardWithPlayability(card, trick.isCardPlayable(card, hand.excluding(card))) }
     }
 
     private fun dealCards() {

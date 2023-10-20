@@ -1,6 +1,6 @@
 
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.CardName
+import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
@@ -122,7 +122,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
 
             is MessageToClient.CardPlayed -> {
                 trick.add(message.card.playedBy(message.playerId))
-                if (message.playerId == playerId) hand.remove(message.card)
+                if (message.playerId == playerId) hand = hand.filter { it.card != message.card }.toMutableList()
             }
 
             MessageToClient.GameCompleted -> TODO()
@@ -145,7 +145,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             is MessageToClient.RoundStarted -> {
                 roundNumber = message.roundNumber
                 roundPhase = RoundPhase.Bidding
-                hand.addAll(message.cardsDealt)
+                hand = message.cardsDealt
             }
 
             is MessageToClient.TrickCompleted -> {
@@ -167,7 +167,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             }
 
             is MessageToClient.YourTurn -> {
-                cardPlayability = message.cards
+                hand = message.cards
             }
         }
 
@@ -207,10 +207,6 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
         }
     }
 
-    override fun isCardPlayable(card: Card): Boolean {
-        return cardPlayability[card.name] ?: error("card ${card.name} playability not found in $cardPlayability")
-    }
-
     override var winsOfTheRound: Map<PlayerId, Int> = emptyMap()
 
     override var trickWinner: PlayerId? = null
@@ -222,7 +218,6 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
 
     override var gameState: GameState? = null
     override var playersInRoom = mutableListOf<PlayerId>()
-    override val hand = mutableListOf<Card>()
+    override var hand = listOf<CardWithPlayability>()
     override var bids = mutableMapOf<PlayerId, DisplayBid>()
-    private var cardPlayability = mapOf<CardName, Boolean>()
 }

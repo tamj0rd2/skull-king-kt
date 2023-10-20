@@ -59,6 +59,12 @@ val Int.yellow get() = Card.NumberedCard(Yellow, this)
 val Int.red get() = Card.NumberedCard(Red, this)
 val Int.black get() = Card.NumberedCard(Black, this)
 
+data class CardWithPlayability(val card: Card, val isPlayable: Boolean) {
+    fun playedBy(playerId: PlayerId): PlayedCard {
+        require(isPlayable) { "card $card is not playable by $playerId" }
+        return card.playedBy(playerId)
+    }
+}
 
 enum class SpecialSuit() {
     Escape,
