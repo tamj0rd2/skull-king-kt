@@ -28,6 +28,8 @@ import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.adapters.HTTPDriver
 import java.net.ServerSocket
+import java.time.Instant.now
+import java.util.*
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
@@ -105,8 +107,12 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
 
     private fun handleMessage(message: MessageToClient) {
         when (message) {
+            is MessageToClient.Acknowledgement -> synchronized(syncObject) {
+                acknowledgements.add(message.messageId)
+                syncObject.notify()
+            }
+
             is MessageToClient.BidPlaced -> {
-                if (message.playerId == playerId) synchronized(syncObject) { syncObject.notify() }
             }
 
             is MessageToClient.BiddingCompleted -> {
@@ -116,13 +122,9 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
 
             is MessageToClient.CardPlayed -> {
                 trick.add(message.card.playedBy(message.playerId))
-                if (message.playerId == playerId) {
-                    synchronized(syncObject) {
-                        hand.remove(message.card)
-                        syncObject.notify()
-                    }
-                }
+                if (message.playerId == playerId) hand.remove(message.card)
             }
+
             MessageToClient.GameCompleted -> TODO()
             is MessageToClient.GameStarted -> {
                 playersInRoom = message.players.toMutableList()
@@ -139,6 +141,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             is MessageToClient.RoundCompleted -> {
                 winsOfTheRound = message.wins
             }
+
             is MessageToClient.RoundStarted -> {
                 roundNumber = message.roundNumber
                 roundPhase = RoundPhase.Bidding
@@ -148,15 +151,18 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             is MessageToClient.TrickCompleted -> {
                 roundPhase = RoundPhase.TrickCompleted
             }
+
             is MessageToClient.TrickStarted -> {
                 roundPhase = RoundPhase.TrickTaking
                 trickNumber = message.trickNumber
                 currentPlayer = message.firstPlayer
+                trick.clear()
             }
+
             is MessageToClient.YouJoined -> synchronized(syncObject) {
                 playersInRoom = message.players.toMutableList()
-                gameState =
-                    if (message.waitingForMorePlayers) GameState.WaitingForMorePlayers else GameState.WaitingToStart
+                gameState = if (message.waitingForMorePlayers) GameState.WaitingForMorePlayers else GameState.WaitingToStart
+                // TODO: get rid of this. Let the client send a JoinGame message requiring acknowledgement instead
                 syncObject.notify()
             }
 
@@ -171,24 +177,34 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
     }
 
     override fun bid(bid: Int) {
-        synchronized(syncObject) {
-            sendMessage(MessageFromClient.BidPlaced(bid))
-            syncObject.wait()
-            logger.info("bidded")
-        }
+        sendMessage(MessageFromClient.BidPlaced(bid))
+        logger.info("bidded")
     }
 
     override fun playCard(card: Card) {
-        synchronized(syncObject) {
-            sendMessage(MessageFromClient.CardPlayed(card.name))
-            syncObject.wait()
-            logger.info("played card")
-        }
+        sendMessage(MessageFromClient.CardPlayed(card.name))
+        logger.info("played card")
     }
 
+    private val acknowledgements = mutableSetOf<UUID>()
+
     private fun sendMessage(message: MessageFromClient) {
-        logger.info("sending $message")
-        ws.send(messageToServerLens(message))
+        synchronized(syncObject) {
+            logger.info("sending $message")
+            ws.send(messageToServerLens(message))
+
+            if (message !is MessageFromClient.MessageRequiringAcknowledgement) return
+
+            logger.info("waiting for acknowledgement for ${message.messageId} $message")
+            val mustEndBy = now().plusSeconds(1)
+            val messageHasBeenAcknowledged = { acknowledgements.contains(message.messageId) }
+
+            do { syncObject.wait(100) } while (now() < mustEndBy && !messageHasBeenAcknowledged())
+            if (messageHasBeenAcknowledged())
+                acknowledgements.remove(message.messageId)
+            else
+                error("$message ${message.messageId} from $playerId was not acknowledged within the timeout. acknowledged messages: $acknowledgements")
+        }
     }
 
     override fun isCardPlayable(card: Card): Boolean {

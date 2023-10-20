@@ -1,6 +1,5 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
@@ -38,88 +37,32 @@ internal fun wsHandler(
             val syncObject = Object()
             val acknowledgements = mutableSetOf<UUID>()
 
+            fun waitForAcknowledgement(message: MessageToClient.MessageRequiringAcknowledgement) {
+                synchronized(syncObject) {
+                    logger.info("waiting for acknowledgement of ${message.messageId} $message")
+                    val mustEndBy = now().plusSeconds(1)
+                    val messageHasBeenAcknowledged = { acknowledgements.contains(message.messageId) }
+
+                    do { syncObject.wait(100) } while (now() < mustEndBy && !messageHasBeenAcknowledged())
+
+                    if (messageHasBeenAcknowledged())
+                        acknowledgements.remove(message.messageId)
+                    else
+                        error("$message ${message.messageId} to $playerId was not acknowledged within the timeout. acknowledged messages: $acknowledgements")
+                }
+            }
+
             WsResponse { ws ->
-                game.subscribeToGameEvents {
-                    val messageToClient: MessageToClient = when (it) {
-                        is GameEvent.BidPlaced -> MessageToClient.BidPlaced(it.playerId)
-                        is GameEvent.BiddingCompleted -> MessageToClient.BiddingCompleted(it.bids)
-                        is GameEvent.CardPlayed -> {
-                            val messages = mutableListOf<MessageToClient>(
-                                MessageToClient.CardPlayed(
-                                    playerId = it.playerId,
-                                    card = it.card,
-                                    nextPlayer = game.currentPlayersTurn
-                                ),
-                            )
+                game.subscribeToGameEvents { event ->
+                    val message = event.asMessageToClient(game, playerId)
 
-                            if (game.currentPlayersTurn == playerId) {
-                                // TODO: make a new method called: "cardsWithPlayability" or something
-                                val cardsWithPlayability = game.getCardsInHand(playerId)
-                                    .associate { it.name to game.isCardPlayable(playerId, it) }
-                                messages.add(MessageToClient.YourTurn(cardsWithPlayability))
-                            }
+                    logger.info("sending message to $playerId: $message")
+                    ws.send(messageToClientLens(message))
 
-                            MessageToClient.Multi(messages)
-                        }
-
-                        is GameEvent.CardsDealt -> TODO("add cards dealt event")
-                        is GameEvent.GameCompleted -> MessageToClient.GameCompleted
-                        is GameEvent.GameStarted -> MessageToClient.GameStarted(it.players)
-                        is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(
-                                it.playerId,
-                                game.isInState(GameState.WaitingForMorePlayers)
-                            )
-
-                        is GameEvent.RoundStarted -> MessageToClient.RoundStarted(
-                                game.getCardsInHand(playerId),
-                                it.roundNumber
-                            )
-
-                        is GameEvent.TrickCompleted -> {
-                            val messages = mutableListOf<MessageToClient>(
-                                MessageToClient.TrickCompleted(it.winner)
-                            )
-
-                            if (game.trickNumber == game.roundNumber) {
-                                messages += MessageToClient.RoundCompleted(game.winsOfTheRound)
-                            }
-
-                            MessageToClient.Multi(messages)
-                        }
-                        is GameEvent.TrickStarted -> {
-                            val messages = mutableListOf<MessageToClient>(
-                                MessageToClient.TrickStarted(
-                                    it.trickNumber,
-                                    game.currentPlayersTurn ?: error("currentPlayer is null")
-                                )
-                            )
-
-                            if (game.currentPlayersTurn == playerId) {
-                                // TODO: make a new method called: "cardsWithPlayability" or something
-                                val cardsWithPlayability = game.getCardsInHand(playerId)
-                                    .associate { it.name to game.isCardPlayable(playerId, it) }
-                                messages.add(MessageToClient.YourTurn(cardsWithPlayability))
-                            }
-
-                            MessageToClient.Multi(messages)
-                        }
-                    }
-
-                    logger.info("sending message to $playerId: $messageToClient")
-                    ws.send(messageToClientLens(messageToClient))
-
-                    if (messageToClient !is MessageToClient.MessageRequiringAcknowledgement) return@subscribeToGameEvents
-
-                    synchronized(syncObject) {
-                        logger.info("waiting for acknowledgement of $messageToClient ${messageToClient.messageId}")
-                        val mustEndBy = now().plusSeconds(1)
-                        val messageHasBeenAcknowledged = { acknowledgements.contains(messageToClient.messageId) }
-
-                        do { syncObject.wait(100) } while (now() < mustEndBy && !messageHasBeenAcknowledged())
-                        if (messageHasBeenAcknowledged())
-                            acknowledgements.remove(messageToClient.messageId)
-                        else
-                            error("$messageToClient to $playerId was not acknowledged within the timeout. acknowledged messages: $acknowledgements")
+                    when (message) {
+                        is MessageToClient.MessageRequiringAcknowledgement -> waitForAcknowledgement(message)
+                        is MessageToClient.Multi -> message.messagesRequiringAcknowledgement().forEach(::waitForAcknowledgement)
+                        else -> {}
                     }
                 }
 
@@ -132,32 +75,98 @@ internal fun wsHandler(
                         is MessageFromClient.UnhandledServerMessage -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
                         is MessageFromClient.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
                         is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
-                        is MessageFromClient.Acknowledgement -> synchronized(syncObject){
+                        is MessageFromClient.Acknowledgement -> synchronized(syncObject) {
                             acknowledgements.add(message.id)
                             syncObject.notify()
                         }
                     }
+
+                    if (message is MessageFromClient.MessageRequiringAcknowledgement) {
+                        ws.send(messageToClientLens(message.acknowledge()))
+                    }
                 }
 
                 logger.info("connected")
-                ws.send(messageToClientLens(MessageToClient.YouJoined(game.players, game.isInState(GameState.WaitingForMorePlayers))))
+                ws.send(
+                    messageToClientLens(
+                        MessageToClient.YouJoined(
+                            game.players,
+                            game.isInState(GameState.WaitingForMorePlayers)
+                        )
+                    )
+                )
             }
         }
     )
 }
 
-internal sealed class MessageFromClient {
-    data class BidPlaced(val bid: Int) : MessageFromClient()
+fun GameEvent.asMessageToClient(game: Game, thisPlayerId: PlayerId): MessageToClient {
+    return when (this) {
+        is GameEvent.BidPlaced -> MessageToClient.BidPlaced(playerId)
+        is GameEvent.BiddingCompleted -> MessageToClient.BiddingCompleted(bids)
+        is GameEvent.CardPlayed -> {
+            val messages = mutableListOf<MessageToClient>(
+                MessageToClient.CardPlayed(
+                    playerId = playerId,
+                    card = card,
+                    nextPlayer = game.currentPlayersTurn
+                ),
+            )
 
-    data class CardPlayed(val cardName: CardName) : MessageFromClient()
+            if (game.currentPlayersTurn == thisPlayerId) {
+                // TODO: make a new method called: "cardsWithPlayability" or something
+                val cardsWithPlayability = game.getCardsInHand(thisPlayerId)
+                    .associate { it.name to game.isCardPlayable(thisPlayerId, it) }
+                messages.add(MessageToClient.YourTurn(cardsWithPlayability))
+            }
 
-    data class UnhandledServerMessage(val offender: String) : MessageFromClient()
+            MessageToClient.Multi(messages)
+        }
 
-    data class Error(val stackTrace: String) : MessageFromClient()
+        is GameEvent.CardsDealt -> TODO("add cards dealt event")
+        is GameEvent.GameCompleted -> MessageToClient.GameCompleted
+        is GameEvent.GameStarted -> MessageToClient.GameStarted(players)
+        is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(
+            playerId,
+            game.isInState(GameState.WaitingForMorePlayers)
+        )
 
-    data class Acknowledgement(val id: UUID) : MessageFromClient()
+        is GameEvent.RoundStarted -> MessageToClient.RoundStarted(
+            game.getCardsInHand(thisPlayerId),
+            roundNumber
+        )
+
+        is GameEvent.TrickCompleted -> {
+            val messages = mutableListOf<MessageToClient>(
+                MessageToClient.TrickCompleted(winner)
+            )
+
+            if (game.trickNumber == game.roundNumber) {
+                messages += MessageToClient.RoundCompleted(game.winsOfTheRound)
+            }
+
+            MessageToClient.Multi(messages)
+        }
+
+        is GameEvent.TrickStarted -> {
+            val messages = mutableListOf<MessageToClient>(
+                MessageToClient.TrickStarted(
+                    trickNumber,
+                    game.currentPlayersTurn ?: error("currentPlayer is null")
+                )
+            )
+
+            if (game.currentPlayersTurn == thisPlayerId) {
+                // TODO: make a new method called: "cardsWithPlayability" or something
+                val cardsWithPlayability = game.getCardsInHand(thisPlayerId)
+                    .associate { it.name to game.isCardPlayable(thisPlayerId, it) }
+                messages.add(MessageToClient.YourTurn(cardsWithPlayability))
+            }
+
+            MessageToClient.Multi(messages)
+        }
+    }
 }
-
 
 private class AutomatedGameMaster(private val game: Game, private val delayOverride: Duration?) {
     private val allGameEvents = CopyOnWriteArrayList<GameEvent>()
