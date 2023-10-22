@@ -10,8 +10,8 @@ import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.webapp.Acknowledgements
 import com.tamj0rd2.webapp.ClientMessage
-import com.tamj0rd2.webapp.ServerMessage
 import com.tamj0rd2.webapp.OverTheWireMessage
+import com.tamj0rd2.webapp.ServerMessage
 import com.tamj0rd2.webapp.awaitingAck
 import com.tamj0rd2.webapp.overTheWireMessageLens
 import com.tamj0rd2.webapp.processedMessage
@@ -69,13 +69,13 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
             val message = overTheWireMessageLens(it)
             logger.receivedMessage(message)
             when (message) {
-                is OverTheWireMessage.AcknowledgementFromServer -> {
+                is OverTheWireMessage.Ack.FromServer -> {
                     message.messages.forEach(::handleMessage)
                     acknowledgements.ack(message.id)
                     logger.processedMessage(message)
                 }
 
-                is OverTheWireMessage.ProcessingFailure -> {
+                is OverTheWireMessage.Nack -> {
                     acknowledgements.nack(message.id)
                 }
 
@@ -188,7 +188,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
     private fun sendMessage(message: ClientMessage.Request): Result<Unit> {
         val otwMessage = message.overTheWire()
 
-        return acknowledgements.waitFor(otwMessage.messageId) {
+        return acknowledgements.waitFor(otwMessage.id) {
             logger.sending(otwMessage)
             ws.send(overTheWireMessageLens(otwMessage))
             logger.awaitingAck(otwMessage)

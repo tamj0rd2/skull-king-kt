@@ -76,7 +76,7 @@ internal fun wsHandler(
                     }
 
                     val otwMessage = OverTheWireMessage.ToClient(messages)
-                    acknowledgements.waitFor(otwMessage.messageId) {
+                    acknowledgements.waitFor(otwMessage.id) {
                         logger.sending(otwMessage)
                         ws.send(overTheWireMessageLens(otwMessage))
                         logger.awaitingAck(otwMessage)
@@ -88,7 +88,7 @@ internal fun wsHandler(
                     logger.receivedMessage(incomingMessage)
 
                     when (incomingMessage) {
-                        is OverTheWireMessage.AcknowledgementFromClient -> {
+                        is OverTheWireMessage.Ack.FromClient -> {
                             acknowledgements.ack(incomingMessage.id)
                             logger.processedMessage(incomingMessage)
                         }
@@ -111,7 +111,7 @@ internal fun wsHandler(
                                         },
                                         onFailure = {
                                             logger.error("processing message failed - $incomingMessage - $it")
-                                            incomingMessage.processingFailed()
+                                            incomingMessage.nack()
                                         }
                                     )
 

@@ -242,12 +242,14 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         sally.attemptsTo(Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>())
 
         thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
-        freddy and sally both Play.theirFirstPlayableCard
+        freddy(Plays.theirFirstPlayableCard)
 
-        thePlayers each ensure(TheCurrentPlayer, Is(thirzah.playerId))
-        sally.attemptsTo(Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>())
+        thePlayers each ensure(TheCurrentPlayer, Is(sally.playerId))
+        thirzah.attemptsTo(Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>())
 
         // recovery
+        thePlayers each ensure(TheCurrentPlayer, Is(sally.playerId))
+        sally(Plays.theirFirstPlayableCard)
         thirzah(Plays.theirFirstPlayableCard)
     }
 

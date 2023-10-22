@@ -1,7 +1,6 @@
 package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.CardName
-import java.util.*
 
 sealed class ClientMessage {
     sealed class Notification : ClientMessage() {
@@ -11,7 +10,7 @@ sealed class ClientMessage {
     }
 
     sealed class Request : ClientMessage() {
-        fun overTheWire() = OverTheWireMessage.ToServer(this, UUID.randomUUID())
+        fun overTheWire() = OverTheWireMessage.ToServer(this)
 
         data class PlaceBid(val bid: Int) : Request()
 
