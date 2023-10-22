@@ -10,7 +10,7 @@ import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.webapp.Acknowledgements
 import com.tamj0rd2.webapp.ClientMessage
-import com.tamj0rd2.webapp.MessageToClient
+import com.tamj0rd2.webapp.ServerMessage
 import com.tamj0rd2.webapp.OverTheWireMessage
 import com.tamj0rd2.webapp.awaitingAck
 import com.tamj0rd2.webapp.overTheWireMessageLens
@@ -83,7 +83,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
                     message.messages.forEach(::handleMessage)
                     logger.processedMessage(message)
 
-                    if (message.messages.size == 1 && message.messages[0] is MessageToClient.YouJoined) {
+                    if (message.messages.size == 1 && message.messages[0] is ServerMessage.YouJoined) {
                         synchronized(joinSyncObject) { joinSyncObject.notify() }
                         return@onMessage
                     }
@@ -103,18 +103,18 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
         logger.debug("joined game")
     }
 
-    private fun handleMessage(message: MessageToClient) {
+    private fun handleMessage(message: ServerMessage) {
         when (message) {
-            is MessageToClient.BidPlaced -> {
+            is ServerMessage.BidPlaced -> {
                 bids[message.playerId] = DisplayBid.Hidden
             }
 
-            is MessageToClient.BiddingCompleted -> {
+            is ServerMessage.BiddingCompleted -> {
                 roundPhase = RoundPhase.BiddingCompleted
                 bids = message.bids.mapValues { DisplayBid.Placed(it.value.bid) }.toMutableMap()
             }
 
-            is MessageToClient.CardPlayed -> {
+            is ServerMessage.CardPlayed -> {
                 currentPlayer = message.nextPlayer
                 trick.add(message.card.playedBy(message.playerId))
                 if (message.playerId == playerId) {
@@ -122,38 +122,38 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
                 }
             }
 
-            is MessageToClient.GameCompleted -> {
+            is ServerMessage.GameCompleted -> {
                 gameState = GameState.Complete
             }
 
-            is MessageToClient.GameStarted -> {
+            is ServerMessage.GameStarted -> {
                 playersInRoom = message.players.toMutableList()
                 gameState = GameState.InProgress
             }
 
-            is MessageToClient.PlayerJoined -> {
+            is ServerMessage.PlayerJoined -> {
                 playersInRoom.add(message.playerId)
                 gameState =
                     if (message.waitingForMorePlayers) GameState.WaitingForMorePlayers else GameState.WaitingToStart
             }
 
-            is MessageToClient.RoundCompleted -> {
+            is ServerMessage.RoundCompleted -> {
                 winsOfTheRound = message.wins
             }
 
-            is MessageToClient.RoundStarted -> {
+            is ServerMessage.RoundStarted -> {
                 roundNumber = message.roundNumber
                 roundPhase = RoundPhase.Bidding
                 hand = message.cardsDealt.toMutableList()
                 bids = playersInRoom.associateWith { DisplayBid.None }.toMutableMap()
             }
 
-            is MessageToClient.TrickCompleted -> {
+            is ServerMessage.TrickCompleted -> {
                 roundPhase = RoundPhase.TrickCompleted
                 trickWinner = message.winner
             }
 
-            is MessageToClient.TrickStarted -> {
+            is ServerMessage.TrickStarted -> {
                 roundPhase = RoundPhase.TrickTaking
                 trickNumber = message.trickNumber
                 currentPlayer = message.firstPlayer
@@ -161,13 +161,13 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
             }
 
             // TODO: get rid of this. Let the client send a JoinGame message requiring acknowledgement instead
-            is MessageToClient.YouJoined -> {
+            is ServerMessage.YouJoined -> {
                 playersInRoom = message.players.toMutableList()
                 gameState =
                     if (message.waitingForMorePlayers) GameState.WaitingForMorePlayers else GameState.WaitingToStart
             }
 
-            is MessageToClient.YourTurn -> {
+            is ServerMessage.YourTurn -> {
                 hand = message.cards.toMutableList()
             }
         }

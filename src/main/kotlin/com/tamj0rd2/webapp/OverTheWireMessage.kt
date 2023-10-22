@@ -15,7 +15,7 @@ sealed class OverTheWireMessage {
         }
 
     // TODO: this naming is really confusing now
-    data class ToClient(val messages: List<MessageToClient>) : OverTheWireMessage() {
+    data class ToClient(val messages: List<ServerMessage>) : OverTheWireMessage() {
         val messageId: UUID = UUID.randomUUID()
 
         fun acknowledge() = AcknowledgementFromClient(messageId)
@@ -29,14 +29,14 @@ sealed class OverTheWireMessage {
     data class ToServer(val message: ClientMessage, val messageId: UUID = UUID.randomUUID()) :
         OverTheWireMessage() {
 
-        fun acknowledge(messages: List<MessageToClient> = emptyList()) = AcknowledgementFromServer(messageId, messages)
+        fun acknowledge(messages: List<ServerMessage> = emptyList()) = AcknowledgementFromServer(messageId, messages)
 
         override fun toString(): String {
             return "$messageId - $message"
         }
     }
 
-    data class AcknowledgementFromServer(val id: UUID, val messages: List<MessageToClient>) : OverTheWireMessage() {
+    data class AcknowledgementFromServer(val id: UUID, val messages: List<ServerMessage>) : OverTheWireMessage() {
         override fun toString(): String {
             return "$id - ${messages.joinToString(", ")}"
         }

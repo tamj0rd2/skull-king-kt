@@ -60,7 +60,7 @@ internal fun wsHandler(
         "/{playerId}" bind { req ->
             val playerId = playerIdLens(req)
             val logger = LoggerFactory.getLogger("$playerId:wsHandler")
-            val messagesToClient = LockedValue<List<MessageToClient>>()
+            val messagesToClient = LockedValue<List<ServerMessage>>()
 
             WsResponse { ws ->
                 val acknowledgements = Acknowledgements(acknowledgementTimeoutMs)
@@ -128,7 +128,7 @@ internal fun wsHandler(
 
                 logger.info("connected")
 
-                val response = MessageToClient.YouJoined(
+                val response = ServerMessage.YouJoined(
                     game.players,
                     game.isInState(GameState.WaitingForMorePlayers)
                 ).overTheWire()
@@ -140,13 +140,13 @@ internal fun wsHandler(
     )
 }
 
-fun GameEvent.asMessagesToClient(game: Game, thisPlayerId: PlayerId): List<MessageToClient> =
+fun GameEvent.asMessagesToClient(game: Game, thisPlayerId: PlayerId): List<ServerMessage> =
     when (this) {
-        is GameEvent.BidPlaced -> listOf(MessageToClient.BidPlaced(playerId))
-        is GameEvent.BiddingCompleted -> listOf(MessageToClient.BiddingCompleted(bids))
+        is GameEvent.BidPlaced -> listOf(ServerMessage.BidPlaced(playerId))
+        is GameEvent.BiddingCompleted -> listOf(ServerMessage.BiddingCompleted(bids))
         is GameEvent.CardPlayed -> {
-            val messages = mutableListOf<MessageToClient>(
-                MessageToClient.CardPlayed(
+            val messages = mutableListOf<ServerMessage>(
+                ServerMessage.CardPlayed(
                     playerId = playerId,
                     card = card,
                     nextPlayer = game.currentPlayersTurn
@@ -154,51 +154,51 @@ fun GameEvent.asMessagesToClient(game: Game, thisPlayerId: PlayerId): List<Messa
             )
 
             if (game.currentPlayersTurn == thisPlayerId) {
-                messages.add(MessageToClient.YourTurn(game.getCardsInHand(thisPlayerId)))
+                messages.add(ServerMessage.YourTurn(game.getCardsInHand(thisPlayerId)))
             }
 
             messages
         }
 
         is GameEvent.CardsDealt -> TODO("add cards dealt event")
-        is GameEvent.GameCompleted -> listOf(MessageToClient.GameCompleted())
-        is GameEvent.GameStarted -> listOf(MessageToClient.GameStarted(players))
+        is GameEvent.GameCompleted -> listOf(ServerMessage.GameCompleted())
+        is GameEvent.GameStarted -> listOf(ServerMessage.GameStarted(players))
         is GameEvent.PlayerJoined -> listOf(
-            MessageToClient.PlayerJoined(
+            ServerMessage.PlayerJoined(
                 playerId,
                 game.isInState(GameState.WaitingForMorePlayers)
             )
         )
 
         is GameEvent.RoundStarted -> listOf(
-            MessageToClient.RoundStarted(
+            ServerMessage.RoundStarted(
                 game.getCardsInHand(thisPlayerId),
                 roundNumber
             )
         )
 
         is GameEvent.TrickCompleted -> {
-            val messages = mutableListOf<MessageToClient>(
-                MessageToClient.TrickCompleted(winner)
+            val messages = mutableListOf<ServerMessage>(
+                ServerMessage.TrickCompleted(winner)
             )
 
             if (game.trickNumber == game.roundNumber) {
-                messages += MessageToClient.RoundCompleted(game.winsOfTheRound)
+                messages += ServerMessage.RoundCompleted(game.winsOfTheRound)
             }
 
             messages
         }
 
         is GameEvent.TrickStarted -> {
-            val messages = mutableListOf<MessageToClient>(
-                MessageToClient.TrickStarted(
+            val messages = mutableListOf<ServerMessage>(
+                ServerMessage.TrickStarted(
                     trickNumber,
                     game.currentPlayersTurn ?: error("currentPlayer is null")
                 )
             )
 
             if (game.currentPlayersTurn == thisPlayerId) {
-                messages.add(MessageToClient.YourTurn(game.getCardsInHand(thisPlayerId)))
+                messages.add(ServerMessage.YourTurn(game.getCardsInHand(thisPlayerId)))
             }
 
             messages

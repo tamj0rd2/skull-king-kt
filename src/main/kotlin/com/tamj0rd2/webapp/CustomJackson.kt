@@ -22,7 +22,7 @@ object CustomJackson : ConfigurableJackson(
         .text(::PlayerId, PlayerId::playerId)
         .int(::Bid, Bid::bid)
         .done()
-        .addMixIn<MessageToClient, DefaultMixin>()
+        .addMixIn<ServerMessage, DefaultMixin>()
         .addMixIn<GameMasterCommand, DefaultMixin>()
         .addMixIn<ClientMessage, DefaultMixin>()
         .addMixIn<OverTheWireMessage, DefaultMixin>()
