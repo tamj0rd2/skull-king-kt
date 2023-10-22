@@ -12,6 +12,7 @@
             <level>WARN</level>
             <onMatch>DENY</onMatch>
         </filter>
+        <filter class="LogFilter" />
         <target>System.out</target>
         <encoder>
             <pattern>%d{HH:mm:ss.SSS}%ms %-5level %-22logger{36} -- %msg%n</pattern>

@@ -4,7 +4,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import org.slf4j.LoggerFactory
 
-internal val logger = LoggerFactory.getLogger(">>> TEST <<<")
+internal val logger = LoggerFactory.getLogger(">> TEST <<")
 
 open class Activity(private val name: String = "AnonymousActivity", private val fn: (Actor) -> Unit) {
     override fun toString(): String  = name

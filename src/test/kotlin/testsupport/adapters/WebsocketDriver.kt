@@ -122,6 +122,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
 
             is MessageToClient.TrickCompleted -> {
                 roundPhase = RoundPhase.TrickCompleted
+                trickWinner = message.winner
             }
 
             is MessageToClient.TrickStarted -> {
