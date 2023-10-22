@@ -13,7 +13,8 @@ object Server {
         host: String = "localhost",
         hotReload: Boolean = false,
         automateGameMasterCommands: Boolean = false,
-        automaticGameMasterDelayOverride: Duration? = null
+        automaticGameMasterDelayOverride: Duration? = null,
+        acknowledgementTimeoutMs: Long = 300,
     ): Http4kServer {
         val game = Game()
         val http = httpHandler(
@@ -23,7 +24,12 @@ object Server {
             automateGameMasterCommands = automateGameMasterCommands,
         )
 
-        val ws = wsHandler(game, automateGameMasterCommands, automaticGameMasterDelayOverride)
+        val ws = wsHandler(
+            game = game,
+            automateGameMasterCommands = automateGameMasterCommands,
+            automaticGameMasterDelayOverride = automaticGameMasterDelayOverride,
+            acknowledgementTimeoutMs = acknowledgementTimeoutMs
+        )
         return PolyHandler(http, ws).asServer(Jetty(port))
     }
 }
@@ -35,6 +41,7 @@ fun main() {
         port = port,
         host = host,
         hotReload = true,
-        automateGameMasterCommands = true
+        automateGameMasterCommands = true,
+        acknowledgementTimeoutMs = 3000,
     ).start().apply { println("Server started on port $host:$port") }
 }

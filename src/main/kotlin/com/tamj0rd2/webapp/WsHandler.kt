@@ -47,7 +47,8 @@ class LockedValue<T> {
 internal fun wsHandler(
     game: Game,
     automateGameMasterCommands: Boolean,
-    automaticGameMasterDelayOverride: Duration?
+    automaticGameMasterDelayOverride: Duration?,
+    acknowledgementTimeoutMs: Long,
 ): RoutingWsHandler {
     val playerIdLens = Path.map(::PlayerId, PlayerId::playerId).of("playerId")
 
@@ -62,7 +63,7 @@ internal fun wsHandler(
             val messagesToClient = LockedValue<List<MessageToClient>>()
 
             WsResponse { ws ->
-                val ack = Acknowledgements()
+                val acknowledgements = Acknowledgements(acknowledgementTimeoutMs)
 
                 game.subscribeToGameEvents { events, triggeredBy ->
                     val messages = events
@@ -75,14 +76,12 @@ internal fun wsHandler(
                     }
 
                     val otwMessage = OverTheWireMessage.MessagesToClient(messages)
-                    ack.waitFor(otwMessage.messageId) {
+                    acknowledgements.waitFor(otwMessage.messageId) {
                         logger.sending(otwMessage)
                         ws.send(overTheWireMessageLens(otwMessage))
                         logger.awaitingAck(otwMessage)
                     }
                 }
-
-                ws.onError { logger.error(it.message) }
 
                 ws.onMessage {
                     val incomingMessage = overTheWireMessageLens(it)
@@ -90,25 +89,34 @@ internal fun wsHandler(
 
                     when (incomingMessage) {
                         is OverTheWireMessage.AcknowledgementFromClient -> {
-                            ack(incomingMessage.id)
+                            acknowledgements.ack(incomingMessage.id)
                             logger.processedMessage(incomingMessage)
                         }
 
+                        // TODO: fix the christmas tree of poor readability
                         is OverTheWireMessage.MessageToServer -> {
                             messagesToClient.use {
-                                when (val message = incomingMessage.message) {
-                                    is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
-                                    is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
-                                    is MessageFromClient.UnhandledServerMessage -> error("CLIENT ERROR: unhandled game event: ${message.offender}")
-                                    is MessageFromClient.Error -> error("CLIENT ERROR: ${message.stackTrace}")
-                                }
+                                val response = runCatching {
+                                    when (val message = incomingMessage.message) {
+                                        is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
+                                        is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
+                                        is MessageFromClient.UnhandledServerMessage -> error("CLIENT ERROR: unhandled game event: ${message.offender}")
+                                        is MessageFromClient.Error -> error("CLIENT ERROR: ${message.stackTrace}")
+                                    }
+                                }.fold(
+                                    onSuccess = {
+                                        logger.processedMessage(incomingMessage)
+                                        incomingMessage.acknowledge(lockedValue.orEmpty())
+                                    },
+                                    onFailure = {
+                                        logger.error("processing message failed - $incomingMessage - $it")
+                                        incomingMessage.processingFailed()
+                                    }
+                                )
 
-                                logger.processedMessage(incomingMessage)
-                                incomingMessage.acknowledge(lockedValue.orEmpty()).let { response ->
-                                    logger.sending(response)
-                                    ws.send(overTheWireMessageLens(response))
-                                    logger.sentAck(response)
-                                }
+                                logger.sending(response)
+                                ws.send(overTheWireMessageLens(response))
+                                logger.sentMessage(response)
                             }
                         }
 

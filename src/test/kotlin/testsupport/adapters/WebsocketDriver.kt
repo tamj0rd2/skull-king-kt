@@ -17,7 +17,7 @@ import com.tamj0rd2.webapp.overTheWireMessageLens
 import com.tamj0rd2.webapp.processedMessage
 import com.tamj0rd2.webapp.receivedMessage
 import com.tamj0rd2.webapp.sending
-import com.tamj0rd2.webapp.sentAck
+import com.tamj0rd2.webapp.sentMessage
 import org.http4k.client.WebsocketClient
 import org.http4k.core.ContentType
 import org.http4k.core.HttpHandler
@@ -33,11 +33,12 @@ import testsupport.ApplicationDriver
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
-class WebsocketDriver(private val httpClient: HttpHandler, host: String) : ApplicationDriver {
+class WebsocketDriver(private val httpClient: HttpHandler, host: String, private val ackTimeoutMs: Long = 300) :
+    ApplicationDriver {
     private val httpBaseUrl = "http://$host"
     private val wsBaseUrl = "ws://$host"
     private val joinSyncObject = Object()
-    private val ack = Acknowledgements()
+    private val acknowledgements = Acknowledgements(ackTimeoutMs)
 
     private lateinit var ws: Websocket
     private lateinit var logger: Logger
@@ -70,8 +71,12 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             when (message) {
                 is OverTheWireMessage.AcknowledgementFromServer -> {
                     message.messages.forEach(::handleMessage)
-                    ack(message.id)
+                    acknowledgements.ack(message.id)
                     logger.processedMessage(message)
+                }
+
+                is OverTheWireMessage.ProcessingFailure -> {
+                    acknowledgements.nack(message.id)
                 }
 
                 is OverTheWireMessage.MessagesToClient -> {
@@ -86,7 +91,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
                     message.acknowledge().let { response ->
                         logger.sending(response)
                         ws.send(overTheWireMessageLens(response))
-                        logger.sentAck(response)
+                        logger.sentMessage(response)
                     }
                 }
 
@@ -167,19 +172,22 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
         }
     }
 
-    override fun bid(bid: Int) {
+    override fun bid(bid: Int): Unit {
         sendMessage(MessageFromClient.BidPlaced(bid))
-        logger.debug("bidded $bid")
+            .onFailure { throw GameException.CannotBid("operation nacked by server") }
+            .onSuccess { logger.debug("bidded $bid") }
     }
 
     override fun playCard(card: Card) {
         sendMessage(MessageFromClient.CardPlayed(card.name))
-        logger.debug("played {}", card)
+            .onFailure { throw GameException.CannotPlayCard("operation nacked by server") }
+            .onSuccess { logger.debug("played $card") }
     }
 
-    private fun sendMessage(message: MessageFromClient) {
+    private fun sendMessage(message: MessageFromClient): Result<Unit> {
         val otwMessage = message.overTheWire()
-        ack.waitFor(otwMessage.messageId) {
+
+        return acknowledgements.waitFor(otwMessage.messageId) {
             logger.sending(otwMessage)
             ws.send(overTheWireMessageLens(otwMessage))
             logger.awaitingAck(otwMessage)

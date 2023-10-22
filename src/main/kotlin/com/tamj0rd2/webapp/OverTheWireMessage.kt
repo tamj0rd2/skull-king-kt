@@ -4,6 +4,17 @@ import org.slf4j.Logger
 import java.util.*
 
 sealed class OverTheWireMessage {
+
+    fun processingFailed(): OverTheWireMessage =
+        when(this) {
+            is AcknowledgementFromClient -> error("processing an ack should never fail")
+            is AcknowledgementFromServer -> error("processing an ack should never fail")
+            is MessageToServer -> ProcessingFailure(messageId)
+            is MessagesToClient -> ProcessingFailure(messageId)
+            is ProcessingFailure -> error("you're already working with a processing failure")
+        }
+
+    // TODO: this naming is really confusing now
     data class MessagesToClient(val messages: List<MessageToClient>) : OverTheWireMessage() {
         val messageId: UUID = UUID.randomUUID()
 
@@ -14,6 +25,7 @@ sealed class OverTheWireMessage {
         }
     }
 
+    // TODO: this naming is really confusing now
     data class MessageToServer(val message: MessageFromClient, val messageId: UUID = UUID.randomUUID()) :
         OverTheWireMessage() {
 
@@ -35,6 +47,8 @@ sealed class OverTheWireMessage {
             return "$id"
         }
     }
+
+    data class ProcessingFailure(val id: UUID): OverTheWireMessage()
 }
 
 fun Logger.receivedMessage(message: OverTheWireMessage) =
@@ -43,6 +57,7 @@ fun Logger.receivedMessage(message: OverTheWireMessage) =
         is OverTheWireMessage.AcknowledgementFromServer -> debug("got ack: ${message.id}")
         is OverTheWireMessage.MessageToServer -> debug("received: ${message.messageId}")
         is OverTheWireMessage.MessagesToClient -> debug("received: ${message.messageId}")
+        is OverTheWireMessage.ProcessingFailure -> debug("received: $message")
     }
 
 fun Logger.processedMessage(message: OverTheWireMessage) =
@@ -51,6 +66,7 @@ fun Logger.processedMessage(message: OverTheWireMessage) =
         is OverTheWireMessage.AcknowledgementFromServer -> debug(">> completed << ${message.id}")
         is OverTheWireMessage.MessageToServer -> debug("processed: ${message.messageId}")
         is OverTheWireMessage.MessagesToClient -> debug("processed: ${message.messageId}")
+        is OverTheWireMessage.ProcessingFailure -> TODO()
     }
 
 fun Logger.sending(message: OverTheWireMessage) =
@@ -59,6 +75,7 @@ fun Logger.sending(message: OverTheWireMessage) =
         is OverTheWireMessage.AcknowledgementFromServer -> if (message.messages.isNotEmpty()) info("acking: $message") else debug("acking: $message")
         is OverTheWireMessage.MessageToServer -> info("sending: $message")
         is OverTheWireMessage.MessagesToClient -> info("sending: $message")
+        is OverTheWireMessage.ProcessingFailure -> info("sending: $message")
     }
 
 fun Logger.awaitingAck(message: OverTheWireMessage) =
@@ -67,12 +84,14 @@ fun Logger.awaitingAck(message: OverTheWireMessage) =
         is OverTheWireMessage.AcknowledgementFromServer -> error("cannot await an ack of an ack")
         is OverTheWireMessage.MessageToServer -> debug("awaiting ack: ${message.messageId}")
         is OverTheWireMessage.MessagesToClient -> debug("awaiting ack: ${message.messageId}")
+        is OverTheWireMessage.ProcessingFailure -> error("cannot await an ack of a proessing failure")
     }
 
-fun Logger.sentAck(message: OverTheWireMessage) =
+fun Logger.sentMessage(message: OverTheWireMessage) =
     when(message) {
-        is OverTheWireMessage.AcknowledgementFromClient -> debug("sent ack: $message")
+        is OverTheWireMessage.AcknowledgementFromClient -> debug("sent ack: ${message.id}")
         is OverTheWireMessage.AcknowledgementFromServer -> debug("sent ack: $message")
-        is OverTheWireMessage.MessageToServer -> error("not an ack")
-        is OverTheWireMessage.MessagesToClient -> error("not an ack")
+        is OverTheWireMessage.MessageToServer -> debug("sent message: ${message.messageId}")
+        is OverTheWireMessage.MessagesToClient -> debug("sent message: ${message.messageId}")
+        is OverTheWireMessage.ProcessingFailure -> info("sent processing failure: $message")
     }
