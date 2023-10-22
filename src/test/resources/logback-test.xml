@@ -1,7 +1,7 @@
 <configuration>
 <!--    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />-->
 
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <!-- deny ERROR level -->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>ERROR</level>
@@ -14,20 +14,7 @@
         </filter>
         <target>System.out</target>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS}%ms %-5level %logger{36} -- %msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
-        <target>System.err</target>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>WARN</level>
-        </filter>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>ERROR</level>
-        </filter>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS}%ms %-5level %logger{36} -- %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS}%ms %-5level %-22logger{36} -- %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -38,12 +25,12 @@
         </filter>
         <target>System.err</target>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS}%ms %-5level %logger{36} -- %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS}%ms %-5level %-22logger{36} -- %msg%n</pattern>
         </encoder>
     </appender>
 
     <root level="info">
-        <appender-ref ref="STDOUT" />
-        <appender-ref ref="STDERR" />
+        <appender-ref ref="stdout" />
+        <appender-ref ref="stderr" />
     </root>
 </configuration>

@@ -4,7 +4,6 @@ import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.PlayerId
-import java.util.*
 
 sealed class MessageToClient {
     data class PlayerJoined(val playerId: PlayerId, val waitingForMorePlayers: Boolean) : MessageToClient()
@@ -21,25 +20,15 @@ sealed class MessageToClient {
 
     data class RoundCompleted(val wins: Map<PlayerId, Int>) : MessageToClient()
 
-    data class YouJoined(val players: List<PlayerId>, val waitingForMorePlayers: Boolean) : MessageToClient()
+    data class YouJoined(val players: List<PlayerId>, val waitingForMorePlayers: Boolean) : MessageToClient() {
+        fun overTheWire() = OverTheWireMessage.MessagesToClient(listOf(this))
+    }
 
     object GameCompleted : MessageToClient()
 
-    data class Multi(val messages: List<MessageToClient>) : MessageToClient() {
-        fun messagesRequiringAcknowledgement() = messages.filterIsInstance<MessageRequiringAcknowledgement>()
-    }
+    data class GameStarted(val players: List<PlayerId>) : MessageToClient()
 
-    data class Acknowledgement(val messageId: UUID) : MessageToClient()
+    data class RoundStarted(val cardsDealt: List<CardWithPlayability>, val roundNumber: Int) : MessageToClient()
 
-    data class GameStarted(val players: List<PlayerId>) : MessageRequiringAcknowledgement()
-
-    data class RoundStarted(val cardsDealt: List<CardWithPlayability>, val roundNumber: Int) : MessageRequiringAcknowledgement()
-
-    data class TrickStarted(val trickNumber: Int, val firstPlayer: PlayerId) : MessageRequiringAcknowledgement()
-
-    sealed class MessageRequiringAcknowledgement : MessageToClient() {
-        fun acknowledge() = MessageFromClient.Acknowledgement(messageId)
-
-        val messageId = UUID.randomUUID()
-    }
+    data class TrickStarted(val trickNumber: Int, val firstPlayer: PlayerId) : MessageToClient()
 }

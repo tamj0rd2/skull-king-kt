@@ -30,7 +30,7 @@ import testsupport.TheRoundPhase
 import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.adapters.HTTPDriver
-import testsupport.adapters.WebDriver
+import testsupport.adapters.BrowserDriver
 import testsupport.ensurer
 import testsupport.playerId
 import java.net.ServerSocket
@@ -106,7 +106,7 @@ private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Durat
             this.navigate().to(baseUrl)
             chromeDrivers += this
         }
-        return ParticipateInGames(WebDriver(chromeDriver))
+        return ParticipateInGames(BrowserDriver(chromeDriver))
     }
 
     override fun manageGames(): ManageGames = ManageGames(HTTPDriver(baseUrl, httpClient))

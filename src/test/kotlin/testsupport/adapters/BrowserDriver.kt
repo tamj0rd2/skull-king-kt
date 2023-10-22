@@ -17,7 +17,7 @@ import testsupport.ApplicationDriver
 
 private const val debug = true
 
-class WebDriver(private val driver: ChromeDriver) : ApplicationDriver {
+class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
     private lateinit var playerId: PlayerId
 
     override fun joinGame(playerId: PlayerId) = debugException {

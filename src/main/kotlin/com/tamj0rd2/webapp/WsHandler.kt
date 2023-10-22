@@ -4,15 +4,12 @@ import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
-import com.tamj0rd2.webapp.CustomJackson.auto
 import org.http4k.lens.Path
 import org.http4k.routing.RoutingWsHandler
 import org.http4k.routing.websockets
 import org.http4k.routing.ws.bind
-import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsResponse
 import org.slf4j.LoggerFactory
-import java.time.Instant.now
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.timerTask
@@ -24,7 +21,6 @@ internal fun wsHandler(
     automaticGameMasterDelayOverride: Duration?
 ): RoutingWsHandler {
     val playerIdLens = Path.map(::PlayerId, PlayerId::playerId).of("playerId")
-    val clientMessageLens = WsMessage.auto<MessageFromClient>().toLens()
 
     if (automateGameMasterCommands) {
         AutomatedGameMaster(game, automaticGameMasterDelayOverride).start()
@@ -34,76 +30,77 @@ internal fun wsHandler(
         "/{playerId}" bind { req ->
             val playerId = playerIdLens(req)
             val logger = LoggerFactory.getLogger("$playerId:wsHandler")
-            val syncObject = Object()
-            val acknowledgements = mutableSetOf<UUID>()
-
-            fun waitForAcknowledgement(message: MessageToClient.MessageRequiringAcknowledgement) {
-                synchronized(syncObject) {
-                    logger.info("waiting for acknowledgement of ${message.messageId} $message")
-                    val mustEndBy = now().plusSeconds(1)
-                    val messageHasBeenAcknowledged = { acknowledgements.contains(message.messageId) }
-
-                    do { syncObject.wait(100) } while (now() < mustEndBy && !messageHasBeenAcknowledged())
-
-                    if (messageHasBeenAcknowledged())
-                        acknowledgements.remove(message.messageId)
-                    else
-                        error("$message ${message.messageId} to $playerId was not acknowledged within the timeout")
-                }
-            }
 
             WsResponse { ws ->
+                val ack = Acknowledgements()
+
                 game.subscribeToGameEvents { event ->
-                    val message = event.asMessageToClient(game, playerId)
+                    val messages = event.asMessagesToClient(game, playerId)
 
-                    logger.info("sending message to $playerId: $message")
-                    ws.send(messageToClientLens(message))
+                    if (messages.isNotEmpty()) {
+                        val otwMessage = OverTheWireMessage.MessagesToClient(messages.toList())
+                        logger.sending(otwMessage)
 
-                    when (message) {
-                        is MessageToClient.MessageRequiringAcknowledgement -> waitForAcknowledgement(message)
-                        is MessageToClient.Multi -> message.messagesRequiringAcknowledgement().forEach(::waitForAcknowledgement)
-                        else -> {}
+                        ws.send(overTheWireMessageLens(otwMessage))
+                        logger.awaitingAck(otwMessage)
+
+                        ack.waitFor(otwMessage.messageId)
                     }
                 }
 
+                ws.onError { logger.error(it.message, it) }
+
                 ws.onMessage {
-                    val message = clientMessageLens(it)
-                    logger.info("received $message")
+                    val otwMessage = overTheWireMessageLens(it)
+                    logger.receivedMessage(otwMessage)
 
-                    when (message) {
-                        is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
-                        is MessageFromClient.UnhandledServerMessage -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
-                        is MessageFromClient.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
-                        is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
-                        is MessageFromClient.Acknowledgement -> synchronized(syncObject) {
-                            acknowledgements.add(message.id)
-                            syncObject.notify()
+                    when (otwMessage) {
+                        is OverTheWireMessage.Acknowledgement -> {
+                            ack(otwMessage.id)
+                            logger.processedMessage(otwMessage)
                         }
-                    }
 
-                    if (message is MessageFromClient.MessageRequiringAcknowledgement) {
-                        ws.send(messageToClientLens(message.acknowledge()))
+                        is OverTheWireMessage.MessageToServer -> {
+                            when (val message = otwMessage.message) {
+                                is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
+                                is MessageFromClient.UnhandledServerMessage -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
+                                is MessageFromClient.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
+                                is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
+                            }
+
+                            logger.processedMessage(otwMessage)
+                            ws.send(overTheWireMessageLens(otwMessage.acknowledge()))
+                            logger.sentAckFor(otwMessage)
+                        }
+
+                        else -> error("invalid message from client to server: $otwMessage")
                     }
                 }
 
                 logger.info("connected")
-                ws.send(
-                    messageToClientLens(
-                        MessageToClient.YouJoined(
-                            game.players,
-                            game.isInState(GameState.WaitingForMorePlayers)
-                        )
-                    )
-                )
+
+                val response = MessageToClient.YouJoined(
+                    game.players,
+                    game.isInState(GameState.WaitingForMorePlayers)
+                ).overTheWire()
+
+                logger.sending(response)
+                ws.send(overTheWireMessageLens(response))
             }
         }
     )
 }
 
-fun GameEvent.asMessageToClient(game: Game, thisPlayerId: PlayerId): MessageToClient {
+fun GameEvent.asMessagesToClient(game: Game, thisPlayerId: PlayerId): List<MessageToClient> {
+    fun ifNotActor(
+        playerId: PlayerId,
+        default: List<MessageToClient> = emptyList(),
+        block: () -> List<MessageToClient>
+    ) = if (playerId == thisPlayerId) default else block()
+
     return when (this) {
-        is GameEvent.BidPlaced -> MessageToClient.BidPlaced(playerId)
-        is GameEvent.BiddingCompleted -> MessageToClient.BiddingCompleted(bids)
+        is GameEvent.BidPlaced -> ifNotActor(playerId) { listOf(MessageToClient.BidPlaced(playerId)) }
+        is GameEvent.BiddingCompleted -> listOf(MessageToClient.BiddingCompleted(bids))
         is GameEvent.CardPlayed -> {
             val messages = mutableListOf<MessageToClient>(
                 MessageToClient.CardPlayed(
@@ -117,20 +114,24 @@ fun GameEvent.asMessageToClient(game: Game, thisPlayerId: PlayerId): MessageToCl
                 messages.add(MessageToClient.YourTurn(game.getCardsInHand(thisPlayerId)))
             }
 
-            MessageToClient.Multi(messages)
+            messages
         }
 
         is GameEvent.CardsDealt -> TODO("add cards dealt event")
-        is GameEvent.GameCompleted -> MessageToClient.GameCompleted
-        is GameEvent.GameStarted -> MessageToClient.GameStarted(players)
-        is GameEvent.PlayerJoined -> MessageToClient.PlayerJoined(
-            playerId,
-            game.isInState(GameState.WaitingForMorePlayers)
+        is GameEvent.GameCompleted -> listOf(MessageToClient.GameCompleted)
+        is GameEvent.GameStarted -> listOf(MessageToClient.GameStarted(players))
+        is GameEvent.PlayerJoined -> listOf(
+            MessageToClient.PlayerJoined(
+                playerId,
+                game.isInState(GameState.WaitingForMorePlayers)
+            )
         )
 
-        is GameEvent.RoundStarted -> MessageToClient.RoundStarted(
-            game.getCardsInHand(thisPlayerId),
-            roundNumber
+        is GameEvent.RoundStarted -> listOf(
+            MessageToClient.RoundStarted(
+                game.getCardsInHand(thisPlayerId),
+                roundNumber
+            )
         )
 
         is GameEvent.TrickCompleted -> {
@@ -142,7 +143,7 @@ fun GameEvent.asMessageToClient(game: Game, thisPlayerId: PlayerId): MessageToCl
                 messages += MessageToClient.RoundCompleted(game.winsOfTheRound)
             }
 
-            MessageToClient.Multi(messages)
+            messages
         }
 
         is GameEvent.TrickStarted -> {
@@ -157,7 +158,7 @@ fun GameEvent.asMessageToClient(game: Game, thisPlayerId: PlayerId): MessageToCl
                 messages.add(MessageToClient.YourTurn(game.getCardsInHand(thisPlayerId)))
             }
 
-            MessageToClient.Multi(messages)
+            messages
         }
     }
 }

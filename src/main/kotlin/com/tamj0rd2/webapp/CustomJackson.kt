@@ -25,11 +25,11 @@ object CustomJackson : ConfigurableJackson(
         .addMixIn<MessageToClient, DefaultMixin>()
         .addMixIn<GameMasterCommand, DefaultMixin>()
         .addMixIn<MessageFromClient, DefaultMixin>()
+        .addMixIn<OverTheWireMessage, DefaultMixin>()
         .addMixIn<Card, DefaultMixin>()
 )
 
-internal val messageToClientLens = WsMessage.auto<MessageToClient>().toLens()
-internal val messageToServerLens = WsMessage.auto<MessageFromClient>().toLens()
+internal val overTheWireMessageLens = WsMessage.auto<OverTheWireMessage>().toLens()
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
