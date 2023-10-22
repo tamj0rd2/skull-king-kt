@@ -15,6 +15,7 @@ import com.tamj0rd2.domain.red
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.RepeatedTest
 import testsupport.Activity
 import testsupport.Actor
 import testsupport.Bid
@@ -131,7 +132,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 
-    @Test
+    @RepeatedTest(5)
     fun `winning a trick`() {
         freddy and sally both SitAtTheTable
         gary(

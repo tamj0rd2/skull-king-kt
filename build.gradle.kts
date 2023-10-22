@@ -22,7 +22,7 @@ dependencies {
     implementation("org.http4k:http4k-format-jackson:$http4kVersion")
     implementation("org.http4k:http4k-server-undertow:$http4kVersion")
     implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
-
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("ch.qos.logback:logback-classic:1.4.11")
 
     testImplementation(kotlin("test"))
@@ -31,7 +31,6 @@ dependencies {
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
     testImplementation("org.http4k:http4k-client-jetty:$http4kVersion")
     testImplementation("org.http4k:http4k-client-websocket:$http4kVersion")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.7.2")
 }
 

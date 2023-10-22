@@ -58,7 +58,8 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             val message = overTheWireMessageLens(it)
             logger.receivedMessage(message)
             when(message) {
-                is OverTheWireMessage.Acknowledgement -> {
+                is OverTheWireMessage.AcknowledgementFromServer -> {
+                    message.messages.forEach(::handleMessage)
                     ack(message.id)
                     logger.processedMessage(message)
                 }
@@ -144,12 +145,12 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
 
     override fun bid(bid: Int) {
         sendMessage(MessageFromClient.BidPlaced(bid))
-        logger.info("bidded")
+        logger.info("bidded $bid")
     }
 
     override fun playCard(card: Card) {
         sendMessage(MessageFromClient.CardPlayed(card.name))
-        logger.info("played card")
+        logger.info("played $card")
     }
 
     private fun sendMessage(message: MessageFromClient) {

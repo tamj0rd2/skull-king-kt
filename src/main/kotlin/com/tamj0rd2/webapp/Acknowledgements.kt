@@ -22,13 +22,11 @@ class Acknowledgements {
 
             val mustEndBy = Instant.now().plusMillis(timeoutMs)
             while (Instant.now() < mustEndBy) {
-                if (done(id)) return
+                if (!outstanding.contains(id)) return
                 syncObject.wait(backoff)
             }
 
             error("$id not acknowledged. outstanding: $outstanding")
         }
     }
-
-    private fun done(id: UUID) = !outstanding.contains(id)
 }

@@ -4,6 +4,9 @@ import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.http4k.lens.Path
 import org.http4k.routing.RoutingWsHandler
 import org.http4k.routing.websockets
@@ -14,6 +17,32 @@ import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.timerTask
 import kotlin.time.Duration
+
+class LockedValue<T> {
+    private val lock = Mutex()
+
+    // TODO: use setterrs with backing fields in Game.kt https://kotlinlang.org/docs/properties.html#backing-fields
+    var lockedValue: T? = null
+        set(newValue) {
+            require(lock.isLocked) { "cannot set the value without first initialising it with use()" }
+            field = newValue
+        }
+
+    fun use(initialValue: T? = null, block: LockedValue<T>.() -> Unit) {
+        require(lockedValue == null) { "the locked value is already erroneously set" }
+
+        runBlocking {
+            lock.withLock(this) {
+                lockedValue = initialValue
+                try {
+                    block()
+                } finally {
+                    lockedValue = null
+                }
+            }
+        }
+    }
+}
 
 internal fun wsHandler(
     game: Game,
@@ -30,50 +59,58 @@ internal fun wsHandler(
         "/{playerId}" bind { req ->
             val playerId = playerIdLens(req)
             val logger = LoggerFactory.getLogger("$playerId:wsHandler")
+            val messagesToClient = LockedValue<List<MessageToClient>>()
 
             WsResponse { ws ->
                 val ack = Acknowledgements()
 
-                game.subscribeToGameEvents { event ->
-                    val messages = event.asMessagesToClient(game, playerId)
+                game.subscribeToGameEvents { events, triggeredBy ->
+                    val messages = events
+                        .flatMap { it.asMessagesToClient(game, playerId) }
+                        .ifEmpty { return@subscribeToGameEvents }
 
-                    if (messages.isNotEmpty()) {
-                        val otwMessage = OverTheWireMessage.MessagesToClient(messages.toList())
-                        logger.sending(otwMessage)
-
-                        ws.send(overTheWireMessageLens(otwMessage))
-                        logger.awaitingAck(otwMessage)
-
-                        ack.waitFor(otwMessage.messageId)
+                    if (triggeredBy == playerId) {
+                        messagesToClient.lockedValue = messages
+                        return@subscribeToGameEvents
                     }
+
+                    val otwMessage = OverTheWireMessage.MessagesToClient(messages)
+
+                    logger.sending(otwMessage)
+                    ws.send(overTheWireMessageLens(otwMessage))
+
+                    logger.awaitingAck(otwMessage)
+                    ack.waitFor(otwMessage.messageId)
                 }
 
-                ws.onError { logger.error(it.message, it) }
+                ws.onError { logger.error(it.message) }
 
                 ws.onMessage {
-                    val otwMessage = overTheWireMessageLens(it)
-                    logger.receivedMessage(otwMessage)
+                    val incomingMessage = overTheWireMessageLens(it)
+                    logger.receivedMessage(incomingMessage)
 
-                    when (otwMessage) {
-                        is OverTheWireMessage.Acknowledgement -> {
-                            ack(otwMessage.id)
-                            logger.processedMessage(otwMessage)
+                    when (incomingMessage) {
+                        is OverTheWireMessage.AcknowledgementFromClient -> {
+                            ack(incomingMessage.id)
+                            logger.processedMessage(incomingMessage)
                         }
 
                         is OverTheWireMessage.MessageToServer -> {
-                            when (val message = otwMessage.message) {
-                                is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
-                                is MessageFromClient.UnhandledServerMessage -> logger.error("CLIENT ERROR: unhandled game event: ${message.offender}")
-                                is MessageFromClient.Error -> logger.error("CLIENT ERROR: ${message.stackTrace}")
-                                is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
-                            }
+                            messagesToClient.use {
+                                when (val message = incomingMessage.message) {
+                                    is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
+                                    is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
+                                    is MessageFromClient.UnhandledServerMessage -> error("CLIENT ERROR: unhandled game event: ${message.offender}")
+                                    is MessageFromClient.Error -> error("CLIENT ERROR: ${message.stackTrace}")
+                                }
 
-                            logger.processedMessage(otwMessage)
-                            ws.send(overTheWireMessageLens(otwMessage.acknowledge()))
-                            logger.sentAckFor(otwMessage)
+                                logger.processedMessage(incomingMessage)
+                                ws.send(overTheWireMessageLens(incomingMessage.acknowledge(lockedValue.orEmpty())))
+                                logger.sentAckFor(incomingMessage)
+                            }
                         }
 
-                        else -> error("invalid message from client to server: $otwMessage")
+                        else -> error("invalid message from client to server: $incomingMessage")
                     }
                 }
 
@@ -91,15 +128,9 @@ internal fun wsHandler(
     )
 }
 
-fun GameEvent.asMessagesToClient(game: Game, thisPlayerId: PlayerId): List<MessageToClient> {
-    fun ifNotActor(
-        playerId: PlayerId,
-        default: List<MessageToClient> = emptyList(),
-        block: () -> List<MessageToClient>
-    ) = if (playerId == thisPlayerId) default else block()
-
-    return when (this) {
-        is GameEvent.BidPlaced -> ifNotActor(playerId) { listOf(MessageToClient.BidPlaced(playerId)) }
+fun GameEvent.asMessagesToClient(game: Game, thisPlayerId: PlayerId): List<MessageToClient> =
+    when (this) {
+        is GameEvent.BidPlaced -> listOf(MessageToClient.BidPlaced(playerId))
         is GameEvent.BiddingCompleted -> listOf(MessageToClient.BiddingCompleted(bids))
         is GameEvent.CardPlayed -> {
             val messages = mutableListOf<MessageToClient>(
@@ -161,7 +192,6 @@ fun GameEvent.asMessagesToClient(game: Game, thisPlayerId: PlayerId): List<Messa
             messages
         }
     }
-}
 
 private class AutomatedGameMaster(private val game: Game, private val delayOverride: Duration?) {
     private val allGameEvents = CopyOnWriteArrayList<GameEvent>()
@@ -170,47 +200,49 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
     fun start() {
         val timer = Timer()
 
-        game.subscribeToGameEvents { event ->
-            allGameEvents.add(event)
+        game.subscribeToGameEvents { events, _ ->
+            events.forEach { event ->
+                allGameEvents.add(event)
 
-            when (event) {
-                is GameEvent.PlayerJoined -> {
-                    if (game.state != GameState.WaitingToStart) return@subscribeToGameEvents
-                    timer.schedule(timerTask {
-                        if (allGameEvents.last() != event) return@timerTask
+                when (event) {
+                    is GameEvent.PlayerJoined -> {
+                        if (game.state != GameState.WaitingToStart) return@subscribeToGameEvents
+                        timer.schedule(timerTask {
+                            if (allGameEvents.last() != event) return@timerTask
 
-                        logger.info("Starting the game")
-                        game.start()
-                    }, delayOverride?.inWholeMilliseconds ?: 5000)
-                }
+                            logger.info("Starting the game")
+                            game.start()
+                        }, delayOverride?.inWholeMilliseconds ?: 5000)
+                    }
 
-                is GameEvent.BiddingCompleted -> {
-                    timer.schedule(timerTask {
-                        val lastEvent = allGameEvents.last()
-                        require(lastEvent == event) { "last event was not bidding completed, it was $lastEvent" }
+                    is GameEvent.BiddingCompleted -> {
+                        timer.schedule(timerTask {
+                            val lastEvent = allGameEvents.last()
+                            require(lastEvent == event) { "last event was not bidding completed, it was $lastEvent" }
 
-                        logger.info("Starting the first trick")
-                        game.startNextTrick()
-                    }, delayOverride?.inWholeMilliseconds ?: 3000)
-                }
-
-                is GameEvent.TrickCompleted -> {
-                    timer.schedule(timerTask {
-                        val lastEvent = allGameEvents.last()
-                        require(lastEvent == event) { "last event was not trick completed, it was $lastEvent" }
-
-                        // TODO: need to write a test for what happens after round 10 trick 10
-                        if (game.roundNumber == game.trickNumber) {
-                            logger.info("Starting the next round")
-                            game.startNextRound()
-                        } else {
-                            logger.info("Starting the next trick")
+                            logger.info("Starting the first trick")
                             game.startNextTrick()
-                        }
-                    }, delayOverride?.inWholeMilliseconds ?: 3000)
-                }
+                        }, delayOverride?.inWholeMilliseconds ?: 3000)
+                    }
 
-                else -> {}
+                    is GameEvent.TrickCompleted -> {
+                        timer.schedule(timerTask {
+                            val lastEvent = allGameEvents.last()
+                            require(lastEvent == event) { "last event was not trick completed, it was $lastEvent" }
+
+                            // TODO: need to write a test for what happens after round 10 trick 10
+                            if (game.roundNumber == game.trickNumber) {
+                                logger.info("Starting the next round")
+                                game.startNextRound()
+                            } else {
+                                logger.info("Starting the next trick")
+                                game.startNextTrick()
+                            }
+                        }, delayOverride?.inWholeMilliseconds ?: 3000)
+                    }
+
+                    else -> {}
+                }
             }
         }
     }
