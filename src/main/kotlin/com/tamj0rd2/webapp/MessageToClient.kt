@@ -24,7 +24,7 @@ sealed class MessageToClient {
         fun overTheWire() = OverTheWireMessage.MessagesToClient(listOf(this))
     }
 
-    object GameCompleted : MessageToClient()
+    class GameCompleted : MessageToClient()
 
     data class GameStarted(val players: List<PlayerId>) : MessageToClient()
 

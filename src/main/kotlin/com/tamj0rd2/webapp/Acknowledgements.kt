@@ -14,11 +14,13 @@ class Acknowledgements {
         }
     }
 
-    fun waitFor(id: UUID, timeoutMs: Long = 1000) {
+    fun waitFor(id: UUID, timeoutMs: Long = 1000, before: () -> Unit) {
         val backoff = timeoutMs / 5
 
         synchronized(syncObject) {
             outstanding.add(id)
+
+            before()
 
             val mustEndBy = Instant.now().plusMillis(timeoutMs)
             while (Instant.now() < mustEndBy) {

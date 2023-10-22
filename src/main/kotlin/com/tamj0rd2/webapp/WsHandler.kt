@@ -75,12 +75,11 @@ internal fun wsHandler(
                     }
 
                     val otwMessage = OverTheWireMessage.MessagesToClient(messages)
-
-                    logger.sending(otwMessage)
-                    ws.send(overTheWireMessageLens(otwMessage))
-
-                    logger.awaitingAck(otwMessage)
-                    ack.waitFor(otwMessage.messageId)
+                    ack.waitFor(otwMessage.messageId) {
+                        logger.sending(otwMessage)
+                        ws.send(overTheWireMessageLens(otwMessage))
+                        logger.awaitingAck(otwMessage)
+                    }
                 }
 
                 ws.onError { logger.error(it.message) }
@@ -105,8 +104,11 @@ internal fun wsHandler(
                                 }
 
                                 logger.processedMessage(incomingMessage)
-                                ws.send(overTheWireMessageLens(incomingMessage.acknowledge(lockedValue.orEmpty())))
-                                logger.sentAckFor(incomingMessage)
+                                incomingMessage.acknowledge(lockedValue.orEmpty()).let { response ->
+                                    logger.sending(response)
+                                    ws.send(overTheWireMessageLens(response))
+                                    logger.sentAck(response)
+                                }
                             }
                         }
 
@@ -149,7 +151,7 @@ fun GameEvent.asMessagesToClient(game: Game, thisPlayerId: PlayerId): List<Messa
         }
 
         is GameEvent.CardsDealt -> TODO("add cards dealt event")
-        is GameEvent.GameCompleted -> listOf(MessageToClient.GameCompleted)
+        is GameEvent.GameCompleted -> listOf(MessageToClient.GameCompleted())
         is GameEvent.GameStarted -> listOf(MessageToClient.GameStarted(players))
         is GameEvent.PlayerJoined -> listOf(
             MessageToClient.PlayerJoined(

@@ -24,9 +24,17 @@ sealed class OverTheWireMessage {
         }
     }
 
-    data class AcknowledgementFromServer(val id: UUID, val messages: List<MessageToClient>) : OverTheWireMessage()
+    data class AcknowledgementFromServer(val id: UUID, val messages: List<MessageToClient>) : OverTheWireMessage() {
+        override fun toString(): String {
+            return "$id - ${messages.joinToString(", ")}"
+        }
+    }
 
-    data class AcknowledgementFromClient(val id: UUID) : OverTheWireMessage()
+    data class AcknowledgementFromClient(val id: UUID) : OverTheWireMessage() {
+        override fun toString(): String {
+            return "$id"
+        }
+    }
 }
 
 fun Logger.receivedMessage(message: OverTheWireMessage) =
@@ -47,8 +55,8 @@ fun Logger.processedMessage(message: OverTheWireMessage) =
 
 fun Logger.sending(message: OverTheWireMessage) =
     when(message) {
-        is OverTheWireMessage.AcknowledgementFromClient -> info("acking: ${message.id}")
-        is OverTheWireMessage.AcknowledgementFromServer -> info("acking: ${message.id}")
+        is OverTheWireMessage.AcknowledgementFromClient -> info("acking: $message")
+        is OverTheWireMessage.AcknowledgementFromServer -> info("acking: $message")
         is OverTheWireMessage.MessageToServer -> info(">> sending << $message")
         is OverTheWireMessage.MessagesToClient -> info(">> sending << $message")
     }
@@ -61,10 +69,10 @@ fun Logger.awaitingAck(message: OverTheWireMessage) =
         is OverTheWireMessage.MessagesToClient -> info("awaiting ack: ${message.messageId}")
     }
 
-fun Logger.sentAckFor(message: OverTheWireMessage) =
+fun Logger.sentAck(message: OverTheWireMessage) =
     when(message) {
-        is OverTheWireMessage.AcknowledgementFromClient -> error("cannot ack an ack")
-        is OverTheWireMessage.AcknowledgementFromServer -> error("cannot ack an ack")
-        is OverTheWireMessage.MessageToServer -> info("sent ack: ${message.messageId}")
-        is OverTheWireMessage.MessagesToClient -> info("sent ack: ${message.messageId}")
+        is OverTheWireMessage.AcknowledgementFromClient -> info("sent ack: $message")
+        is OverTheWireMessage.AcknowledgementFromServer -> info("sent ack: $message")
+        is OverTheWireMessage.MessageToServer -> error("not an ack")
+        is OverTheWireMessage.MessagesToClient -> error("not an ack")
     }

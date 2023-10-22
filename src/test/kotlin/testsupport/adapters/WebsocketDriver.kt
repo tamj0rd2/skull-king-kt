@@ -16,7 +16,7 @@ import com.tamj0rd2.webapp.overTheWireMessageLens
 import com.tamj0rd2.webapp.processedMessage
 import com.tamj0rd2.webapp.receivedMessage
 import com.tamj0rd2.webapp.sending
-import com.tamj0rd2.webapp.sentAckFor
+import com.tamj0rd2.webapp.sentAck
 import org.http4k.client.WebsocketClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
@@ -72,15 +72,18 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
                         return@onMessage
                     }
 
-                    ws.send(overTheWireMessageLens(message.acknowledge()))
-                    logger.sentAckFor(message)
+                    message.acknowledge().let { response ->
+                        logger.sending(response)
+                        ws.send(overTheWireMessageLens(response))
+                        logger.sentAck(response)
+                    }
                 }
                 else -> error("invalid message from server to client: $message")
             }
         }
 
         synchronized(joinSyncObject) { joinSyncObject.wait() }
-        logger.info("joined game")
+        logger.warn("joined game")
     }
 
     private fun handleMessage(message: MessageToClient) {
@@ -95,10 +98,14 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
 
             is MessageToClient.CardPlayed -> {
                 trick.add(message.card.playedBy(message.playerId))
-                if (message.playerId == playerId) hand = hand.filter { it.card != message.card }.toMutableList()
+                if (message.playerId == playerId) {
+                    hand.removeFirstIf { it.card == message.card }
+                }
             }
 
-            MessageToClient.GameCompleted -> TODO()
+            is MessageToClient.GameCompleted -> {
+                gameState = GameState.Complete
+            }
             is MessageToClient.GameStarted -> {
                 playersInRoom = message.players.toMutableList()
                 gameState = GameState.InProgress
@@ -117,7 +124,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             is MessageToClient.RoundStarted -> {
                 roundNumber = message.roundNumber
                 roundPhase = RoundPhase.Bidding
-                hand = message.cardsDealt
+                hand = message.cardsDealt.toMutableList()
             }
 
             is MessageToClient.TrickCompleted -> {
@@ -139,28 +146,28 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             }
 
             is MessageToClient.YourTurn -> {
-                hand = message.cards
+                hand = message.cards.toMutableList()
             }
         }
     }
 
     override fun bid(bid: Int) {
         sendMessage(MessageFromClient.BidPlaced(bid))
-        logger.info("bidded $bid")
+        logger.warn("bidded $bid")
     }
 
     override fun playCard(card: Card) {
         sendMessage(MessageFromClient.CardPlayed(card.name))
-        logger.info("played $card")
+        logger.warn("played $card")
     }
 
     private fun sendMessage(message: MessageFromClient) {
         val otwMessage = message.overTheWire()
-        logger.sending(otwMessage)
-        ws.send(overTheWireMessageLens(otwMessage))
-
-        logger.awaitingAck(otwMessage)
-        ack.waitFor(otwMessage.messageId)
+        ack.waitFor(otwMessage.messageId) {
+            logger.sending(otwMessage)
+            ws.send(overTheWireMessageLens(otwMessage))
+            logger.awaitingAck(otwMessage)
+        }
     }
 
     override var winsOfTheRound: Map<PlayerId, Int> = emptyMap()
@@ -174,6 +181,13 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
 
     override var gameState: GameState? = null
     override var playersInRoom = mutableListOf<PlayerId>()
-    override var hand = listOf<CardWithPlayability>()
+    override var hand = mutableListOf<CardWithPlayability>()
     override var bids = mutableMapOf<PlayerId, DisplayBid>()
+}
+
+private fun <T> MutableList<T>.removeFirstIf(predicate: (T) -> Boolean): Boolean {
+    val firstMatchingIndex = indexOfFirst(predicate)
+    if (firstMatchingIndex < 0) return false
+    removeAt(firstMatchingIndex)
+    return true
 }
