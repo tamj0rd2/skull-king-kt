@@ -21,7 +21,7 @@ sealed class MessageToClient {
     data class RoundCompleted(val wins: Map<PlayerId, Int>) : MessageToClient()
 
     data class YouJoined(val players: List<PlayerId>, val waitingForMorePlayers: Boolean) : MessageToClient() {
-        fun overTheWire() = OverTheWireMessage.MessagesToClient(listOf(this))
+        fun overTheWire() = OverTheWireMessage.ToClient(listOf(this))
     }
 
     class GameCompleted : MessageToClient()

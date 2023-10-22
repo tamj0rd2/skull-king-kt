@@ -75,7 +75,7 @@ internal fun wsHandler(
                         return@subscribeToGameEvents
                     }
 
-                    val otwMessage = OverTheWireMessage.MessagesToClient(messages)
+                    val otwMessage = OverTheWireMessage.ToClient(messages)
                     acknowledgements.waitFor(otwMessage.messageId) {
                         logger.sending(otwMessage)
                         ws.send(overTheWireMessageLens(otwMessage))
@@ -94,29 +94,31 @@ internal fun wsHandler(
                         }
 
                         // TODO: fix the christmas tree of poor readability
-                        is OverTheWireMessage.MessageToServer -> {
-                            messagesToClient.use {
-                                val response = runCatching {
-                                    when (val message = incomingMessage.message) {
-                                        is MessageFromClient.BidPlaced -> game.bid(playerId, message.bid)
-                                        is MessageFromClient.CardPlayed -> game.playCard(playerId, message.cardName)
-                                        is MessageFromClient.UnhandledServerMessage -> error("CLIENT ERROR: unhandled game event: ${message.offender}")
-                                        is MessageFromClient.Error -> error("CLIENT ERROR: ${message.stackTrace}")
-                                    }
-                                }.fold(
-                                    onSuccess = {
-                                        logger.processedMessage(incomingMessage)
-                                        incomingMessage.acknowledge(lockedValue.orEmpty())
-                                    },
-                                    onFailure = {
-                                        logger.error("processing message failed - $incomingMessage - $it")
-                                        incomingMessage.processingFailed()
-                                    }
-                                )
+                        is OverTheWireMessage.ToServer -> {
+                            when (val message = incomingMessage.message) {
+                                is ClientMessage.Notification -> error("Client error: $message")
+                                is ClientMessage.Request -> messagesToClient.use {
+                                    val response = runCatching {
+                                        when (message) {
+                                            // TODO: how about game.perform(message.toCommand())
+                                            is ClientMessage.Request.PlaceBid -> game.bid(playerId, message.bid)
+                                            is ClientMessage.Request.PlayCard -> game.playCard(playerId, message.cardName)
+                                        }
+                                    }.fold(
+                                        onSuccess = {
+                                            logger.processedMessage(incomingMessage)
+                                            incomingMessage.acknowledge(lockedValue.orEmpty())
+                                        },
+                                        onFailure = {
+                                            logger.error("processing message failed - $incomingMessage - $it")
+                                            incomingMessage.processingFailed()
+                                        }
+                                    )
 
-                                logger.sending(response)
-                                ws.send(overTheWireMessageLens(response))
-                                logger.sentMessage(response)
+                                    logger.sending(response)
+                                    ws.send(overTheWireMessageLens(response))
+                                    logger.sentMessage(response)
+                                }
                             }
                         }
 

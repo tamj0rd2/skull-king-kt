@@ -13,7 +13,6 @@ import org.http4k.format.asConfigurable
 import org.http4k.format.int
 import org.http4k.format.text
 import org.http4k.format.withStandardMappings
-import org.http4k.template.ViewModel
 import org.http4k.websocket.WsMessage
 
 object CustomJackson : ConfigurableJackson(
@@ -25,7 +24,7 @@ object CustomJackson : ConfigurableJackson(
         .done()
         .addMixIn<MessageToClient, DefaultMixin>()
         .addMixIn<GameMasterCommand, DefaultMixin>()
-        .addMixIn<MessageFromClient, DefaultMixin>()
+        .addMixIn<ClientMessage, DefaultMixin>()
         .addMixIn<OverTheWireMessage, DefaultMixin>()
         .addMixIn<Card, DefaultMixin>()
 )

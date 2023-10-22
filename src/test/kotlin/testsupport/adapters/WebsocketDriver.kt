@@ -9,7 +9,7 @@ import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.webapp.Acknowledgements
-import com.tamj0rd2.webapp.MessageFromClient
+import com.tamj0rd2.webapp.ClientMessage
 import com.tamj0rd2.webapp.MessageToClient
 import com.tamj0rd2.webapp.OverTheWireMessage
 import com.tamj0rd2.webapp.awaitingAck
@@ -79,7 +79,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
                     acknowledgements.nack(message.id)
                 }
 
-                is OverTheWireMessage.MessagesToClient -> {
+                is OverTheWireMessage.ToClient -> {
                     message.messages.forEach(::handleMessage)
                     logger.processedMessage(message)
 
@@ -174,18 +174,18 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
     }
 
     override fun bid(bid: Int): Unit {
-        sendMessage(MessageFromClient.BidPlaced(bid))
+        sendMessage(ClientMessage.Request.PlaceBid(bid))
             .onFailure { throw GameException.CannotBid("operation nacked by server") }
             .onSuccess { logger.debug("bidded $bid") }
     }
 
     override fun playCard(card: Card) {
-        sendMessage(MessageFromClient.CardPlayed(card.name))
+        sendMessage(ClientMessage.Request.PlayCard(card.name))
             .onFailure { throw GameException.CannotPlayCard("operation nacked by server") }
             .onSuccess { logger.debug("played $card") }
     }
 
-    private fun sendMessage(message: MessageFromClient): Result<Unit> {
+    private fun sendMessage(message: ClientMessage.Request): Result<Unit> {
         val otwMessage = message.overTheWire()
 
         return acknowledgements.waitFor(otwMessage.messageId) {

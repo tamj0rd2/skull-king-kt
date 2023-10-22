@@ -9,13 +9,13 @@ sealed class OverTheWireMessage {
         when(this) {
             is AcknowledgementFromClient -> error("processing an ack should never fail")
             is AcknowledgementFromServer -> error("processing an ack should never fail")
-            is MessageToServer -> ProcessingFailure(messageId)
-            is MessagesToClient -> ProcessingFailure(messageId)
+            is ToServer -> ProcessingFailure(messageId)
+            is ToClient -> ProcessingFailure(messageId)
             is ProcessingFailure -> error("you're already working with a processing failure")
         }
 
     // TODO: this naming is really confusing now
-    data class MessagesToClient(val messages: List<MessageToClient>) : OverTheWireMessage() {
+    data class ToClient(val messages: List<MessageToClient>) : OverTheWireMessage() {
         val messageId: UUID = UUID.randomUUID()
 
         fun acknowledge() = AcknowledgementFromClient(messageId)
@@ -26,7 +26,7 @@ sealed class OverTheWireMessage {
     }
 
     // TODO: this naming is really confusing now
-    data class MessageToServer(val message: MessageFromClient, val messageId: UUID = UUID.randomUUID()) :
+    data class ToServer(val message: ClientMessage, val messageId: UUID = UUID.randomUUID()) :
         OverTheWireMessage() {
 
         fun acknowledge(messages: List<MessageToClient> = emptyList()) = AcknowledgementFromServer(messageId, messages)
@@ -55,8 +55,8 @@ fun Logger.receivedMessage(message: OverTheWireMessage) =
     when(message) {
         is OverTheWireMessage.AcknowledgementFromClient -> debug("got ack: ${message.id}")
         is OverTheWireMessage.AcknowledgementFromServer -> debug("got ack: ${message.id}")
-        is OverTheWireMessage.MessageToServer -> debug("received: ${message.messageId}")
-        is OverTheWireMessage.MessagesToClient -> debug("received: ${message.messageId}")
+        is OverTheWireMessage.ToServer -> debug("received: ${message.messageId}")
+        is OverTheWireMessage.ToClient -> debug("received: ${message.messageId}")
         is OverTheWireMessage.ProcessingFailure -> debug("received: $message")
     }
 
@@ -64,8 +64,8 @@ fun Logger.processedMessage(message: OverTheWireMessage) =
     when(message) {
         is OverTheWireMessage.AcknowledgementFromClient -> debug(">> completed << ${message.id}")
         is OverTheWireMessage.AcknowledgementFromServer -> debug(">> completed << ${message.id}")
-        is OverTheWireMessage.MessageToServer -> debug("processed: ${message.messageId}")
-        is OverTheWireMessage.MessagesToClient -> debug("processed: ${message.messageId}")
+        is OverTheWireMessage.ToServer -> debug("processed: ${message.messageId}")
+        is OverTheWireMessage.ToClient -> debug("processed: ${message.messageId}")
         is OverTheWireMessage.ProcessingFailure -> TODO()
     }
 
@@ -73,8 +73,8 @@ fun Logger.sending(message: OverTheWireMessage) =
     when(message) {
         is OverTheWireMessage.AcknowledgementFromClient -> debug("acking: $message")
         is OverTheWireMessage.AcknowledgementFromServer -> if (message.messages.isNotEmpty()) info("acking: $message") else debug("acking: $message")
-        is OverTheWireMessage.MessageToServer -> info("sending: $message")
-        is OverTheWireMessage.MessagesToClient -> info("sending: $message")
+        is OverTheWireMessage.ToServer -> info("sending: $message")
+        is OverTheWireMessage.ToClient -> info("sending: $message")
         is OverTheWireMessage.ProcessingFailure -> info("sending: $message")
     }
 
@@ -82,8 +82,8 @@ fun Logger.awaitingAck(message: OverTheWireMessage) =
     when(message) {
         is OverTheWireMessage.AcknowledgementFromClient -> error("cannot await an ack of an ack")
         is OverTheWireMessage.AcknowledgementFromServer -> error("cannot await an ack of an ack")
-        is OverTheWireMessage.MessageToServer -> debug("awaiting ack: ${message.messageId}")
-        is OverTheWireMessage.MessagesToClient -> debug("awaiting ack: ${message.messageId}")
+        is OverTheWireMessage.ToServer -> debug("awaiting ack: ${message.messageId}")
+        is OverTheWireMessage.ToClient -> debug("awaiting ack: ${message.messageId}")
         is OverTheWireMessage.ProcessingFailure -> error("cannot await an ack of a proessing failure")
     }
 
@@ -91,7 +91,7 @@ fun Logger.sentMessage(message: OverTheWireMessage) =
     when(message) {
         is OverTheWireMessage.AcknowledgementFromClient -> debug("sent ack: ${message.id}")
         is OverTheWireMessage.AcknowledgementFromServer -> debug("sent ack: $message")
-        is OverTheWireMessage.MessageToServer -> debug("sent message: ${message.messageId}")
-        is OverTheWireMessage.MessagesToClient -> debug("sent message: ${message.messageId}")
+        is OverTheWireMessage.ToServer -> debug("sent message: ${message.messageId}")
+        is OverTheWireMessage.ToClient -> debug("sent message: ${message.messageId}")
         is OverTheWireMessage.ProcessingFailure -> debug("sent processing failure: $message")
     }
