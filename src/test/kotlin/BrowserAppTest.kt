@@ -31,6 +31,8 @@ import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.BrowserDriver
+import testsupport.both
+import testsupport.each
 import testsupport.ensurer
 import testsupport.playerId
 import java.net.ServerSocket

@@ -115,6 +115,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
             }
 
             is MessageToClient.CardPlayed -> {
+                currentPlayer = message.nextPlayer
                 trick.add(message.card.playedBy(message.playerId))
                 if (message.playerId == playerId) {
                     hand.removeFirstIf { it.card == message.card }

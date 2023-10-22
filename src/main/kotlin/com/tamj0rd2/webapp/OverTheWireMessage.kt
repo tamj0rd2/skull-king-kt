@@ -93,5 +93,5 @@ fun Logger.sentMessage(message: OverTheWireMessage) =
         is OverTheWireMessage.AcknowledgementFromServer -> debug("sent ack: $message")
         is OverTheWireMessage.MessageToServer -> debug("sent message: ${message.messageId}")
         is OverTheWireMessage.MessagesToClient -> debug("sent message: ${message.messageId}")
-        is OverTheWireMessage.ProcessingFailure -> info("sent processing failure: $message")
+        is OverTheWireMessage.ProcessingFailure -> debug("sent processing failure: $message")
     }

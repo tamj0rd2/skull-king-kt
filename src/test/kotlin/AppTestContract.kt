@@ -12,14 +12,9 @@ import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.RoundPhase.*
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.domain.red
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
-import testsupport.Activity
 import testsupport.Actor
 import testsupport.Bid
 import testsupport.Bids
-import testsupport.EnsureActivity
 import testsupport.Ensurer
 import testsupport.HerFirstCard
 import testsupport.HerHand
@@ -48,12 +43,13 @@ import testsupport.TheWinnerOfTheTrick
 import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
+import testsupport.both
+import testsupport.each
 import testsupport.ensurer
 import testsupport.expectingFailure
 import testsupport.isEmpty
 import testsupport.playerId
 import testsupport.sizeIs
-import java.lang.management.ManagementFactory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -245,6 +241,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
         sally.attemptsTo(Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>())
 
+        thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
         freddy and sally both Play.theirFirstPlayableCard
 
         thePlayers each ensure(TheCurrentPlayer, Is(thirzah.playerId))
@@ -514,29 +511,6 @@ internal object TestHelpers {
 }
 
 internal fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.playerId)
-
-internal infix fun Pair<Actor, Actor>.both(activity: Activity) {
-    listOf(first, second).each(activity)
-}
-
-val isInDebugMode = ManagementFactory.getRuntimeMXBean().inputArguments.none { it.contains("jdwp") }
-internal infix fun List<Actor>.each(activity: Activity) {
-    if (activity is EnsureActivity && !isInDebugMode) {
-        parallelMap { actor -> actor(activity) }
-            .firstOrNull { it.isFailure }
-            ?.onFailure { throw Error("activity '$activity' failed", it) }
-
-        return
-    }
-
-    forEach { actor -> actor(activity) }
-}
-
-private fun <A, B>List<A>.parallelMap(f: suspend (A) -> B): List<Result<B>> = runBlocking {
-    map { async(Dispatchers.Default) {
-        runCatching { f(it) }
-    } }.map { it.await() }
-}
 
 internal infix fun Actor.and(other: Actor) = this to other
 internal infix fun Pair<Actor, Actor>.and(other: Actor) = listOf(first, second, other)

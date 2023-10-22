@@ -4,6 +4,10 @@ import com.tamj0rd2.domain.PlayerId
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
+import java.lang.management.ManagementFactory
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
@@ -85,7 +89,7 @@ fun ensurer(within: Duration): Ensurer {
 
         override fun <T> ensure(question: Question<T>, assertion: Assertion<T>, within: Duration?) = EnsureActivity { actor ->
             val mustEndBy = Instant.now().plus((within ?: outerWithin).toJavaDuration())
-            logger.info("${actor.playerId} - Running assertion for $question")
+            logger.debug("${actor.playerId} - Running assertion for $question")
 
             do {
                 try {
@@ -113,4 +117,29 @@ fun ensurer(within: Duration): Ensurer {
             } while (true)
         }
     }
+}
+
+internal infix fun Pair<Actor, Actor>.both(activity: Activity) {
+    listOf(first, second).each(activity)
+}
+
+val isInDebugMode = ManagementFactory.getRuntimeMXBean().inputArguments.none { it.contains("jdwp") }
+internal infix fun List<Actor>.each(activity: Activity) {
+    if (activity is EnsureActivity && !isInDebugMode) {
+        parallelMap { actor -> actor(activity) }
+            .firstOrNull { it.isFailure }
+            ?.onFailure { throw Error("activity '$activity' failed", it) }
+
+        return
+    }
+
+    forEach { actor -> actor(activity) }
+}
+
+private fun <A, B>List<A>.parallelMap(f: suspend (A) -> B): List<Result<B>> = runBlocking {
+    map {
+        async(Dispatchers.Default) {
+            runCatching { f(it) }
+        }
+    }.map { it.await() }
 }
