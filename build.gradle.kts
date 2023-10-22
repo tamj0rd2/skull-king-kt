@@ -17,13 +17,14 @@ dependencies {
     val chromeVersion = "v114"
 
     implementation(platform("org.http4k:http4k-bom:5.8.5.1"))
+    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
     implementation("org.http4k:http4k-core")
+    implementation("org.http4k:http4k-format-core")
+    implementation("org.http4k:http4k-format-jackson")
     implementation("org.http4k:http4k-server-jetty")
     implementation("org.http4k:http4k-template-handlebars")
-    implementation("org.http4k:http4k-format-jackson")
-    implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation("ch.qos.logback:logback-classic:1.4.11")
 
     testImplementation(kotlin("test"))
     testImplementation("org.seleniumhq.selenium:selenium-devtools-$chromeVersion:$seleniumVersion")

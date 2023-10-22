@@ -3,6 +3,7 @@ package testsupport.adapters
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.DisplayBid
+import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
@@ -18,6 +19,7 @@ import com.tamj0rd2.webapp.receivedMessage
 import com.tamj0rd2.webapp.sending
 import com.tamj0rd2.webapp.sentAck
 import org.http4k.client.WebsocketClient
+import org.http4k.core.ContentType
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -45,8 +47,16 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
         logger = LoggerFactory.getLogger("$playerId:wsClient")
         this.playerId = playerId
 
-        val res = httpClient(Request(Method.POST, "$httpBaseUrl/play").form("playerId", playerId.playerId))
-        if (res.status != Status.OK) error("failed to join game - ${res.status} - ${res.bodyString()}")
+        val req = Request(Method.POST, "$httpBaseUrl/play")
+            .form("playerId", playerId.playerId)
+            .header("Accept", ContentType.APPLICATION_JSON.toHeaderValue())
+
+        val res = httpClient(req)
+        when (res.status) {
+            Status.OK -> {}
+            Status.CONFLICT -> throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
+            else -> error("failed to join game - ${res.status} - ${res.bodyString()}")
+        }
 
         ws = WebsocketClient.nonBlocking(
             Uri.of("$wsBaseUrl/$playerId"),
@@ -57,12 +67,13 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
         ws.onMessage {
             val message = overTheWireMessageLens(it)
             logger.receivedMessage(message)
-            when(message) {
+            when (message) {
                 is OverTheWireMessage.AcknowledgementFromServer -> {
                     message.messages.forEach(::handleMessage)
                     ack(message.id)
                     logger.processedMessage(message)
                 }
+
                 is OverTheWireMessage.MessagesToClient -> {
                     message.messages.forEach(::handleMessage)
                     logger.processedMessage(message)
@@ -78,6 +89,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
                         logger.sentAck(response)
                     }
                 }
+
                 else -> error("invalid message from server to client: $message")
             }
         }
@@ -106,6 +118,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
             is MessageToClient.GameCompleted -> {
                 gameState = GameState.Complete
             }
+
             is MessageToClient.GameStarted -> {
                 playersInRoom = message.players.toMutableList()
                 gameState = GameState.InProgress
@@ -139,10 +152,11 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
                 trick.clear()
             }
 
-                // TODO: get rid of this. Let the client send a JoinGame message requiring acknowledgement instead
+            // TODO: get rid of this. Let the client send a JoinGame message requiring acknowledgement instead
             is MessageToClient.YouJoined -> {
                 playersInRoom = message.players.toMutableList()
-                gameState = if (message.waitingForMorePlayers) GameState.WaitingForMorePlayers else GameState.WaitingToStart
+                gameState =
+                    if (message.waitingForMorePlayers) GameState.WaitingForMorePlayers else GameState.WaitingToStart
             }
 
             is MessageToClient.YourTurn -> {

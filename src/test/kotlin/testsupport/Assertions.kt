@@ -1,11 +1,18 @@
 package testsupport
 
 import com.tamj0rd2.domain.PlayerId
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
+
+inline fun <reified T : Throwable> Activity.expectingFailure() = EnsureActivity { actor ->
+    withClue("$actor expected activity '$this' to fail") {
+        shouldThrow<T> { actor.invoke(this@expectingFailure) }
+    }
+}
 
 fun interface Assertion<T> {
     fun T?.assert()
