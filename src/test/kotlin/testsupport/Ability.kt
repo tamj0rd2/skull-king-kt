@@ -1,7 +1,8 @@
 package testsupport
 
-import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardWithPlayability
+import com.tamj0rd2.domain.Command.GameMasterCommand
+import com.tamj0rd2.domain.Command.PlayerCommand
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
@@ -11,9 +12,7 @@ import com.tamj0rd2.domain.RoundPhase
 interface Ability
 
 interface ApplicationDriver {
-    fun joinGame(playerId: PlayerId)
-    fun bid(bid: Int)
-    fun playCard(card: Card)
+    fun perform(command: PlayerCommand)
 
     val winsOfTheRound: Map<PlayerId, Int>
     val trickWinner: PlayerId?
@@ -29,8 +28,5 @@ interface ApplicationDriver {
 }
 
 interface GameMasterDriver {
-    fun startGame()
-    fun rigDeck(playerId: PlayerId, cards: List<Card>)
-    fun startNextRound()
-    fun startNextTrick()
+    fun perform(command: GameMasterCommand)
 }

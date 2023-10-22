@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.addMixIn
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.Command
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.webapp.CustomJackson.auto
 import org.http4k.format.ConfigurableJackson
@@ -22,11 +23,11 @@ object CustomJackson : ConfigurableJackson(
         .text(::PlayerId, PlayerId::playerId)
         .int(::Bid, Bid::bid)
         .done()
-        .addMixIn<GameMasterCommand, DefaultMixin>()
         .addMixIn<ServerMessage, DefaultMixin>()
         .addMixIn<ClientMessage, DefaultMixin>()
         .addMixIn<OverTheWireMessage, DefaultMixin>()
         .addMixIn<Card, DefaultMixin>()
+        .addMixIn<Command, DefaultMixin>()
 )
 
 internal val overTheWireMessageLens = WsMessage.auto<OverTheWireMessage>().toLens()

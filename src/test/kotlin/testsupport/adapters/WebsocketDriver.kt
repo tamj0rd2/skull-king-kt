@@ -1,7 +1,8 @@
 package testsupport.adapters
 
-import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.CardWithPlayability
+import com.tamj0rd2.domain.Command
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
@@ -44,7 +45,25 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
     private lateinit var logger: Logger
     private lateinit var playerId: PlayerId
 
-    override fun joinGame(playerId: PlayerId) {
+    override var winsOfTheRound: Map<PlayerId, Int> = emptyMap()
+    override var trickWinner: PlayerId? = null
+    override var currentPlayer: PlayerId? = null
+    override var trickNumber: Int? = null
+    override var roundNumber: Int? = null
+    override val trick = mutableListOf<PlayedCard>()
+    override var roundPhase: RoundPhase? = null
+    override var gameState: GameState? = null
+    override var playersInRoom = mutableListOf<PlayerId>()
+    override var hand = mutableListOf<CardWithPlayability>()
+    override var bids = mutableMapOf<PlayerId, DisplayBid>()
+
+    override fun perform(command: Command.PlayerCommand) = when(command) {
+        is Command.PlayerCommand.JoinGame -> joinGame(command.actor)
+        is Command.PlayerCommand.PlaceBid -> bid(command.bid.bid)
+        is Command.PlayerCommand.PlayCard -> playCard(command.cardName)
+    }
+
+    private fun joinGame(playerId: PlayerId) {
         logger = LoggerFactory.getLogger("$playerId:wsClient")
         this.playerId = playerId
 
@@ -101,6 +120,18 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
 
         synchronized(joinSyncObject) { joinSyncObject.wait() }
         logger.debug("joined game")
+    }
+
+    private fun bid(bid: Int): Unit {
+        sendMessage(ClientMessage.Request.PlaceBid(bid))
+            .onFailure { throw GameException.CannotBid("operation nacked by server") }
+            .onSuccess { logger.debug("bidded $bid") }
+    }
+
+    private fun playCard(cardName: CardName) {
+        sendMessage(ClientMessage.Request.PlayCard(cardName))
+            .onFailure { throw GameException.CannotPlayCard("operation nacked by server") }
+            .onSuccess { logger.debug("played $cardName") }
     }
 
     private fun handleMessage(message: ServerMessage) {
@@ -173,18 +204,6 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
         }
     }
 
-    override fun bid(bid: Int): Unit {
-        sendMessage(ClientMessage.Request.PlaceBid(bid))
-            .onFailure { throw GameException.CannotBid("operation nacked by server") }
-            .onSuccess { logger.debug("bidded $bid") }
-    }
-
-    override fun playCard(card: Card) {
-        sendMessage(ClientMessage.Request.PlayCard(card.name))
-            .onFailure { throw GameException.CannotPlayCard("operation nacked by server") }
-            .onSuccess { logger.debug("played $card") }
-    }
-
     private fun sendMessage(message: ClientMessage.Request): Result<Unit> {
         val otwMessage = message.overTheWire()
 
@@ -194,20 +213,6 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
             logger.awaitingAck(otwMessage)
         }
     }
-
-    override var winsOfTheRound: Map<PlayerId, Int> = emptyMap()
-
-    override var trickWinner: PlayerId? = null
-    override var currentPlayer: PlayerId? = null
-    override var trickNumber: Int? = null
-    override var roundNumber: Int? = null
-    override val trick = mutableListOf<PlayedCard>()
-    override var roundPhase: RoundPhase? = null
-
-    override var gameState: GameState? = null
-    override var playersInRoom = mutableListOf<PlayerId>()
-    override var hand = mutableListOf<CardWithPlayability>()
-    override var bids = mutableMapOf<PlayerId, DisplayBid>()
 }
 
 private fun <T> MutableList<T>.removeFirstIf(predicate: (T) -> Boolean): Boolean {

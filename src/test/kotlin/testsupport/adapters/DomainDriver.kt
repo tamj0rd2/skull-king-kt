@@ -1,6 +1,7 @@
 package testsupport.adapters
 
-import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.Command
+import com.tamj0rd2.domain.Command.PlayerCommand
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameState
@@ -14,29 +15,13 @@ class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver
 
     private lateinit var playerId: PlayerId
 
-    override fun joinGame(playerId: PlayerId) {
-        this.playerId = playerId
-        game.addPlayer(playerId)
-    }
-    override fun startGame() {
-        game.start()
-    }
-    override fun rigDeck(playerId: PlayerId, cards: List<Card>) {
-        game.rigDeck(playerId, cards)
-    }
-    override fun startNextRound() {
-        game.startNextRound()
-    }
-    override fun startNextTrick() {
-        game.startNextTrick()
+    override fun perform(command: PlayerCommand) {
+        if (command is PlayerCommand.JoinGame) playerId = command.actor
+        game.perform(command)
     }
 
-    override fun bid(bid: Int) {
-        game.bid(playerId, bid)
-    }
-
-    override fun playCard(card: Card) {
-        game.playCard(playerId, card.name)
+    override fun perform(command: Command.GameMasterCommand) {
+        game.perform(command)
     }
 
     override val winsOfTheRound: Map<PlayerId, Int>

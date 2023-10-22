@@ -1,5 +1,10 @@
 package com.tamj0rd2.webapp
 
+import com.tamj0rd2.domain.Bid
+import com.tamj0rd2.domain.Command.GameMasterCommand.*
+import com.tamj0rd2.domain.Command.PlayerCommand
+import com.tamj0rd2.domain.Command.PlayerCommand.PlaceBid
+import com.tamj0rd2.domain.Command.PlayerCommand.PlayCard
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
@@ -98,22 +103,17 @@ internal fun wsHandler(
                             when (val message = incomingMessage.message) {
                                 is ClientMessage.Notification -> error("Client error: $message")
                                 is ClientMessage.Request -> messagesToClient.use {
-                                    val response = runCatching {
-                                        when (message) {
-                                            // TODO: how about game.perform(message.toCommand())
-                                            is ClientMessage.Request.PlaceBid -> game.bid(playerId, message.bid)
-                                            is ClientMessage.Request.PlayCard -> game.playCard(playerId, message.cardName)
-                                        }
-                                    }.fold(
-                                        onSuccess = {
-                                            logger.processedMessage(incomingMessage)
-                                            incomingMessage.acknowledge(lockedValue.orEmpty())
-                                        },
-                                        onFailure = {
-                                            logger.error("processing message failed - $incomingMessage - $it")
-                                            incomingMessage.nack()
-                                        }
-                                    )
+                                    val response = runCatching { game.perform(message.asCommand(playerId)) }
+                                        .fold(
+                                            onSuccess = {
+                                                logger.processedMessage(incomingMessage)
+                                                incomingMessage.acknowledge(lockedValue.orEmpty())
+                                            },
+                                            onFailure = {
+                                                logger.error("processing message failed - $incomingMessage - $it")
+                                                incomingMessage.nack()
+                                            }
+                                        )
 
                                     logger.sending(response)
                                     ws.send(overTheWireMessageLens(response))
@@ -223,7 +223,7 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
                             if (allGameEvents.last() != event) return@timerTask
 
                             logger.info("Starting the game")
-                            game.start()
+                            game.perform(StartGame)
                         }, delayOverride?.inWholeMilliseconds ?: 5000)
                     }
 
@@ -233,7 +233,7 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
                             require(lastEvent == event) { "last event was not bidding completed, it was $lastEvent" }
 
                             logger.info("Starting the first trick")
-                            game.startNextTrick()
+                            game.perform(StartNextTrick)
                         }, delayOverride?.inWholeMilliseconds ?: 3000)
                     }
 
@@ -245,10 +245,10 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
                             // TODO: need to write a test for what happens after round 10 trick 10
                             if (game.roundNumber == game.trickNumber) {
                                 logger.info("Starting the next round")
-                                game.startNextRound()
+                                game.perform(StartNextRound)
                             } else {
                                 logger.info("Starting the next trick")
-                                game.startNextTrick()
+                                game.perform(StartNextTrick)
                             }
                         }, delayOverride?.inWholeMilliseconds ?: 3000)
                     }
@@ -258,4 +258,9 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
             }
         }
     }
+}
+
+fun ClientMessage.Request.asCommand(playerId: PlayerId): PlayerCommand = when (this) {
+    is ClientMessage.Request.PlaceBid -> PlaceBid(playerId, Bid(bid))
+    is ClientMessage.Request.PlayCard -> PlayCard(playerId, cardName)
 }

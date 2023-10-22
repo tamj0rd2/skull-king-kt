@@ -2,6 +2,7 @@ package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.Command
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.webapp.CustomJackson.asA
@@ -45,11 +46,11 @@ class CustomJacksonTest {
 
     @Test
     fun `can serialize and deserialize GameMasterCommands`() {
-        val expected = GameMasterCommand.RigDeck(PlayerId("somePlayer"), listOf(11.blue))
+        val expected = Command.GameMasterCommand.RigDeck(PlayerId("somePlayer"), listOf(11.blue))
         val jsonString = expected.asJsonObject().asCompactJsonString()
         println(jsonString)
 
-        val result = jsonString.asJsonObject().asA(GameMasterCommand::class)
+        val result = jsonString.asJsonObject().asA(Command::class)
         result shouldBe expected
     }
 

@@ -50,7 +50,17 @@ class Game {
         this.eventListeners += listener
     }
 
-    fun addPlayer(playerId: PlayerId) = playerCommand(playerId) {
+    fun perform(command: Command): List<GameEvent> = when(command) {
+        is Command.GameMasterCommand.RigDeck -> rigDeck(command.playerId, command.cards)
+        is Command.GameMasterCommand.StartGame -> start()
+        is Command.GameMasterCommand.StartNextRound -> startNextRound()
+        is Command.GameMasterCommand.StartNextTrick -> startNextTrick()
+        is Command.PlayerCommand.JoinGame -> addPlayer(command.actor)
+        is Command.PlayerCommand.PlaceBid -> bid(command.actor, command.bid.bid)
+        is Command.PlayerCommand.PlayCard -> playCard(command.actor, command.cardName)
+    }
+
+    private fun addPlayer(playerId: PlayerId) = playerCommand(playerId) {
         if (_players.contains(playerId)) throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
 
         _players += playerId
@@ -58,7 +68,7 @@ class Game {
         recordEvent(GameEvent.PlayerJoined(playerId))
     }
 
-    fun start() = gameMasterCommand {
+    private fun start() = gameMasterCommand {
         require(!waitingForMorePlayers) { "not enough players to start the game - ${players.size}/$roomSizeToStartGame" }
 
         _state = GameState.InProgress
@@ -66,7 +76,7 @@ class Game {
         recordEvent(GameEvent.GameStarted(players))
     }
 
-    fun bid(playerId: PlayerId, bid: Int) = playerCommand(playerId) {
+    private fun bid(playerId: PlayerId, bid: Int) = playerCommand(playerId) {
         if (state != GameState.InProgress) throw GameException.CannotBid("game not in progress")
         if (phase != Bidding) throw GameException.CannotBid("not in bidding phase")
         if (bid < 0 || bid > roundNumber) throw GameException.CannotBid("bid $bid is greater than the round number ($roundNumber)")
@@ -81,7 +91,7 @@ class Game {
         }
     }
 
-    fun playCard(playerId: PlayerId, cardName: CardName) = playerCommand(playerId) {
+    private fun playCard(playerId: PlayerId, cardName: CardName) = playerCommand(playerId) {
         if (phase != TrickTaking) throw GameException.CannotPlayCard("not in trick taking phase - phase is $phase")
         if (currentPlayersTurn != playerId) throw GameException.CannotPlayCard("it is not $playerId's turn to play a card")
 
@@ -112,12 +122,12 @@ class Game {
         }
     }
 
-    fun rigDeck(playerId: PlayerId, cards: List<Card>) = gameMasterCommand {
+    private fun rigDeck(playerId: PlayerId, cards: List<Card>) = gameMasterCommand {
         if (riggedHands == null) riggedHands = players.associateWith { emptyList<Card>() }.toMutableMap()
         riggedHands!![playerId] = cards
     }
 
-    fun startNextRound() = gameMasterCommand {
+    private fun startNextRound() = gameMasterCommand {
         _roundNumber += 1
         _trickNumber = 0
 
@@ -130,7 +140,7 @@ class Game {
         recordEvent(GameEvent.RoundStarted(roundNumber))
     }
 
-    fun startNextTrick() = gameMasterCommand {
+    private fun startNextTrick() = gameMasterCommand {
         _trickNumber += 1
         trick = Trick(players.size)
         _phase = TrickTaking

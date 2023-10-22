@@ -1,6 +1,7 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.Command.GameMasterCommand
+import com.tamj0rd2.domain.Command.PlayerCommand.JoinGame
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
@@ -71,19 +72,14 @@ internal fun httpHandler(
         val command = gameMasterCommandLens(req)
         logger.info("received command: $command")
 
-        try {
-            when (command) {
-                is GameMasterCommand.StartGame -> game.start().respondOK()
-                is GameMasterCommand.RigDeck -> game.rigDeck(command.playerId, command.cards).respondOK()
-                is GameMasterCommand.StartNextRound -> game.startNextRound().respondOK()
-                is GameMasterCommand.StartNextTrick -> game.startNextTrick().respondOK()
-            }
-        } catch (e: Exception) {
-            logger.error("error while executing command: ${req.bodyString()}", e)
-            return Response(Status.INTERNAL_SERVER_ERROR).body(e.message ?: "unknown error")
-        }
-
-        return Response(Status.OK)
+        return runCatching { game.perform(command) }
+            .fold(
+                onSuccess = { Response(Status.OK) },
+                onFailure = {e ->
+                    logger.error("error while executing command: ${req.bodyString()}", e)
+                    return Response(Status.INTERNAL_SERVER_ERROR).body(e.message ?: "unknown error")
+                }
+            )
     }
 
     val vmHtmlLens = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
@@ -98,7 +94,7 @@ internal fun httpHandler(
         "/play" bind Method.POST to { request ->
             val playerId = request.form("playerId")?.let(PlayerId::from) ?: error("playerId not posted!")
 
-            runCatching { game.addPlayer(playerId) }.fold(
+            runCatching { game.perform(JoinGame(playerId)) }.fold(
                 onSuccess = {
                     logger.info("$playerId joined the game")
                     Status.OK to Game(
@@ -122,29 +118,6 @@ internal fun httpHandler(
         },
         "/do-game-master-command" bind Method.POST to ::gameMasterCommandHandler
     )
-}
-
-private fun Any.respondOK() = this.let { Response(Status.OK) }
-
-sealed class GameMasterCommand {
-    object StartGame : GameMasterCommand() {
-        override fun toString(): String {
-            return this::class.simpleName!!
-        }
-    }
-
-    data class RigDeck(val playerId: PlayerId, val cards: List<Card>) : GameMasterCommand()
-    object StartNextRound : GameMasterCommand() {
-        override fun toString(): String {
-            return this::class.simpleName!!
-        }
-    }
-
-    object StartNextTrick : GameMasterCommand() {
-        override fun toString(): String {
-            return this::class.simpleName!!
-        }
-    }
 }
 
 private fun buildResourceLoaders(hotReload: Boolean) = when {

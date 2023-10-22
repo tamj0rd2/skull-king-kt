@@ -1,7 +1,9 @@
 package testsupport.adapters
 
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.CardWithPlayability
+import com.tamj0rd2.domain.Command
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
@@ -20,7 +22,13 @@ private const val debug = true
 class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
     private lateinit var playerId: PlayerId
 
-    override fun joinGame(playerId: PlayerId) = debugException {
+    override fun perform(command: Command.PlayerCommand) = when(command) {
+        is Command.PlayerCommand.JoinGame -> joinGame(command.actor)
+        is Command.PlayerCommand.PlaceBid -> bid(command.bid.bid)
+        is Command.PlayerCommand.PlayCard -> playCard(command.cardName)
+    }
+
+    private fun joinGame(playerId: PlayerId) = debugException {
         driver.findElement(By.name("playerId")).sendKeys(playerId.playerId)
         this.playerId = playerId
 
@@ -37,7 +45,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    override fun bid(bid: Int) = debugException {
+    private fun bid(bid: Int) = debugException {
         try {
             driver.findElement(By.name("bid")).sendKeys(bid.toString())
             driver.findElement(By.id("placeBid")).let {
@@ -49,12 +57,12 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    override fun playCard(card: Card) = debugException {
+    private fun playCard(cardName: CardName) = debugException {
         val li = driver.findElement(By.id("hand"))
             .findElements(By.tagName("li"))
             .ifEmpty { error("$playerId has no cards") }
-            .find { it.toCard().name == card.name }
-            .let { it ?: error("$playerId does not have card $card") }
+            .find { it.toCard().name == cardName }
+            .let { it ?: error("$playerId does not have card $cardName") }
 
         try {
             li.findElement(By.tagName("button")).click()
