@@ -2,8 +2,8 @@ package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Game
 import org.http4k.server.Http4kServer
+import org.http4k.server.Jetty
 import org.http4k.server.PolyHandler
-import org.http4k.server.Undertow
 import org.http4k.server.asServer
 import kotlin.time.Duration
 
@@ -24,7 +24,7 @@ object Server {
         )
 
         val ws = wsHandler(game, automateGameMasterCommands, automaticGameMasterDelayOverride)
-        return PolyHandler(http, ws).asServer(Undertow(port))
+        return PolyHandler(http, ws).asServer(Jetty(port))
     }
 }
 

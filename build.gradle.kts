@@ -13,14 +13,14 @@ repositories {
 }
 
 dependencies {
-    val http4kVersion = "5.6.3.0"
     val seleniumVersion = "4.12.0"
     val chromeVersion = "v114"
 
-    implementation("org.http4k:http4k-core:$http4kVersion")
-    implementation("org.http4k:http4k-template-handlebars:$http4kVersion")
-    implementation("org.http4k:http4k-format-jackson:$http4kVersion")
-    implementation("org.http4k:http4k-server-undertow:$http4kVersion")
+    implementation(platform("org.http4k:http4k-bom:5.8.5.1"))
+    implementation("org.http4k:http4k-core")
+    implementation("org.http4k:http4k-server-jetty")
+    implementation("org.http4k:http4k-template-handlebars")
+    implementation("org.http4k:http4k-format-jackson")
     implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("ch.qos.logback:logback-classic:1.4.11")
@@ -29,8 +29,8 @@ dependencies {
     testImplementation("org.seleniumhq.selenium:selenium-devtools-$chromeVersion:$seleniumVersion")
     testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion")
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
-    testImplementation("org.http4k:http4k-client-jetty:$http4kVersion")
-    testImplementation("org.http4k:http4k-client-websocket:$http4kVersion")
+    testImplementation("org.http4k:http4k-client-jetty")
+    testImplementation("org.http4k:http4k-client-websocket")
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.7.2")
 }
 
