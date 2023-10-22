@@ -4,8 +4,11 @@ import com.tamj0rd2.domain.Game
 import org.http4k.server.Http4kServer
 import org.http4k.server.Jetty
 import org.http4k.server.PolyHandler
+import org.http4k.server.ServerConfig.StopMode
 import org.http4k.server.asServer
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 object Server {
     fun make(
@@ -15,6 +18,7 @@ object Server {
         automateGameMasterCommands: Boolean = false,
         automaticGameMasterDelayOverride: Duration? = null,
         acknowledgementTimeoutMs: Long = 300,
+        gracefulShutdownTimeout: Duration = 1.seconds,
     ): Http4kServer {
         val game = Game()
         val http = httpHandler(
@@ -30,7 +34,8 @@ object Server {
             automaticGameMasterDelayOverride = automaticGameMasterDelayOverride,
             acknowledgementTimeoutMs = acknowledgementTimeoutMs
         )
-        return PolyHandler(http, ws).asServer(Jetty(port))
+
+        return PolyHandler(http, ws).asServer(Jetty(port, StopMode.Graceful(gracefulShutdownTimeout.toJavaDuration())))
     }
 }
 
