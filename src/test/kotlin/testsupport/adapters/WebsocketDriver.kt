@@ -95,12 +95,13 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
         }
 
         synchronized(joinSyncObject) { joinSyncObject.wait() }
-        logger.warn("joined game")
+        logger.debug("joined game")
     }
 
     private fun handleMessage(message: MessageToClient) {
         when (message) {
             is MessageToClient.BidPlaced -> {
+                bids[message.playerId] = DisplayBid.Hidden
             }
 
             is MessageToClient.BiddingCompleted -> {
@@ -138,6 +139,7 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
                 roundNumber = message.roundNumber
                 roundPhase = RoundPhase.Bidding
                 hand = message.cardsDealt.toMutableList()
+                bids = playersInRoom.associateWith { DisplayBid.None }.toMutableMap()
             }
 
             is MessageToClient.TrickCompleted -> {
@@ -167,12 +169,12 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String) : Appli
 
     override fun bid(bid: Int) {
         sendMessage(MessageFromClient.BidPlaced(bid))
-        logger.warn("bidded $bid")
+        logger.debug("bidded $bid")
     }
 
     override fun playCard(card: Card) {
         sendMessage(MessageFromClient.CardPlayed(card.name))
-        logger.warn("played $card")
+        logger.debug("played {}", card)
     }
 
     private fun sendMessage(message: MessageFromClient) {

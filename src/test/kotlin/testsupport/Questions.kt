@@ -49,7 +49,7 @@ val TheirFirstCard = Question.about("the first card in their hand") { actor ->
 val HisFirstCard = TheirFirstCard
 val HerFirstCard = TheirFirstCard
 
-val TheySeeBids = Question.about("the bids that have been made") { actor ->
+val TheySeeBids = Question.about("the bids that have been placed") { actor ->
     actor.use<ParticipateInGames>().bids
 }
 
