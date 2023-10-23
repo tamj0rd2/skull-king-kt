@@ -12,7 +12,7 @@ export class PlayersElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToNotifications({
-            [NotificationType.YouJoined]: ({ playerId }) => this.addPlayer(playerId),
+            [NotificationType.YouJoined]: ({ players }) => players.forEach(this.addPlayer),
             [NotificationType.PlayerJoined]: ({ playerId }) => this.addPlayer(playerId),
             [NotificationType.GameStarted]: () => this.parentNode!!.removeChild(this),
         })
@@ -23,8 +23,6 @@ export class PlayersElement extends HTMLElement {
             `
 
         this.playersElement = document.querySelector("#players") as HTMLUListElement
-        // TODO: replace this
-        // INITIAL_STATE.players.forEach(this.addPlayer)
     }
 
     addPlayer = (playerId: PlayerId) => {

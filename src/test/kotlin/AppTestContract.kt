@@ -16,9 +16,7 @@ import testsupport.Actor
 import testsupport.Bid
 import testsupport.Bids
 import testsupport.Ensurer
-import testsupport.HerFirstCard
 import testsupport.HerHand
-import testsupport.HisFirstCard
 import testsupport.HisHand
 import testsupport.Is
 import testsupport.ManageGames
@@ -40,6 +38,7 @@ import testsupport.TheRoundNumber
 import testsupport.TheRoundPhase
 import testsupport.TheTrickNumber
 import testsupport.TheWinnerOfTheTrick
+import testsupport.TheirFirstCard
 import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
@@ -128,7 +127,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 
-    @Test @Wip
+    @Test
     fun `winning a trick`() {
         freddy and sally both SitAtTheTable
         gary(
@@ -215,7 +214,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         sally(Plays(4.red))
     }
 
-    @Test @Wip
+    @Test
     fun `can play special cards when you have a card for the correct suit - sanity check`() {
         val thePlayers = listOf(freddy, sally)
         val theGameMaster = gary
@@ -294,7 +293,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure<GameException.CannotJoinGame>())
     }
 
-    @Test @Wip
+    @Test
     fun `playing a game from start to finish`() {
         freddy and sally both SitAtTheTable
         freddy and sally both ensure {
@@ -325,11 +324,10 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
             that(TheCurrentPlayer, Is(freddy.playerId))
         }
 
-        val freddysFirstCard = freddy.asksAbout(HisFirstCard)
-        val sallysFirstCard = sally.asksAbout(HerFirstCard)
-        freddy and sally both Play.theirFirstPlayableCard
+        val freddysCard = freddy.asksAbout(TheirFirstCard).also { freddy(Plays(it)) }
+        val sallysCard = sally.asksAbout(TheirFirstCard).also { sally(Plays(it)) }
         freddy and sally both ensure {
-            that(TheCurrentTrick, onlyContains(freddysFirstCard.playedBy(freddy), sallysFirstCard.playedBy(sally)))
+            that(TheCurrentTrick, onlyContains(freddysCard.playedBy(freddy), sallysCard.playedBy(sally)))
             that(TheRoundPhase, Is(TrickCompleted))
             that(TheirHand, isEmpty())
         }
