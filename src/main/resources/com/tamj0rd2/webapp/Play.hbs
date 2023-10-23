@@ -13,7 +13,7 @@
 </form>
 
 <div id="root" class="content">
-    <h1>Game Page - {{playerId}}</h1>
+    <h1>Game Page</h1>
     <sk-gamestate></sk-gamestate>
     <h2 id="roundNumber"></h2>
     <sk-gamephase></sk-gamephase>
@@ -35,8 +35,8 @@
     if (location.protocol === "https:") wsProtocol += "s"
 
     window.INITIAL_STATE = {
-        playerId: "{{playerId}}",
         endpoint: `${wsProtocol}://{{host}}:${location.port}/play`,
+        ackTimeoutMs: {{ackTimeoutMs}}
     };
 </script>
 </body>

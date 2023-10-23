@@ -26,6 +26,7 @@ object Server {
             host = host,
             hotReload = hotReload,
             automateGameMasterCommands = automateGameMasterCommands,
+            ackTimeoutMs = acknowledgementTimeoutMs,
         )
 
         val ws = wsHandler(

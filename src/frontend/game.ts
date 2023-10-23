@@ -12,13 +12,14 @@ export {TrickElement} from "./components/TrickElement";
 export {WinsElement} from "./components/WinsElement";
 
 const joinGameEl = document.forms.namedItem("joinGame")!!
-joinGameEl.addEventListener("submit", async (e) => {
+joinGameEl.addEventListener("submit",  (e) => {
     e.preventDefault()
     e.stopImmediatePropagation()
     const formData = new FormData(joinGameEl)
     const playerId = formData.get("playerId") as PlayerId
     setPlayerId(playerId)
-    await sendCommand({type: CommandType.JoinGame, actor: playerId})
+    sendCommand({type: CommandType.JoinGame, actor: playerId})
+        .catch((reason) => { throw reason })
 })
 
 const roundNumberEl = document.querySelector("#roundNumber") as HTMLHeadingElement
@@ -27,8 +28,8 @@ const playerWhoseTurnItIsEl = document.querySelector("#currentPlayer") as HTMLHe
 const trickWinnerEl = document.querySelector("#trickWinner") as HTMLHeadingElement
 listenToNotifications({
     [NotificationType.YouJoined]: ({playerId}) => {
-        console.log(`You (${playerId}) joined :)`)
         setPlayerId(playerId)
+        document.querySelector("h1")!!.textContent = `Game Page - ${playerId}`
     },
     [NotificationType.RoundStarted]: ({roundNumber}) => {
         roundNumberEl.innerText = `Round ${roundNumber}`

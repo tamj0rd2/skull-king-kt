@@ -23,22 +23,7 @@ export enum NotificationType {
     YouJoined = "Notification$YouJoined",
 }
 
-// const knownNotificationTypes = Object.values(NotificationType)
-// TODO: work my way through these one by one in whatever order makes sense, then remove this whole thing, prefering the above
-const knownNotificationTypes = [
-    NotificationType.PlayerJoined,
-    NotificationType.GameStarted,
-    // NotificationType.RoundStarted,
-    // NotificationType.BidPlaced,
-    // NotificationType.BiddingCompleted,
-    // NotificationType.CardPlayed,
-    // NotificationType.TrickCompleted,
-    // NotificationType.TrickStarted,
-    // NotificationType.GameCompleted,
-    // NotificationType.YourTurn,
-    // NotificationType.RoundCompleted,
-    NotificationType.YouJoined
-]
+const knownNotificationTypes = Object.values(NotificationType)
 
 export enum CommandType {
     PlaceBid = "Command$PlayerCommand$BidPlaced",

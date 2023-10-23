@@ -3,10 +3,9 @@ import {PlayerId} from "./Constants";
 
 const socket = new WebSocket(INITIAL_STATE.endpoint)
 
+socket.addEventListener("close", (event) => console.warn(`disconnected from ws - ${event.reason}`, event))
 socket.addEventListener("error", (event) => console.error(event))
 socket.addEventListener("message", (event) => console.log(`${getPlayerId()} received ${event.data}`, JSON.parse(event.data)))
-socket.addEventListener("close", (event) => console.warn(`disconnected from ws - ${event.reason}`, event))
-socket.addEventListener("open", () => console.log("connected to ws"))
 
 export { socket }
 
@@ -39,7 +38,7 @@ export function sendCommand(command: Command): Promise<void> {
         spinner.classList.remove("u-hidden")
 
         const messageId = crypto.randomUUID()
-        const signal = AbortSignal.timeout(5000)
+        const signal = AbortSignal.timeout(INITIAL_STATE.ackTimeoutMs)
 
         socket.addEventListener("message", function handler(event) {
             if (signal.aborted) {
@@ -62,8 +61,7 @@ export function sendCommand(command: Command): Promise<void> {
                 })
             })
 
-            listeners.forEach((listener) => listener)
-
+            console.log("done processing")
             spinner.classList.add("u-hidden")
             resolve()
         })

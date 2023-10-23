@@ -56,13 +56,13 @@ export class HandElement extends HTMLElement {
 
             const button = document.createElement("button")
             button.innerText = "Play"
-            button.onclick = async () => {
+            button.onclick = () => {
                 li.remove()
                 this.makeCardsUnplayable()
-                await sendCommand({
+                sendCommand({
                     type: CommandType.PlayCard,
                     cardName: cardName,
-                })
+                }).catch((reason) => { throw reason })
             }
             li.appendChild(button)
         })

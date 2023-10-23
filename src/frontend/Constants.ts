@@ -1,6 +1,7 @@
 declare global {
     const INITIAL_STATE: {
         endpoint: string
+        ackTimeoutMs: number
     }
 }
 

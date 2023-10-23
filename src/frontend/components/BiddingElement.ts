@@ -4,6 +4,7 @@ import {
     CommandType
 } from "../GameEvents";
 import {DisconnectGameEventListener, Notification, sendCommand, socket} from "../Socket";
+import {randomFill} from "crypto";
 
 export class BiddingElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -46,12 +47,12 @@ export class BiddingElement extends HTMLElement {
             biddingError.innerText = `Bid must be between 0 and ${roundNumber}`
         }
 
-        placeBidBtn.onclick = async () => {
+        placeBidBtn.onclick = () => {
             this.hideForm()
-            await sendCommand({
+            sendCommand({
                 type: CommandType.PlaceBid,
                 bid: bidInput.value,
-            })
+            }).catch((reason) => { throw reason })
         }
     }
 
