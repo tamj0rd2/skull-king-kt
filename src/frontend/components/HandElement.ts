@@ -1,6 +1,5 @@
-import {NotificationType, listenToNotifications, CommandType} from "../GameEvents";
-import {Card} from "../Constants";
-import {DisconnectGameEventListener, sendCommand} from "../Socket";
+import {Card, CommandType, NotificationType} from "../Constants";
+import {DisconnectGameEventListener, getPlayerId, listenToNotifications, sendCommand} from "../Socket";
 
 export class HandElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -62,6 +61,7 @@ export class HandElement extends HTMLElement {
                 sendCommand({
                     type: CommandType.PlayCard,
                     cardName: cardName,
+                    actor: getPlayerId(),
                 }).catch((reason) => { throw reason })
             }
             li.appendChild(button)

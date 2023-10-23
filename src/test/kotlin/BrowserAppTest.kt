@@ -76,6 +76,7 @@ private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Durat
         hotReload = false,
         automateGameMasterCommands = automaticGameMasterCommandDelay != null,
         automaticGameMasterDelayOverride = automaticGameMasterCommandDelay,
+        acknowledgementTimeoutMs = 2000
     )
     private val baseUrl = "http://localhost:$port"
     private val httpClient = HttpClient()

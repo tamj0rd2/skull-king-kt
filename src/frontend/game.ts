@@ -1,6 +1,5 @@
-import {CommandType, listenToNotifications, NotificationType} from "./GameEvents";
-import {sendCommand, setPlayerId} from "./Socket";
-import {PlayerId} from "./Constants";
+import {listenToNotifications, sendCommand, setPlayerId} from "./Socket";
+import {CommandType, NotificationType, PlayerId} from "./Constants";
 
 export {BiddingElement} from "./components/BiddingElement";
 export {BidsElement} from "./components/BidsElement";

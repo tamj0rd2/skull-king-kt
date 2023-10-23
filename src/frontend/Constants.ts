@@ -34,3 +34,34 @@ export interface Card {
 export type PlayerId = string
 export type PlayerIds = PlayerId[]
 export type ActualBids = {[playerId: PlayerId]: number}
+
+export enum NotificationType {
+    PlayerJoined = "Notification$PlayerJoined",
+    GameStarted = "Notification$GameStarted",
+    RoundStarted = "Notification$RoundStarted",
+    BidPlaced = "Notification$BidPlaced",
+    BiddingCompleted = "Notification$BiddingCompleted",
+    CardPlayed = "Notification$CardPlayed",
+    TrickCompleted = "Notification$TrickCompleted",
+    TrickStarted = "Notification$TrickStarted",
+    GameCompleted = "Notification$GameCompleted",
+    YourTurn = "Notification$YourTurn",
+    RoundCompleted = "Notification$RoundCompleted",
+    YouJoined = "Notification$YouJoined",
+}
+
+export const knownNotificationTypes = Object.values(NotificationType)
+
+export enum CommandType {
+    PlaceBid = "Command$PlayerCommand$PlaceBid",
+    PlayCard = "Command$PlayerCommand$PlayCard",
+    // UnhandledServerMessage = "MessageFromClient$UnhandledServerMessage",
+    // Error = "MessageFromClient$Error",
+    JoinGame = "Command$PlayerCommand$JoinGame"
+}
+
+export interface Command {
+    type: CommandType
+    actor: PlayerId
+    [key: string]: any
+}

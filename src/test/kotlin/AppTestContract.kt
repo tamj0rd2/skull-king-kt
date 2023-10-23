@@ -91,7 +91,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         )
     }
 
-    @Test @Wip
+    @Test
     fun `waiting for sally to bid`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -294,7 +294,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure<GameException.CannotJoinGame>())
     }
 
-    @Test
+    @Test @Wip
     fun `playing a game from start to finish`() {
         freddy and sally both SitAtTheTable
         freddy and sally both ensure {

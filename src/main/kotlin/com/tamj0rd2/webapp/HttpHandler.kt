@@ -62,7 +62,8 @@ internal fun httpHandler(
     val loggingFilter = Filter { next ->
         { request ->
             next(request).also { response ->
-                if (response.status.successful) logger.trace("Responded with {} for {} {}", response.status, request.method, request.uri)
+                if (response.status.successful || response.status.redirection)
+                    logger.trace("Responded with {} for {} {}", response.status, request.method, request.uri)
                 else logger.warn("Responded with {} for {} {}", response.status, request.method, request.uri)
             }
         }

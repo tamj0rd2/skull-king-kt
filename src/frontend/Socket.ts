@@ -1,11 +1,53 @@
-import {Command, NotificationType} from "./GameEvents";
-import {PlayerId} from "./Constants";
+import {Command, knownNotificationTypes, NotificationType, PlayerId} from "./Constants";
 
 const socket = new WebSocket(INITIAL_STATE.endpoint)
 
 socket.addEventListener("close", (event) => console.warn(`disconnected from ws - ${event.reason}`, event))
 socket.addEventListener("error", (event) => console.error(event))
-socket.addEventListener("message", (event) => console.log(`${getPlayerId()} received ${event.data}`, JSON.parse(event.data)))
+socket.addEventListener("message", (event) => {
+    console.log(`${getPlayerId()} received ${event.data}`)
+
+    try {
+        const message = JSON.parse(event.data) as Message
+        switch (message.type) {
+            case MessageType.ToClient:
+                break
+            case MessageType.AckFromServer:
+                // acks from the server are handled as part of `sendCommand`
+                return
+            case MessageType.Nack:
+                throw Error("handle nacks from server")
+            default:
+                throw Error("unhandled message type")
+        }
+
+        message.notifications!!.forEach((notification) => {
+            listenerRegistry.forEach((listeners) => {
+                if (!knownNotificationTypes.includes(notification.type)) {
+                    // TODO: do something about this
+                    socket.send(JSON.stringify({
+                        type: "UnknownMessageFromServer",
+                        offender: notification.type,
+                    }))
+                    console.error(`Unknown message from server: ${notification.type}`)
+                    socket.close(4000, `Unknown message from server: ${notification.type}`)
+                    return
+                }
+
+                listeners[notification.type]?.(notification)
+            })
+        })
+
+        acknowledgeMessage(message)
+    } catch(e) {
+        // TODO: do something about this
+        socket.send(JSON.stringify({
+            stackTrace: (e as Error).stack,
+            type: "ClientError",
+        }))
+        throw e
+    }
+})
 
 export { socket }
 
@@ -20,17 +62,18 @@ export enum MessageType {
 export interface Message {
     type: MessageType
     id: String
+    notifications?: Notification[]
     [key: string]: any
 }
 
 const spinner = document.querySelector("#spinner")!!
 
-const listeners = new Map<string, NotificationListeners>()
+const listenerRegistry = new Map<string, NotificationListeners>()
 export function registerNotificationListeners(id: string, listenersToAdd: NotificationListeners) {
-    listeners.set(id, listenersToAdd)
+    listenerRegistry.set(id, listenersToAdd)
 }
 export function removeNotificationListeners(id: string) {
-    listeners.delete(id)
+    listenerRegistry.delete(id)
 }
 
 export function sendCommand(command: Command): Promise<void> {
@@ -53,11 +96,9 @@ export function sendCommand(command: Command): Promise<void> {
 
             this.removeEventListener("message", handler)
 
-            const notifications: Notification[] = message.notifications
-            notifications.forEach((notification) => {
-                listeners.forEach((listeners) => {
-                    const listener = listeners[notification.type]
-                    if (!!listener) listener(notification)
+            message.notifications!!.forEach((notification) => {
+                listenerRegistry.forEach((listeners) => {
+                    listeners[notification.type]?.(notification)
                 })
             })
 
@@ -66,11 +107,18 @@ export function sendCommand(command: Command): Promise<void> {
             resolve()
         })
 
-        const message = { id: messageId, type: MessageType.ToServer, command };
-        const json = JSON.stringify(message);
-        console.log(`sending ${json}`, message)
-        socket.send(json)
+        send({ id: messageId, type: MessageType.ToServer, command })
     })
+}
+
+export function acknowledgeMessage(messageToAck: Message) {
+    send({ type: MessageType.AckFromClient, id: messageToAck.id})
+}
+
+function send(message: Message) {
+    const json = JSON.stringify(message)
+    console.log(`${playerId} is sending ${json}`, message)
+    socket.send(json)
 }
 
 let playerId: PlayerId = "unidentified"
@@ -85,10 +133,15 @@ export function setPlayerId(newId: PlayerId) {
 
 export interface Notification {
     type: NotificationType
-
     [key: string]: any
 }
 
 export type NotificationListener = (notification: Notification) => void
 export type NotificationListeners = { [key in NotificationType]?: NotificationListener }
 export type DisconnectGameEventListener = () => void
+
+export function listenToNotifications(notificationListeners: NotificationListeners): DisconnectGameEventListener {
+    const listenerId = crypto.randomUUID()
+    registerNotificationListeners(listenerId, notificationListeners)
+    return () => removeNotificationListeners(listenerId)
+}

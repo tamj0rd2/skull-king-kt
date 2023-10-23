@@ -1,10 +1,13 @@
 import {
-    NotificationType,
+    DisconnectGameEventListener,
+    getPlayerId,
     listenToNotifications,
-    CommandType
-} from "../GameEvents";
-import {DisconnectGameEventListener, Notification, sendCommand, socket} from "../Socket";
+    Notification,
+    sendCommand,
+    socket
+} from "../Socket";
 import {randomFill} from "crypto";
+import {CommandType, NotificationType} from "../Constants";
 
 export class BiddingElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -51,7 +54,8 @@ export class BiddingElement extends HTMLElement {
             this.hideForm()
             sendCommand({
                 type: CommandType.PlaceBid,
-                bid: bidInput.value,
+                bid: parseInt(bidInput.value),
+                actor: getPlayerId(),
             }).catch((reason) => { throw reason })
         }
     }
