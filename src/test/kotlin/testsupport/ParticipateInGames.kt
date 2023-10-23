@@ -3,6 +3,7 @@ package testsupport
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.Command.PlayerCommand
+import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.PlayerId
 
 class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
@@ -15,7 +16,8 @@ object Plays {
 
     val theirFirstPlayableCard = Activity("play their first playable card") { actor ->
         val ability = actor.use<ParticipateInGames>()
-        val card = ability.hand.firstOrNull { it.isPlayable }?.card ?: error("no playable cards in hand")
+        val card = ability.hand.firstOrNull { it.isPlayable }?.card
+            ?: throw GameException.CannotPlayCard("no playable cards in hand")
         ability.perform(PlayerCommand.PlayCard(actor.playerId, card.name))
     }
 }

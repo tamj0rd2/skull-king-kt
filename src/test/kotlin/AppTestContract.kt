@@ -175,7 +175,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 
-    @Test @Wip
+    @Test
     fun `cannot play a card before the trick begins`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -189,7 +189,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy and sally both Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>()
     }
 
-    @Test @Wip
+    @Test
     fun `cannot play a card that would break suit rules`() {
         val thePlayers = listOf(freddy, sally)
         val theGameMaster = gary
@@ -232,7 +232,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         thePlayers each ensure(TheRoundPhase, Is(TrickCompleted))
     }
 
-    @Test @Wip
+    @Test
     fun `cannot play a card when it is not their turn`() {
         val thirzah = Actor("Thirzah Third").whoCan(c.participateInGames())
         val thePlayers = listOf(freddy, sally, thirzah)
@@ -253,14 +253,14 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         thirzah(Plays.theirFirstPlayableCard)
     }
 
-    @Test @Wip
+    @Test
     fun `cannot bid before the game has started`() {
         freddy and sally both SitAtTheTable
         freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
         freddy and sally both ensure(TheGameState, Is(WaitingToStart))
     }
 
-    @Test @Wip
+    @Test
     fun `cannot bid while tricks are taking place`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -271,7 +271,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
     }
 
-    @Test @Wip
+    @Test
     fun `cannot bid twice`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -279,7 +279,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
     }
 
-    @Test @Wip
+    @Test
     fun `cannot bid more than the current round number`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
