@@ -1,7 +1,5 @@
 package testsupport.adapters
 
-import com.tamj0rd2.domain.Bid
-import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.Command.PlayerCommand
 import com.tamj0rd2.domain.Command.PlayerCommand.*
@@ -58,15 +56,16 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
     override var hand = mutableListOf<CardWithPlayability>()
     override var bids = mutableMapOf<PlayerId, DisplayBid>()
 
-    override fun perform(command: PlayerCommand) = when(command) {
-        is JoinGame -> joinGame(command.actor)
-        is PlaceBid -> bid(command.bid)
-        is PlayCard -> playCard(command.cardName)
-    }
+    override fun perform(command: PlayerCommand) =
+        when (command) {
+            is JoinGame -> joinGame(command)
+            is PlaceBid -> bid(command)
+            is PlayCard -> playCard(command)
+        }
 
-    private fun joinGame(playerId: PlayerId) {
+    private fun joinGame(command: JoinGame) {
+        playerId = command.actor
         logger = LoggerFactory.getLogger("$playerId:wsClient")
-        this.playerId = playerId
 
         val req = Request(Method.POST, "$httpBaseUrl/play")
             .form("playerId", playerId.playerId)
@@ -123,16 +122,17 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
         logger.debug("joined game")
     }
 
-    private fun bid(bid: Bid) {
-        sendCommand(PlaceBid(playerId, bid))
+    // TODO: these 2 can be deleted once I refactor joinGame
+    private fun bid(command: PlaceBid) {
+        sendCommand(command)
             .onFailure { throw GameException.CannotBid("operation nacked by server") }
-            .onSuccess { logger.debug("bidded $bid") }
+            .onSuccess { logger.debug("bidded ${command.bid}") }
     }
 
-    private fun playCard(cardName: CardName) {
-        sendCommand(PlayCard(playerId, cardName))
+    private fun playCard(command: PlayCard) {
+        sendCommand(command)
             .onFailure { throw GameException.CannotPlayCard("operation nacked by server") }
-            .onSuccess { logger.debug("played $cardName") }
+            .onSuccess { logger.debug("played ${command.cardName}") }
     }
 
     private fun handleMessage(message: ServerMessage) {
