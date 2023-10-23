@@ -1,10 +1,6 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Command.GameMasterCommand.*
-import com.tamj0rd2.domain.Command.PlayerCommand
-import com.tamj0rd2.domain.Command.PlayerCommand.PlaceBid
-import com.tamj0rd2.domain.Command.PlayerCommand.PlayCard
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
@@ -98,27 +94,22 @@ internal fun wsHandler(
                             logger.processedMessage(incomingMessage)
                         }
 
-                        // TODO: fix the christmas tree of poor readability
                         is OverTheWireMessage.ToServer -> {
-                            when (val message = incomingMessage.message) {
-                                is ClientMessage.Notification -> error("Client error: $message")
-                                is ClientMessage.Request -> messagesToClient.use {
-                                    val response = runCatching { game.perform(message.asCommand(playerId)) }
-                                        .fold(
-                                            onSuccess = {
-                                                logger.processedMessage(incomingMessage)
-                                                incomingMessage.acknowledge(lockedValue.orEmpty())
-                                            },
-                                            onFailure = {
-                                                logger.error("processing message failed - $incomingMessage - $it")
-                                                incomingMessage.nack()
-                                            }
-                                        )
+                            messagesToClient.use {
+                                val response = runCatching { game.perform(incomingMessage.command) }.fold(
+                                    onSuccess = {
+                                        logger.processedMessage(incomingMessage)
+                                        incomingMessage.acknowledge(lockedValue.orEmpty())
+                                    },
+                                    onFailure = {
+                                        logger.error("processing message failed - $incomingMessage - $it")
+                                        incomingMessage.nack()
+                                    }
+                                )
 
-                                    logger.sending(response)
-                                    ws.send(overTheWireMessageLens(response))
-                                    logger.sentMessage(response)
-                                }
+                                logger.sending(response)
+                                ws.send(overTheWireMessageLens(response))
+                                logger.sentMessage(response)
                             }
                         }
 
@@ -258,9 +249,4 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
             }
         }
     }
-}
-
-fun ClientMessage.Request.asCommand(playerId: PlayerId): PlayerCommand = when (this) {
-    is ClientMessage.Request.PlaceBid -> PlaceBid(playerId, Bid(bid))
-    is ClientMessage.Request.PlayCard -> PlayCard(playerId, cardName)
 }

@@ -7,7 +7,6 @@ import testsupport.ParticipateInGames
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebsocketDriver
 import java.net.ServerSocket
-import java.time.Instant.now
 import kotlin.time.Duration
 
 class WebAppTest : AppTestContract(WebAppTestConfiguration())

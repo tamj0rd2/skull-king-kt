@@ -1,7 +1,5 @@
 package com.tamj0rd2.domain
 
-// TODO: can I get to a point where the test contract uses commands instead of Activities directly?
-// the test infrastructure can just turn the commands into activities
 sealed class Command {
 
     sealed class GameMasterCommand : Command() {

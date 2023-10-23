@@ -24,7 +24,6 @@ object CustomJackson : ConfigurableJackson(
         .int(::Bid, Bid::bid)
         .done()
         .addMixIn<ServerMessage, DefaultMixin>()
-        .addMixIn<ClientMessage, DefaultMixin>()
         .addMixIn<OverTheWireMessage, DefaultMixin>()
         .addMixIn<Card, DefaultMixin>()
         .addMixIn<Command, DefaultMixin>()

@@ -1,8 +1,10 @@
 package testsupport.adapters
 
+import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.CardWithPlayability
-import com.tamj0rd2.domain.Command
+import com.tamj0rd2.domain.Command.PlayerCommand
+import com.tamj0rd2.domain.Command.PlayerCommand.*
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
@@ -10,7 +12,6 @@ import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.webapp.Acknowledgements
-import com.tamj0rd2.webapp.ClientMessage
 import com.tamj0rd2.webapp.OverTheWireMessage
 import com.tamj0rd2.webapp.ServerMessage
 import com.tamj0rd2.webapp.awaitingAck
@@ -57,10 +58,10 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
     override var hand = mutableListOf<CardWithPlayability>()
     override var bids = mutableMapOf<PlayerId, DisplayBid>()
 
-    override fun perform(command: Command.PlayerCommand) = when(command) {
-        is Command.PlayerCommand.JoinGame -> joinGame(command.actor)
-        is Command.PlayerCommand.PlaceBid -> bid(command.bid.bid)
-        is Command.PlayerCommand.PlayCard -> playCard(command.cardName)
+    override fun perform(command: PlayerCommand) = when(command) {
+        is JoinGame -> joinGame(command.actor)
+        is PlaceBid -> bid(command.bid)
+        is PlayCard -> playCard(command.cardName)
     }
 
     private fun joinGame(playerId: PlayerId) {
@@ -122,14 +123,14 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
         logger.debug("joined game")
     }
 
-    private fun bid(bid: Int): Unit {
-        sendMessage(ClientMessage.Request.PlaceBid(bid))
+    private fun bid(bid: Bid) {
+        sendCommand(PlaceBid(playerId, bid))
             .onFailure { throw GameException.CannotBid("operation nacked by server") }
             .onSuccess { logger.debug("bidded $bid") }
     }
 
     private fun playCard(cardName: CardName) {
-        sendMessage(ClientMessage.Request.PlayCard(cardName))
+        sendCommand(PlayCard(playerId, cardName))
             .onFailure { throw GameException.CannotPlayCard("operation nacked by server") }
             .onSuccess { logger.debug("played $cardName") }
     }
@@ -204,8 +205,8 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
         }
     }
 
-    private fun sendMessage(message: ClientMessage.Request): Result<Unit> {
-        val otwMessage = message.overTheWire()
+    private fun sendCommand(command: PlayerCommand): Result<Unit> {
+        val otwMessage = OverTheWireMessage.ToServer(command)
 
         return acknowledgements.waitFor(otwMessage.id) {
             logger.sending(otwMessage)

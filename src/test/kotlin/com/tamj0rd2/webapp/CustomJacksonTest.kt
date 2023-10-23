@@ -55,16 +55,6 @@ class CustomJacksonTest {
     }
 
     @Test
-    fun `can serialize and deserialize ClientMessages`() {
-        val expected = ClientMessage.Request.PlaceBid(1)
-        val jsonString = expected.asJsonObject().asCompactJsonString()
-        println(jsonString)
-
-        val result = jsonString.asJsonObject().asA(ClientMessage::class)
-        result shouldBe expected
-    }
-
-    @Test
     fun `can serialize and deserialize Cards`() {
         val expected = 13.blue
         val jsonString = expected.asJsonObject().asCompactJsonString()

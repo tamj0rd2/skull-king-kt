@@ -1,5 +1,6 @@
 package com.tamj0rd2.webapp
 
+import com.tamj0rd2.domain.Command.PlayerCommand
 import org.slf4j.Logger
 import java.util.*
 
@@ -46,13 +47,13 @@ sealed class OverTheWireMessage {
         }
     }
 
-    data class ToServer(val message: ClientMessage) : OverTheWireMessage() {
+    data class ToServer(val command: PlayerCommand) : OverTheWireMessage() {
         override val id: MessageId = MessageId.next()
 
         fun acknowledge(messages: List<ServerMessage> = emptyList()) = Ack.FromServer(id, messages)
 
         override fun toString(): String {
-            return "$id - $message"
+            return "$id - $command"
         }
     }
 }
