@@ -220,6 +220,7 @@ private class AutomatedGameMaster(private val game: Game, private val delayOverr
 
                             logger.info("Starting the game")
                             game.perform(StartGame)
+                            game.perform(StartNextRound)
                         }, delayOverride?.inWholeMilliseconds ?: 5000)
                     }
 

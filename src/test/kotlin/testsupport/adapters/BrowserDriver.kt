@@ -119,7 +119,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         get() = debugException {
             driver.findElement(By.id("players"))
                 .findElements(By.tagName("li"))
-                .map { PlayerId(it.text) }
+                .mapNotNull { PlayerId(it.text) }
         }
 
     override val hand: List<CardWithPlayability>

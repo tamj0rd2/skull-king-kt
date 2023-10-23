@@ -31,6 +31,7 @@ import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.adapters.BrowserDriver
 import testsupport.adapters.HTTPDriver
+import testsupport.are
 import testsupport.both
 import testsupport.each
 import testsupport.ensurer
@@ -39,7 +40,6 @@ import testsupport.playerId
 import java.net.ServerSocket
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
-import kotlin.test.Ignore
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -121,9 +121,9 @@ private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Durat
 @Execution(ExecutionMode.SAME_THREAD)
 class BrowserAppTest : AppTestContract(BrowserAppTestConfiguration(automaticGameMasterCommandDelay = null))
 
-@Ignore
-@Execution(ExecutionMode.CONCURRENT)
-class BrowserAppTestWithAutomatedGameMasterCommands : Ensurer by ensurer(1.seconds) {
+@SkipWip
+@Execution(ExecutionMode.SAME_THREAD)
+class BrowserAppTestWithAutomatedGameMasterCommands : Ensurer by ensurer(Duration.ZERO) {
     private val gmDelay = 1.seconds
     private val expectedDelay = gmDelay * 2
     private val c = BrowserAppTestConfiguration(automaticGameMasterCommandDelay = gmDelay)
@@ -138,8 +138,8 @@ class BrowserAppTestWithAutomatedGameMasterCommands : Ensurer by ensurer(1.secon
     @Test
     fun `the game automatically starts after a delay when the minimum table size is reached`() {
         freddy and sally both SitAtTheTable
+        freddy and sally both ensure(ThePlayersAtTheTable, are(freddy, sally))
         freddy and sally both ensure(within = expectedDelay) {
-            that(ThePlayersAtTheTable, are(freddy, sally))
             that(TheGameState, Is(GameState.InProgress))
             that(TheRoundNumber, Is(1))
             that(TheirHand, sizeIs(1))
@@ -155,8 +155,8 @@ class BrowserAppTestWithAutomatedGameMasterCommands : Ensurer by ensurer(1.secon
         Thread.sleep((gmDelay / 4).inWholeMilliseconds)
         thirzah(SitsAtTheTable)
 
+        freddy and sally and thirzah each ensure(ThePlayersAtTheTable, are(freddy, sally, thirzah))
         freddy and sally and thirzah each ensure(within = expectedDelay) {
-            that(ThePlayersAtTheTable, are(freddy, sally, thirzah))
             that(TheGameState, Is(GameState.InProgress))
             that(TheRoundNumber, Is(1))
             that(TheirHand, sizeIs(1))
