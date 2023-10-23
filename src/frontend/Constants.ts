@@ -1,8 +1,6 @@
 declare global {
-    var INITIAL_STATE: {
-        playerId: PlayerId;
-        players: PlayerIds
-        waitingForMorePlayers: boolean
+    const INITIAL_STATE: {
+        endpoint: string
     }
 }
 

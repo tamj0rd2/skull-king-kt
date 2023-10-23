@@ -1,4 +1,4 @@
-import {DisconnectGameEventListener, MessageToClient, listenToGameEvents} from "../GameEvents";
+import {DisconnectGameEventListener, NotificationType, listenToNotifications} from "../GameEvents";
 import {GamePhase} from "../Constants";
 
 export class GamePhaseElement extends HTMLElement {
@@ -10,15 +10,15 @@ export class GamePhaseElement extends HTMLElement {
 
     connectedCallback() {
         this.disconnectedCallback()
-        this.disconnectFn = listenToGameEvents({
-            [MessageToClient.GameStarted]: () => {
+        this.disconnectFn = listenToNotifications({
+            [NotificationType.GameStarted]: () => {
                 this.replaceChildren()
                 this.innerHTML = `<h2 id="roundPhase"></h2>`
             },
-            [MessageToClient.RoundStarted]: () => this.updateGamePhase(GamePhase.Bidding, "Place your bid"),
-            [MessageToClient.BiddingCompleted]: () => this.updateGamePhase(GamePhase.BiddingCompleted, "All bids are in"),
-            [MessageToClient.TrickStarted]: () => this.updateGamePhase(GamePhase.TrickTaking, ""),
-            [MessageToClient.TrickCompleted]: () => this.updateGamePhase(GamePhase.TrickCompleted, ""),
+            [NotificationType.RoundStarted]: () => this.updateGamePhase(GamePhase.Bidding, "Place your bid"),
+            [NotificationType.BiddingCompleted]: () => this.updateGamePhase(GamePhase.BiddingCompleted, "All bids are in"),
+            [NotificationType.TrickStarted]: () => this.updateGamePhase(GamePhase.TrickTaking, ""),
+            [NotificationType.TrickCompleted]: () => this.updateGamePhase(GamePhase.TrickCompleted, ""),
         })
     }
 

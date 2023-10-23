@@ -2,20 +2,21 @@ package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Command.GameMasterCommand
 import com.tamj0rd2.domain.Game
-import com.tamj0rd2.domain.PlayerId
-import com.tamj0rd2.webapp.CustomJackson.asCompactJsonString
-import com.tamj0rd2.webapp.CustomJackson.asJsonObject
 import com.tamj0rd2.webapp.CustomJackson.auto
 import org.http4k.core.Body
 import org.http4k.core.ContentType
+import org.http4k.core.Filter
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.Uri
+import org.http4k.core.then
 import org.http4k.core.with
 import org.http4k.format.auto
 import org.http4k.lens.ContentNegotiation
+import org.http4k.lens.Header
 import org.http4k.routing.ResourceLoader
 import org.http4k.routing.bind
 import org.http4k.routing.routes
@@ -25,35 +26,11 @@ import org.http4k.template.ViewModel
 import org.http4k.template.viewModel
 import org.slf4j.LoggerFactory
 
-private data class Game(
-    val host: String,
-    // TODO: might be able to get rid of this since the data is coming in the YouJoined message
-    val playersJson: String,
-    val waitingForMorePlayers: Boolean,
-    val playerId: String,
-) : ViewModel {
-
-    constructor(
-        host: String,
-        players: List<PlayerId>,
-        waitingForMorePlayers: Boolean,
-        playerId: PlayerId,
-    ) : this(
-        host = host,
-        playersJson = players.asJsonObject().asCompactJsonString(),
-        waitingForMorePlayers = waitingForMorePlayers,
-        playerId = playerId.playerId,
-    )
-}
-
-private data class Index(val errorMessage: String? = null) : ViewModel {
-    companion object {
-        val withoutError = Index()
-    }
-}
+private data class Play(val host: String) : ViewModel
 
 internal fun httpHandler(
     game: Game,
+    host: String,
     hotReload: Boolean,
     automateGameMasterCommands: Boolean
 ): HttpHandler {
@@ -74,19 +51,33 @@ internal fun httpHandler(
         return runCatching { game.perform(command) }
             .fold(
                 onSuccess = { Response(Status.OK) },
-                onFailure = {e ->
+                onFailure = { e ->
                     logger.error("error while executing command: ${req.bodyString()}", e)
                     return Response(Status.INTERNAL_SERVER_ERROR).body(e.message ?: "unknown error")
                 }
             )
     }
 
-    return routes(
-        static(resourceLoader, "map" to ContentType.APPLICATION_JSON),
-        "/" bind Method.GET to {
-            Response(Status.OK).with(negotiator.outbound(it) of Index.withoutError)
-        },
-        "/do-game-master-command" bind Method.POST to ::gameMasterCommandHandler
+    val loggingFilter = Filter { next ->
+        { request ->
+            next(request).also { response ->
+                if (response.status.successful) logger.trace("Responded with {} for {} {}", response.status, request.method, request.uri)
+                else logger.warn("Responded with {} for {} {}", response.status, request.method, request.uri)
+            }
+        }
+    }
+
+    return loggingFilter.then(
+        routes(
+            static(resourceLoader, "map" to ContentType.APPLICATION_JSON),
+            "/" bind Method.GET to {
+                Response(Status.MOVED_PERMANENTLY).with(Header.LOCATION of Uri.of("/play"))
+            },
+            "/play" bind Method.GET to {
+                Response(Status.OK).with(negotiator.outbound(it) of Play(host))
+            },
+            "/do-game-master-command" bind Method.POST to ::gameMasterCommandHandler
+        )
     )
 }
 

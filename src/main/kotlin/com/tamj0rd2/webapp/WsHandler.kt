@@ -72,6 +72,9 @@ internal fun wsHandler(
                 val acknowledgements = Acknowledgements(acknowledgementTimeoutMs)
                 val messagesToClient = LockedValue<List<Notification>>()
 
+                ws.onClose { logger.warn("$playerId disconnected") }
+                ws.onError { logger.error(it.message, it) }
+
                 ws.onMessage {
                     val message = messageLens(it)
                     logger.receivedMessage(message)
@@ -127,6 +130,8 @@ internal fun wsHandler(
                         else -> error("invalid message from client to server: $message")
                     }
                 }
+
+                logger.info("connected")
             }
         }
     )

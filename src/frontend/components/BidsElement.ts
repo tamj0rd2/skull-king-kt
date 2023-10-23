@@ -1,4 +1,4 @@
-import {DisconnectGameEventListener, MessageToClient, listenToGameEvents} from "../GameEvents";
+import {DisconnectGameEventListener, NotificationType, listenToNotifications} from "../GameEvents";
 import {ActualBids, PlayerId, PlayerIds} from "../Constants";
 
 export class BidsElement extends HTMLElement {
@@ -10,10 +10,10 @@ export class BidsElement extends HTMLElement {
 
     connectedCallback() {
         this.disconnectedCallback()
-        this.disconnectFn = listenToGameEvents({
-            [MessageToClient.GameStarted]: ({players}) => this.initialiseForPlayers(players),
-            [MessageToClient.BidPlaced]: ({playerId}) => this.indicateThatPlayerHasBid(playerId),
-            [MessageToClient.BiddingCompleted]: ({bids}) => this.showActualBids(bids),
+        this.disconnectFn = listenToNotifications({
+            [NotificationType.GameStarted]: ({players}) => this.initialiseForPlayers(players),
+            [NotificationType.BidPlaced]: ({playerId}) => this.indicateThatPlayerHasBid(playerId),
+            [NotificationType.BiddingCompleted]: ({bids}) => this.showActualBids(bids),
         })
     }
 

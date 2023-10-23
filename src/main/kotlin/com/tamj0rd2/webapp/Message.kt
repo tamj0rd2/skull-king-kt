@@ -26,9 +26,9 @@ sealed class Message {
         }
 
     sealed class Ack : Message() {
-        data class FromServer(override val id: MessageId, val messages: List<Notification>) : Ack() {
+        data class FromServer(override val id: MessageId, val notifications: List<Notification>) : Ack() {
             override fun toString(): String {
-                return "$id - ${messages.joinToString(", ")}"
+                return "$id - ${notifications.joinToString(", ")}"
             }
         }
 
@@ -82,7 +82,7 @@ fun Logger.sending(message: Message) =
     when (message) {
         is Message.Ack.FromClient -> debug("acking: {}", message)
         is Message.Ack.FromServer -> {
-            if (message.messages.isNotEmpty()) info("acking: $message") else debug("acking: {}", message)
+            if (message.notifications.isNotEmpty()) info("acking: $message") else debug("acking: {}", message)
         }
 
         is Message.ToServer -> info("sending: $message")

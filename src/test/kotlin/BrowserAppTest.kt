@@ -102,7 +102,8 @@ private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Durat
         val chromeDriver = ChromeDriver(Config.chromeOptions).apply {
             devTools.createSession()
             devTools.domains.events().addJavascriptExceptionListener { j: JavascriptException ->
-                println("JAVASCRIPT ERROR!: ${j.localizedMessage}")
+                val stackTrace = j.stackTrace.joinToString("\n") { it.toString().replace("$baseUrl/", "") }
+                error("JAVASCRIPT ERROR!: ${j.rawMessage}\n$stackTrace")
             }
             devTools.domains.events().addConsoleListener { println(it.messages.joinToString(" ")) }
 
@@ -116,7 +117,7 @@ private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Durat
 }
 
 @SkipWip
-@Execution(ExecutionMode.CONCURRENT)
+@Execution(ExecutionMode.SAME_THREAD)
 class BrowserAppTest : AppTestContract(BrowserAppTestConfiguration(automaticGameMasterCommandDelay = null))
 
 @Ignore

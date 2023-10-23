@@ -1,4 +1,7 @@
-import {MessageToClient, listenToGameEvents} from "./GameEvents";
+import {CommandType, listenToNotifications, NotificationType} from "./GameEvents";
+import {sendCommand, setPlayerId} from "./Socket";
+import {PlayerId} from "./Constants";
+
 export {BiddingElement} from "./components/BiddingElement";
 export {BidsElement} from "./components/BidsElement";
 export {HandElement} from "./components/HandElement";
@@ -8,16 +11,23 @@ export {PlayersElement} from "./components/PlayersElement";
 export {TrickElement} from "./components/TrickElement";
 export {WinsElement} from "./components/WinsElement";
 
-declare global {
-    var socket: WebSocket
-}
+const joinGameEl = document.forms.namedItem("joinGame")!!
+joinGameEl.addEventListener("submit", (e) => {
+    e.preventDefault()
+    e.stopImmediatePropagation()
+    const formData = new FormData(joinGameEl)
+    const playerId = formData.get("playerId") as PlayerId
+    setPlayerId(playerId)
+    sendCommand({ type: CommandType.JoinGame, actor: playerId })
+})
 
 const roundNumberEl = document.querySelector("#roundNumber") as HTMLHeadingElement
 const trickNumberEl = document.querySelector("#trickNumber") as HTMLHeadingElement
 const playerWhoseTurnItIsEl = document.querySelector("#currentPlayer") as HTMLHeadingElement
 const trickWinnerEl = document.querySelector("#trickWinner") as HTMLHeadingElement
-listenToGameEvents({
-    [MessageToClient.RoundStarted]: ({roundNumber}) => {
+listenToNotifications({
+    [NotificationType.YouJoined]: ({playerId}) => setPlayerId(playerId),
+    [NotificationType.RoundStarted]: ({roundNumber}) => {
         roundNumberEl.innerText = `Round ${roundNumber}`
         roundNumberEl.setAttribute("data-roundNumber", roundNumber)
 
@@ -27,7 +37,7 @@ listenToGameEvents({
         trickWinnerEl.innerText = ""
         trickWinnerEl.removeAttribute("data-playerId")
     },
-    [MessageToClient.TrickStarted]: ({trickNumber, firstPlayer}) => {
+    [NotificationType.TrickStarted]: ({trickNumber, firstPlayer}) => {
         trickNumberEl.innerText = `Trick ${trickNumber}`
         trickNumberEl.setAttribute("data-trickNumber", trickNumber)
 
@@ -37,16 +47,12 @@ listenToGameEvents({
         trickWinnerEl.innerText = ""
         trickWinnerEl.removeAttribute("data-playerId")
     },
-    [MessageToClient.CardPlayed]: ({nextPlayer}) => {
+    [NotificationType.CardPlayed]: ({nextPlayer}) => {
         playerWhoseTurnItIsEl.innerText = nextPlayer ? `Current player: ${nextPlayer}` : ""
         playerWhoseTurnItIsEl.setAttribute("data-playerId", nextPlayer)
     },
-    [MessageToClient.TrickCompleted]: ({winner}) => {
+    [NotificationType.TrickCompleted]: ({winner}) => {
         trickWinnerEl.innerText = `Winner: ${winner}`
         trickWinnerEl.setAttribute("data-playerId", winner)
     }
-})
-
-socket.addEventListener("close", (event) => {
-    console.error("disconnected from ws")
 })

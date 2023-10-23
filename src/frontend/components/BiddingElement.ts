@@ -1,10 +1,11 @@
 import {
     DisconnectGameEventListener,
-    GameEvent,
-    MessageToClient,
-    listenToGameEvents,
-    MessageFromClient
+    Notification,
+    NotificationType,
+    listenToNotifications,
+    CommandType
 } from "../GameEvents";
+import {sendCommand, socket} from "../Socket";
 
 export class BiddingElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -15,13 +16,13 @@ export class BiddingElement extends HTMLElement {
 
     connectedCallback() {
         this.disconnectedCallback()
-        this.disconnectFn = listenToGameEvents({
-            [MessageToClient.RoundStarted]: this.showForm,
-            [MessageToClient.BiddingCompleted]: this.hideForm,
+        this.disconnectFn = listenToNotifications({
+            [NotificationType.RoundStarted]: this.showForm,
+            [NotificationType.BiddingCompleted]: this.hideForm,
         })
     }
 
-    showForm = ({roundNumber}: GameEvent) => {
+    showForm = ({roundNumber}: Notification) => {
         this.replaceChildren()
         this.innerHTML = `
             <label>Bid <input type="number" name="bid" min="0" max="${roundNumber}"></label>
@@ -48,10 +49,10 @@ export class BiddingElement extends HTMLElement {
         }
 
         placeBidBtn.onclick = () => {
-            socket.send(JSON.stringify({
-                type: MessageFromClient.BidPlaced,
+            sendCommand({
+                type: CommandType.PlaceBid,
                 bid: bidInput.value,
-            }))
+            })
             this.hideForm()
         }
     }

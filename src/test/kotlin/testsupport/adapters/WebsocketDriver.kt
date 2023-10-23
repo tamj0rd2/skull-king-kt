@@ -70,7 +70,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
 
             when (message) {
                 is Message.Ack.FromServer -> {
-                    message.messages.forEach(::handleMessage)
+                    message.notifications.forEach(::handleMessage)
                     acknowledgements.ack(message.id)
                     logger.processedMessage(message)
                 }
@@ -108,7 +108,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
         }
 
         if (wasSuccessful) {
-            logger.info("successfully performed $command")
+            logger.info("success: $command")
             return
         }
 

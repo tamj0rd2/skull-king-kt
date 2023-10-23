@@ -1,5 +1,5 @@
-import {DisconnectGameEventListener, MessageToClient, listenToGameEvents} from "../GameEvents";
-import {ActualBids, PlayerId, PlayerIds} from "../Constants";
+import {DisconnectGameEventListener, NotificationType, listenToNotifications} from "../GameEvents";
+import {PlayerId} from "../Constants";
 
 export class WinsElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -10,9 +10,9 @@ export class WinsElement extends HTMLElement {
 
     connectedCallback() {
         this.disconnectedCallback()
-        this.disconnectFn = listenToGameEvents({
-            [MessageToClient.RoundStarted]: () => this.replaceChildren(),
-            [MessageToClient.RoundCompleted]: ({wins}) => this.showWins(wins),
+        this.disconnectFn = listenToNotifications({
+            [NotificationType.RoundStarted]: () => this.replaceChildren(),
+            [NotificationType.RoundCompleted]: ({wins}) => this.showWins(wins),
         })
     }
 

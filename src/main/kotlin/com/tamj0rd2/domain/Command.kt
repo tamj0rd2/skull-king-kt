@@ -3,6 +3,10 @@ package com.tamj0rd2.domain
 sealed class Command {
 
     sealed class GameMasterCommand : Command() {
+        override fun toString(): String {
+            return this::class.simpleName!!
+        }
+
         object StartGame : GameMasterCommand()
 
         object StartNextRound : GameMasterCommand()

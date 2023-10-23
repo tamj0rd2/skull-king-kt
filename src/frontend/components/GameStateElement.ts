@@ -1,4 +1,4 @@
-import {DisconnectGameEventListener, MessageToClient, listenToGameEvents} from "../GameEvents";
+import {DisconnectGameEventListener, NotificationType, listenToNotifications} from "../GameEvents";
 import {GameState} from "../Constants";
 
 export class GameStateElement extends HTMLElement {
@@ -10,14 +10,16 @@ export class GameStateElement extends HTMLElement {
 
     connectedCallback() {
         this.disconnectedCallback()
-        this.disconnectFn = listenToGameEvents({
-            [MessageToClient.PlayerJoined]: ({waitingForMorePlayers}) => this.setBasedOnPlayers(waitingForMorePlayers),
-            [MessageToClient.GameStarted]: () => this.set(GameState.InProgress),
-            [MessageToClient.GameCompleted]: () => this.set(GameState.Complete),
+        this.disconnectFn = listenToNotifications({
+            [NotificationType.YouJoined]: ({waitingForMorePlayers}) => this.setBasedOnPlayers(waitingForMorePlayers),
+            [NotificationType.PlayerJoined]: ({waitingForMorePlayers}) => this.setBasedOnPlayers(waitingForMorePlayers),
+            [NotificationType.GameStarted]: () => this.set(GameState.InProgress),
+            [NotificationType.GameCompleted]: () => this.set(GameState.Complete),
         })
 
         this.innerHTML = `<h2 id="gameState"></h2>`
-        this.setBasedOnPlayers(INITIAL_STATE.waitingForMorePlayers)
+        // TODO: replace this
+        // this.setBasedOnPlayers(INITIAL_STATE.waitingForMorePlayers)
     }
 
     setBasedOnPlayers = (waitingForMorePlayers: boolean) => {

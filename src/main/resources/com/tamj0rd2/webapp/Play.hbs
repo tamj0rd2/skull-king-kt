@@ -1,8 +1,18 @@
 <html>
 <head>
     <link href="/style.css" rel="stylesheet" type="text/css"/>
+    <title>Playing Skull King</title>
 </head>
 <body>
+
+<form id="joinGame">
+    <label>
+        Player ID:
+        <input name="playerId" placeholder="Enter a name"/>
+    </label>
+    <input type="submit" value="Submit"/>
+</form>
+
 <div id="root" class="content">
     <h1>Game Page - {{playerId}}</h1>
     <sk-gamestate></sk-gamestate>
@@ -19,26 +29,15 @@
     <sk-trick></sk-trick>
     <sk-wins></sk-wins>
 </div>
+<script src="/game.js" defer></script>
 <script>
-    window.INITIAL_STATE = {
-        playerId: "{{playerId}}",
-        players: {{{playersJson}}},
-        waitingForMorePlayers: {{waitingForMorePlayers}},
-    };
-
     let wsProtocol = "ws";
     if (location.protocol === "https:") wsProtocol += "s"
 
-    window.socket = new WebSocket(`${wsProtocol}://{{host}}:${location.port}/{{playerId}}`)
-    window.socket.addEventListener("message", (event) => {
-        console.log(`{{playerId}} received`, event.data)
-    })
-
-    const gameScript = document.createElement('script')
-    gameScript.async = false
-    gameScript.defer = false
-    gameScript.src = '/game.js'
-    document.head.appendChild(gameScript)
+    window.INITIAL_STATE = {
+        playerId: "{{playerId}}",
+        endpoint: `${wsProtocol}://{{host}}:${location.port}/play`,
+    };
 </script>
 </body>
 </html>

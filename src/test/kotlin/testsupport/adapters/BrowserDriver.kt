@@ -10,6 +10,8 @@ import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
+import io.kotest.assertions.withClue
+import io.kotest.matchers.shouldBe
 import org.openqa.selenium.By
 import org.openqa.selenium.NoSuchElementException
 import org.openqa.selenium.WebDriver
@@ -20,9 +22,9 @@ import testsupport.ApplicationDriver
 private const val debug = true
 
 class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
-    private lateinit var playerId: PlayerId
+    private var playerId = PlayerId.unidentified
 
-    override fun perform(command: Command.PlayerCommand) = when(command) {
+    override fun perform(command: Command.PlayerCommand): Unit = when(command) {
         is Command.PlayerCommand.JoinGame -> joinGame(command.actor)
         is Command.PlayerCommand.PlaceBid -> bid(command.bid.bid)
         is Command.PlayerCommand.PlayCard -> playCard(command.cardName)
@@ -32,12 +34,17 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         driver.findElement(By.name("playerId")).sendKeys(playerId.playerId)
         this.playerId = playerId
 
-        driver.findElement(By.id("joinGame")).submit().apply {
-            val errorElements = driver.findElements(By.id("errorMessage"))
-            if (errorElements.isNotEmpty()) {
-                throw GameException.CannotJoinGame(errorElements.single().text)
-            }
+        driver.findElement(By.id("joinGame")).submit()
+
+        val errorElements = driver.findElements(By.id("errorMessage"))
+        if (errorElements.isNotEmpty()) {
+            throw GameException.CannotJoinGame(errorElements.single().text)
         }
+
+        withClue("the game page didn't load successfully") {
+            driver.title shouldBe "Playing Skull King"
+        }
+        Unit
     }
 
     private fun bid(bid: Int) = debugException {

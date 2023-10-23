@@ -1,50 +1,85 @@
-export enum MessageToClient {
-    PlayerJoined = "MessageToClient$PlayerJoined",
-    GameStarted = "MessageToClient$GameStarted",
-    RoundStarted = "MessageToClient$RoundStarted",
-    BidPlaced = "MessageToClient$BidPlaced",
-    BiddingCompleted = "MessageToClient$BiddingCompleted",
-    CardPlayed = "MessageToClient$CardPlayed",
-    TrickCompleted = "MessageToClient$TrickCompleted",
-    TrickStarted = "MessageToClient$TrickStarted",
-    GameCompleted = "MessageToClient$GameCompleted",
-    YourTurn = "MessageToClient$YourTurn",
-    RoundCompleted = "MessageToClient$RoundCompleted",
-    Multi = "MessageToClient$Multi",
+import {Message, MessageType, socket} from "./Socket";
+
+export enum NotificationType {
+    PlayerJoined = "Notification$PlayerJoined",
+    GameStarted = "Notification$GameStarted",
+    RoundStarted = "Notification$RoundStarted",
+    BidPlaced = "Notification$BidPlaced",
+    BiddingCompleted = "Notification$BiddingCompleted",
+    CardPlayed = "Notification$CardPlayed",
+    TrickCompleted = "Notification$TrickCompleted",
+    TrickStarted = "Notification$TrickStarted",
+    GameCompleted = "Notification$GameCompleted",
+    YourTurn = "Notification$YourTurn",
+    RoundCompleted = "Notification$RoundCompleted",
+    YouJoined = "Notification$YouJoined",
 }
 
-const knownMessagesToClient = Object.values(MessageToClient).filter((v) => v != MessageToClient.Multi)
+// const knownNotificationTypes = Object.values(NotificationType)
+// TODO: work my way through these one by one in whatever order makes sense, then remove this whole thing, prefering the above
+const knownNotificationTypes = [
+    // NotificationType.PlayerJoined,
+    // NotificationType.GameStarted,
+    // NotificationType.RoundStarted,
+    // NotificationType.BidPlaced,
+    // NotificationType.BiddingCompleted,
+    // NotificationType.CardPlayed,
+    // NotificationType.TrickCompleted,
+    // NotificationType.TrickStarted,
+    // NotificationType.GameCompleted,
+    // NotificationType.YourTurn,
+    // NotificationType.RoundCompleted,
+    NotificationType.YouJoined
+]
 
-export enum MessageFromClient {
-    BidPlaced = "MessageFromClient$BidPlaced",
-    CardPlayed = "MessageFromClient$CardPlayed",
-    UnhandledServerMessage = "MessageFromClient$UnhandledServerMessage",
-    Error = "MessageFromClient$Error",
+export enum CommandType {
+    PlaceBid = "Command$PlayerCommand$BidPlaced",
+    PlayCard = "Command$PlayerCommand$CardPlayed",
+    // UnhandledServerMessage = "MessageFromClient$UnhandledServerMessage",
+    // Error = "MessageFromClient$Error",
+    JoinGame = "Command$PlayerCommand$JoinGame"
 }
 
-// TODO: bad naming
-export interface GameEvent {
-    type: MessageToClient
+export interface Command {
+    type: CommandType
     [key: string]: any
 }
 
-export type GameEventListener = (event: GameEvent) => void
-export type GameEventListeners = { [key in MessageToClient]?: GameEventListener }
+// TODO: bad naming
+export interface Notification {
+    type: NotificationType
+    [key: string]: any
+}
+
+export type NotificationListener = (event: Notification) => void
+export type NotificationListeners = { [key in NotificationType]?: NotificationListener }
 export type DisconnectGameEventListener = () => void
 
-export function listenToGameEvents(gameEventCallbacks: GameEventListeners): DisconnectGameEventListener {
+export function listenToNotifications(notificationListeners: NotificationListeners): DisconnectGameEventListener {
+    function readNotificationsFrom(message: Message): Notification[] {
+        switch (message.type) {
+            case MessageType.ToClient:
+            case MessageType.AckFromServer:
+                return message.notifications ?? []
+            case MessageType.Nack:
+                throw Error("handle nacks from server")
+            case MessageType.AckFromClient:
+            case MessageType.ToServer:
+                throw Error("client shouldn't receive this kind of message")
+        }
+    }
+
     function listener(this: WebSocket, event: MessageEvent<any>) {
         try {
-            const data = JSON.parse(event.data) as GameEvent
-            const messages: GameEvent[] = data.type === MessageToClient.Multi ? data.messages : [data]
+            const notifications = readNotificationsFrom(JSON.parse(event.data))
 
-            messages.forEach((message) => {
-                const callback = gameEventCallbacks[message.type]
+            notifications.forEach((message) => {
+                const callback = notificationListeners[message.type]
                 if (callback) return callback(message)
 
-                if (!knownMessagesToClient.includes(message.type)) {
+                if (!knownNotificationTypes.includes(message.type)) {
                     socket.send(JSON.stringify({
-                        type: MessageFromClient.UnhandledServerMessage,
+                        type: "UnknownMessageFromServer",
                         offender: message.type,
                     }))
                     console.error(`Unknown message from server: ${message.type}`)
@@ -54,7 +89,7 @@ export function listenToGameEvents(gameEventCallbacks: GameEventListeners): Disc
         } catch (e) {
             socket.send(JSON.stringify({
                 stackTrace: (e as Error).stack,
-                type: MessageFromClient.Error,
+                type: "ClientError",
             }))
             throw e
         }

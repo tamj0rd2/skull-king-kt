@@ -1,5 +1,6 @@
-import {DisconnectGameEventListener, MessageToClient, listenToGameEvents, MessageFromClient} from "../GameEvents";
+import {DisconnectGameEventListener, NotificationType, listenToNotifications, CommandType} from "../GameEvents";
 import {Card} from "../Constants";
+import {sendCommand} from "../Socket";
 
 export class HandElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -10,11 +11,11 @@ export class HandElement extends HTMLElement {
 
     connectedCallback() {
         this.disconnectedCallback()
-        this.disconnectFn = listenToGameEvents({
-            [MessageToClient.GameStarted]: this.showHand,
-            [MessageToClient.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
-            [MessageToClient.YourTurn]: ({ cards }) => this.makeCardsPlayable(cards),
-            [MessageToClient.TrickCompleted]: () => this.makeCardsUnplayable(),
+        this.disconnectFn = listenToNotifications({
+            [NotificationType.GameStarted]: this.showHand,
+            [NotificationType.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
+            [NotificationType.YourTurn]: ({ cards }) => this.makeCardsPlayable(cards),
+            [NotificationType.TrickCompleted]: () => this.makeCardsUnplayable(),
         })
     }
 
@@ -58,10 +59,10 @@ export class HandElement extends HTMLElement {
             button.onclick = () => {
                 li.remove()
                 this.makeCardsUnplayable()
-                socket.send(JSON.stringify({
-                    type: MessageFromClient.CardPlayed,
+                sendCommand({
+                    type: CommandType.PlayCard,
                     cardName: cardName,
-                }))
+                })
             }
             li.appendChild(button)
         })

@@ -128,7 +128,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 
-    @Test @Wip
+    @Test
     fun `winning a trick`() {
         freddy and sally both SitAtTheTable
         gary(
