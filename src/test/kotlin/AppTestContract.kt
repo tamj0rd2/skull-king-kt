@@ -42,7 +42,6 @@ import testsupport.TheirFirstCard
 import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
-import testsupport.Wip
 import testsupport.both
 import testsupport.each
 import testsupport.ensurer
@@ -286,7 +285,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy.attemptsTo(Bid(2).expectingFailure<GameException.CannotBid>())
     }
 
-    @Test @Wip
+    @Test
     fun `a player can't join twice`() {
         freddy(SitsAtTheTable)
         val freddyOnASecondDevice = Actor(freddy.name).whoCan(c.participateInGames())

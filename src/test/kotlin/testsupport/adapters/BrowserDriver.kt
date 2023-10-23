@@ -49,7 +49,18 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         this.playerId = playerId
         driver.findElement(By.name("playerId")).sendKeys(playerId.playerId)
         driver.findElement(By.id("joinGame")).submit()
-        waitUntil({ driver.findElement(By.tagName("h1")).text == "Game Page - $playerId" })
+        waitUntil({
+            driver.findElementOrNull(By.id("errorMessage"))?.let {
+                if (!it.isDisplayed) return@let
+
+                when(it.getAttributeOrNull("errorCode")) {
+                    GameException.CannotJoinGame::class.simpleName -> throw GameException.CannotJoinGame(it.text)
+                    else -> error("failed to join the game due to unknown reasons")
+                }
+            }
+
+            driver.findElement(By.tagName("h1")).text == "Game Page - $playerId"
+        }, "the new player id isn't showing up")
     }
 
     private fun bid(bid: Int) = debugException {

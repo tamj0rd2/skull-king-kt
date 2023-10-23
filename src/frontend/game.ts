@@ -18,8 +18,18 @@ joinGameEl.addEventListener("submit",  (e) => {
     const playerId = formData.get("playerId") as PlayerId
     setPlayerId(playerId)
     sendCommand({type: CommandType.JoinGame, actor: playerId})
-        .catch((reason) => { throw reason })
+        .catch((reason) => {
+            console.error(`${playerId} failed to join game`)
+            showErrorMessage("Failed to join the game. Try choosing a different name", "CannotJoinGame")
+        })
 })
+
+function showErrorMessage(message: string, code: string) {
+    const el = document.querySelector("#errorMessage")!!
+    el.setAttribute("errorCode", code)
+    el.textContent = message
+    el.classList.remove("u-hidden")
+}
 
 const roundNumberEl = document.querySelector("#roundNumber") as HTMLHeadingElement
 const trickNumberEl = document.querySelector("#trickNumber") as HTMLHeadingElement

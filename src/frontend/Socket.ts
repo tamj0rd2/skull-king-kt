@@ -12,11 +12,10 @@ socket.addEventListener("message", (event) => {
         switch (message.type) {
             case MessageType.ToClient:
                 break
+            // acks and nacks are handled as part of `sendCommand`
             case MessageType.AckFromServer:
-                // acks from the server are handled as part of `sendCommand`
-                return
             case MessageType.Nack:
-                throw Error("handle nacks from server")
+                return
             default:
                 throw Error("unhandled message type")
         }
@@ -91,10 +90,11 @@ export function sendCommand(command: Command): Promise<void> {
 
             const message = JSON.parse(event.data) as Message
             if (message.id !== messageId) return
-            if (message.type === MessageType.Nack) return reject(new Error("server nacked the command. handle this..."))
-            if (message.type !== MessageType.AckFromServer) return reject(new Error(`invalid message type ${message.type}`))
 
             this.removeEventListener("message", handler)
+
+            if (message.type === MessageType.Nack) return reject(new Error("server nacked the command. handle this..."))
+            if (message.type !== MessageType.AckFromServer) return reject(new Error(`invalid message type ${message.type}`))
 
             message.notifications!!.forEach((notification) => {
                 listenerRegistry.forEach((listeners) => {
@@ -103,12 +103,11 @@ export function sendCommand(command: Command): Promise<void> {
             })
 
             console.log("done processing")
-            spinner.classList.add("u-hidden")
             resolve()
         })
 
         send({ id: messageId, type: MessageType.ToServer, command })
-    })
+    }).finally(() => spinner.classList.add("u-hidden"))
 }
 
 export function acknowledgeMessage(messageToAck: Message) {
