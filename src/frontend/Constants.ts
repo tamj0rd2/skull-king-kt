@@ -24,6 +24,11 @@ export const enum CardType {
     SpecialCard = "Card$SpecialCard",
 }
 
+export interface CardWithPlayability {
+    card: Card
+    isPlayable: boolean
+}
+
 export interface Card {
     suit: string
     number?: number

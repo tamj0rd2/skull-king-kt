@@ -112,14 +112,11 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
 
     override val hand: List<CardWithPlayability>
-        get() = TODO("Not yet implemented - getting cards with playability")
-
-    //override val hand: Hand
-    //    get() = debugException {
-    //        driver.findElement(By.id("hand"))
-    //            .findElements(By.tagName("li"))
-    //            .map { it.toCard() }
-    //    }
+        get() = debugException {
+            driver.findElement(By.id("hand"))
+                .findElements(By.tagName("li"))
+                .map { it.toCardWithPlayability() }
+        }
 
     override val trick: List<PlayedCard>
         get() = debugException {
@@ -205,6 +202,10 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
     }
 
     private fun WebElement.toCard() = Card.from(this.getAttribute("suit"), this.getAttribute("number")?.toInt())
+    private fun WebElement.toCardWithPlayability(): CardWithPlayability {
+        val isPlayable = findElementOrNull(By.tagName("button")) != null
+        return CardWithPlayability(toCard(), isPlayable)
+    }
 }
 
 private fun waitUntil(predicate: () -> Boolean, errorMessage: String = "predicate not met within timeout") {

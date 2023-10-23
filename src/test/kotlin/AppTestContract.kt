@@ -102,7 +102,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 
-    @Test @Wip
+    @Test
     fun `playing a card and waiting for the next player to do the same`() {
         freddy and sally both SitAtTheTable
         gary(RigsTheDeck.SoThat(freddy).willEndUpWith(11.blue), SaysTheGameCanStart)

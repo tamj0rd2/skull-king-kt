@@ -1,4 +1,4 @@
-import {Card, CommandType, NotificationType} from "../Constants";
+import {Card, CardWithPlayability, CommandType, NotificationType} from "../Constants";
 import {DisconnectGameEventListener, getPlayerId, listenToNotifications, sendCommand} from "../Socket";
 
 export class HandElement extends HTMLElement {
@@ -12,8 +12,8 @@ export class HandElement extends HTMLElement {
         this.disconnectedCallback()
         this.disconnectFn = listenToNotifications({
             [NotificationType.GameStarted]: this.showHand,
-            [NotificationType.RoundStarted]: ({ cardsDealt }) => this.initialiseHand(cardsDealt),
-            [NotificationType.YourTurn]: ({ cards }) => this.makeCardsPlayable(cards),
+            [NotificationType.RoundStarted]: ({cardsDealt}) => this.initialiseHand(cardsDealt),
+            [NotificationType.YourTurn]: ({cards}) => this.makeCardsPlayable(cards),
             [NotificationType.TrickCompleted]: () => this.makeCardsUnplayable(),
         })
     }
@@ -21,16 +21,16 @@ export class HandElement extends HTMLElement {
     showHand = () => {
         this.replaceChildren()
         this.innerHTML = `
-                <section id="handArea">
-                    <h3>Hand</h3>
-                    <ul id="hand"></ul>
-                </section> 
-            `
+            <section id="handArea">
+                <h3>Hand</h3>
+                <ul id="hand"></ul>
+            </section> 
+        `
     }
 
-    initialiseHand = (cards: Card[]) => {
+    initialiseHand = (cards: CardWithPlayability[]) => {
         const hand = this.querySelector("#hand")!!
-        cards.forEach(card => {
+        cards.forEach(({card}) => {
             const li = document.createElement("li")
             li.innerText = card.name
             li.setAttribute("data-cardType", card.type)
@@ -43,28 +43,30 @@ export class HandElement extends HTMLElement {
 
     makeCardsUnplayable = () => {
         this.querySelectorAll("li button").forEach(button => {
-            button.parentNode!!.removeChild(button)
+            button.remove()
         })
     }
 
-    makeCardsPlayable = (cardNamesToPlayability: Record<string, boolean> ) => {
-        this.querySelectorAll("li").forEach(li => {
-            const cardName = li.getAttribute("data-cardName")!!
-            const isPlayable = cardNamesToPlayability[cardName]
+    makeCardsPlayable = (cards: CardWithPlayability[]) => {
+        cards.forEach(({card, isPlayable}) => {
             if (!isPlayable) return
 
-            const button = document.createElement("button")
-            button.innerText = "Play"
-            button.onclick = () => {
-                li.remove()
-                this.makeCardsUnplayable()
-                sendCommand({
-                    type: CommandType.PlayCard,
-                    cardName: cardName,
-                    actor: getPlayerId(),
-                }).catch((reason) => { throw reason })
-            }
-            li.appendChild(button)
+            this.querySelectorAll(`li[data-cardName="${card.name}"]`).forEach((li) => {
+                const button = document.createElement("button")
+                button.innerText = "Play"
+                button.onclick = () => {
+                    li.remove()
+                    this.makeCardsUnplayable()
+                    sendCommand({
+                        type: CommandType.PlayCard,
+                        cardName: card.name,
+                        actor: getPlayerId(),
+                    }).catch((reason) => {
+                        throw reason
+                    })
+                }
+                li.appendChild(button)
+            })
         })
     }
 

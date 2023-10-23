@@ -9,7 +9,8 @@ sealed class Card(val name: CardName) {
 
     companion object {
         fun from(suit: String, number: Int?): Card {
-            return number?.let { NumberedCard(Suit.from(suit), it) } ?: SpecialCard(SpecialSuit.from(suit))
+            if (number != null) return NumberedCard(Suit.from(suit), number)
+            return SpecialCard(SpecialSuit.from(suit))
         }
     }
 
