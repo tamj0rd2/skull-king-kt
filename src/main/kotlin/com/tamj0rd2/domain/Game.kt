@@ -7,48 +7,43 @@ fun interface GameEventListener {
 }
 
 class Game {
-    private val _winsOfTheRound = mutableMapOf<PlayerId, Int>()
     val winsOfTheRound: Map<PlayerId, Int> get() = _winsOfTheRound
-
-    private var _trickWinner: PlayerId? = null
-    val trickWinner: PlayerId? get() = _trickWinner
-
-    private var _trickNumber: Int = 0
-    val trickNumber: Int get() = _trickNumber
-
-    private var _roundNumber = 0
-    val roundNumber: Int get() = _roundNumber
-
-    private var _phase: RoundPhase? = null
-    val phase: RoundPhase get() = _phase ?: error("game not started")
-
-    private var _state = GameState.WaitingForMorePlayers
-    val state: GameState get() = _state
-
-    private val _players = mutableListOf<PlayerId>()
+    val currentTrick: List<PlayedCard> get() = trick.playedCards
     val players get() = _players.toList()
-
-    private val hands = mutableMapOf<PlayerId, MutableList<Card>>()
-    private var riggedHands: MutableMap<PlayerId, Hand>? = null
-
-    private val _bids = Bids()
+    val currentPlayersTurn get(): PlayerId? = roundTurnOrder.firstOrNull()
     val bids: Map<PlayerId, DisplayBid> get() = _bids.forDisplay()
 
+    var trickWinner: PlayerId? = null
+        private set
+
+    var trickNumber: Int = 0
+        private set
+
+    var roundNumber: Int = 0
+        private set
+
+    var phase: RoundPhase? = null
+        private set
+
+    var state: GameState = GameState.WaitingForMorePlayers
+        private set
+
+
+    private val _winsOfTheRound = mutableMapOf<PlayerId, Int>()
+    private val _players = mutableListOf<PlayerId>()
+    private val hands = mutableMapOf<PlayerId, MutableList<Card>>()
+    private var riggedHands: MutableMap<PlayerId, Hand>? = null
+    private val _bids = Bids()
     private val roomSizeToStartGame = 2
-
     private val waitingForMorePlayers get() = players.size < roomSizeToStartGame
-
     private var trick: Trick = Trick(0)
-    val currentTrick: Trick get() = trick
-
     private var roundTurnOrder = mutableListOf<PlayerId>()
-    val currentPlayersTurn get(): PlayerId? = roundTurnOrder.firstOrNull()
-
-    fun isInState(state: GameState) = this.state == state
 
     fun subscribeToGameEvents(listener: GameEventListener) {
         this.eventListeners += listener
     }
+
+    fun isInState(state: GameState) = this.state == state
 
     fun perform(command: Command): List<GameEvent> = when(command) {
         is Command.GameMasterCommand.RigDeck -> rigDeck(command.playerId, command.cards)
@@ -64,14 +59,14 @@ class Game {
         if (_players.contains(playerId)) throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
 
         _players += playerId
-        if (!waitingForMorePlayers) _state = GameState.WaitingToStart
+        if (!waitingForMorePlayers) state = GameState.WaitingToStart
         recordEvent(GameEvent.PlayerJoined(playerId))
     }
 
     private fun start() = gameMasterCommand {
         require(!waitingForMorePlayers) { "not enough players to start the game - ${players.size}/$roomSizeToStartGame" }
 
-        _state = GameState.InProgress
+        state = GameState.InProgress
         players.forEach { hands[it] = mutableListOf() }
         recordEvent(GameEvent.GameStarted(players))
     }
@@ -86,7 +81,7 @@ class Game {
         recordEvent(GameEvent.BidPlaced(playerId, Bid(bid)))
 
         if (_bids.areComplete) {
-            this._phase = BiddingCompleted
+            this.phase = BiddingCompleted
             recordEvent(GameEvent.BiddingCompleted(_bids.asCompleted()))
         }
     }
@@ -110,13 +105,13 @@ class Game {
         recordEvent(GameEvent.CardPlayed(playerId, card))
 
         if (trick.isComplete) {
-            _phase = TrickCompleted
-            _trickWinner = trick.winner
-            _winsOfTheRound[_trickWinner!!] = _winsOfTheRound[_trickWinner!!]!! + 1
+            phase = TrickCompleted
+            trickWinner = trick.winner
+            _winsOfTheRound[trickWinner!!] = _winsOfTheRound[trickWinner!!]!! + 1
             recordEvent(GameEvent.TrickCompleted(trick.winner))
 
             if (roundNumber == 10) {
-                _state = GameState.Complete
+                state = GameState.Complete
                 recordEvent(GameEvent.GameCompleted)
             }
         }
@@ -128,11 +123,11 @@ class Game {
     }
 
     private fun startNextRound() = gameMasterCommand {
-        _roundNumber += 1
-        _trickNumber = 0
+        roundNumber += 1
+        trickNumber = 0
 
         _bids.initFor(players)
-        _phase = Bidding
+        phase = Bidding
         roundTurnOrder = (1..roundNumber).flatMap { players }.toMutableList()
         players.forEach { _winsOfTheRound[it] = 0 }
 
@@ -141,9 +136,9 @@ class Game {
     }
 
     private fun startNextTrick() = gameMasterCommand {
-        _trickNumber += 1
+        trickNumber += 1
         trick = Trick(players.size)
-        _phase = TrickTaking
+        phase = TrickTaking
         recordEvent(GameEvent.TrickStarted(trickNumber))
     }
 
@@ -226,6 +221,7 @@ data class PlayedCard(val playerId: PlayerId, val card: Card) {
 
 data class Bid(val bid: Int)
 
+// TODO: should make this a data class that gets copied...
 private class Bids {
     private var bids = mutableMapOf<PlayerId, DisplayBid>()
 

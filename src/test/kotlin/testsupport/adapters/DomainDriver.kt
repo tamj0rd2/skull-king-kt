@@ -31,9 +31,9 @@ class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver
 
     override val playersInRoom get() = game.players
     override val hand get() = game.getCardsInHand(playerId)
-    override val trick: List<PlayedCard> get() = game.currentTrick.playedCards
+    override val trick: List<PlayedCard> get() = game.currentTrick
     override val gameState: GameState get() = game.state
-    override val roundPhase: RoundPhase get() = game.phase
+    override val roundPhase: RoundPhase? get() = game.phase
     override val bids: Map<PlayerId, DisplayBid> get() = game.bids
     override val trickNumber: Int get() = game.trickNumber
     override val roundNumber: Int get() = game.roundNumber

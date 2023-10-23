@@ -22,7 +22,6 @@ import kotlin.time.Duration
 class LockedValue<T> {
     private val lock = Mutex()
 
-    // TODO: use setterrs with backing fields in Game.kt https://kotlinlang.org/docs/properties.html#backing-fields
     var lockedValue: T? = null
         set(newValue) {
             require(lock.isLocked) { "cannot set the value without first initialising it with use()" }
