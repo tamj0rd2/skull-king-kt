@@ -23,7 +23,6 @@ object Server {
         val game = Game()
         val http = httpHandler(
             game = game,
-            host = host,
             hotReload = hotReload,
             automateGameMasterCommands = automateGameMasterCommands,
         )

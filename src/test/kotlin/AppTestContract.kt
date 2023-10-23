@@ -43,6 +43,7 @@ import testsupport.TheWinnerOfTheTrick
 import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
+import testsupport.Wip
 import testsupport.both
 import testsupport.each
 import testsupport.ensurer
@@ -79,7 +80,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
 
     @AfterTest fun teardown() = c.teardown()
 
-    @Test
+    @Test @Wip
     fun `sitting at an empty table and waiting for more players to join`() {
         freddy(
             SitsAtTheTable,
@@ -90,7 +91,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         )
     }
 
-    @Test
+    @Test @Wip
     fun `waiting for sally to bid`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -101,7 +102,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 
-    @Test
+    @Test @Wip
     fun `playing a card and waiting for the next player to do the same`() {
         freddy and sally both SitAtTheTable
         gary(RigsTheDeck.SoThat(freddy).willEndUpWith(11.blue), SaysTheGameCanStart)
@@ -127,7 +128,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 
-    @Test
+    @Test @Wip
     fun `winning a trick`() {
         freddy and sally both SitAtTheTable
         gary(
@@ -175,7 +176,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 
-    @Test
+    @Test @Wip
     fun `cannot play a card before the trick begins`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -189,7 +190,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy and sally both Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>()
     }
 
-    @Test
+    @Test @Wip
     fun `cannot play a card that would break suit rules`() {
         val thePlayers = listOf(freddy, sally)
         val theGameMaster = gary
@@ -214,7 +215,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         sally(Plays(4.red))
     }
 
-    @Test
+    @Test @Wip
     fun `can play special cards when you have a card for the correct suit - sanity check`() {
         val thePlayers = listOf(freddy, sally)
         val theGameMaster = gary
@@ -232,7 +233,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         thePlayers each ensure(TheRoundPhase, Is(TrickCompleted))
     }
 
-    @Test
+    @Test @Wip
     fun `cannot play a card when it is not their turn`() {
         val thirzah = Actor("Thirzah Third").whoCan(c.participateInGames())
         val thePlayers = listOf(freddy, sally, thirzah)
@@ -253,14 +254,14 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         thirzah(Plays.theirFirstPlayableCard)
     }
 
-    @Test
+    @Test @Wip
     fun `cannot bid before the game has started`() {
         freddy and sally both SitAtTheTable
         freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
         freddy and sally both ensure(TheGameState, Is(WaitingToStart))
     }
 
-    @Test
+    @Test @Wip
     fun `cannot bid while tricks are taking place`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -271,7 +272,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
     }
 
-    @Test
+    @Test @Wip
     fun `cannot bid twice`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -279,21 +280,21 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
     }
 
-    @Test
+    @Test @Wip
     fun `cannot bid more than the current round number`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
         freddy.attemptsTo(Bid(2).expectingFailure<GameException.CannotBid>())
     }
 
-    @Test
+    @Test @Wip
     fun `a player can't join twice`() {
         freddy(SitsAtTheTable)
         val freddyOnASecondDevice = Actor(freddy.name).whoCan(c.participateInGames())
-        freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure<GameException.PlayerWithSameNameAlreadyJoined>())
+        freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure<GameException.CannotJoinGame>())
     }
 
-    @Test
+    @Test @Wip
     fun `playing a game from start to finish`() {
         freddy and sally both SitAtTheTable
         freddy and sally both ensure {

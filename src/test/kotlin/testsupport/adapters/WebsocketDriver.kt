@@ -10,39 +10,32 @@ import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.webapp.Acknowledgements
-import com.tamj0rd2.webapp.OverTheWireMessage
-import com.tamj0rd2.webapp.ServerMessage
+import com.tamj0rd2.webapp.Message
+import com.tamj0rd2.webapp.Notification
 import com.tamj0rd2.webapp.awaitingAck
-import com.tamj0rd2.webapp.overTheWireMessageLens
+import com.tamj0rd2.webapp.messageLens
 import com.tamj0rd2.webapp.processedMessage
 import com.tamj0rd2.webapp.receivedMessage
 import com.tamj0rd2.webapp.sending
 import com.tamj0rd2.webapp.sentMessage
 import org.http4k.client.WebsocketClient
-import org.http4k.core.ContentType
-import org.http4k.core.HttpHandler
-import org.http4k.core.Method
-import org.http4k.core.Request
-import org.http4k.core.Status
 import org.http4k.core.Uri
-import org.http4k.core.body.form
 import org.http4k.websocket.Websocket
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import testsupport.ApplicationDriver
+import java.time.Instant.now
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
-class WebsocketDriver(private val httpClient: HttpHandler, host: String, private val ackTimeoutMs: Long = 300) :
+class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
     ApplicationDriver {
-    private val httpBaseUrl = "http://$host"
     private val wsBaseUrl = "ws://$host"
-    private val joinSyncObject = Object()
     private val acknowledgements = Acknowledgements(ackTimeoutMs)
 
-    private lateinit var ws: Websocket
-    private lateinit var logger: Logger
     private lateinit var playerId: PlayerId
+    private lateinit var logger: Logger
+    private var ws: Websocket
 
     override var winsOfTheRound: Map<PlayerId, Int> = emptyMap()
     override var trickWinner: PlayerId? = null
@@ -56,60 +49,44 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
     override var hand = mutableListOf<CardWithPlayability>()
     override var bids = mutableMapOf<PlayerId, DisplayBid>()
 
-    override fun perform(command: PlayerCommand) =
-        when (command) {
-            is JoinGame -> joinGame(command)
-            is PlaceBid -> bid(command)
-            is PlayCard -> playCard(command)
-        }
+    init {
+        identifyAs(PlayerId.unidentified)
 
-    private fun joinGame(command: JoinGame) {
-        playerId = command.actor
-        logger = LoggerFactory.getLogger("$playerId:wsClient")
-
-        val req = Request(Method.POST, "$httpBaseUrl/play")
-            .form("playerId", playerId.playerId)
-            .header("Accept", ContentType.APPLICATION_JSON.toHeaderValue())
-
-        val res = httpClient(req)
-        when (res.status) {
-            Status.OK -> {}
-            Status.CONFLICT -> throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
-            else -> error("failed to join game - ${res.status} - ${res.bodyString()}")
-        }
+        val syncer = Syncer()
+        var connected = false
 
         ws = WebsocketClient.nonBlocking(
-            Uri.of("$wsBaseUrl/$playerId"),
+            Uri.of("$wsBaseUrl/play"),
             onError = { throw it },
             timeout = 1.seconds.toJavaDuration(),
-        )
+        ) {
+            connected = true
+            syncer.wake()
+        }
 
         ws.onMessage {
-            val message = overTheWireMessageLens(it)
+            val message = messageLens(it)
             logger.receivedMessage(message)
+
             when (message) {
-                is OverTheWireMessage.Ack.FromServer -> {
+                is Message.Ack.FromServer -> {
                     message.messages.forEach(::handleMessage)
                     acknowledgements.ack(message.id)
                     logger.processedMessage(message)
                 }
 
-                is OverTheWireMessage.Nack -> {
+                is Message.Nack -> {
                     acknowledgements.nack(message.id)
                 }
 
-                is OverTheWireMessage.ToClient -> {
-                    message.messages.forEach(::handleMessage)
+                is Message.ToClient -> {
+                    message.notifications.forEach(::handleMessage)
                     logger.processedMessage(message)
 
-                    if (message.messages.size == 1 && message.messages[0] is ServerMessage.YouJoined) {
-                        synchronized(joinSyncObject) { joinSyncObject.notify() }
-                        return@onMessage
-                    }
 
                     message.acknowledge().let { response ->
                         logger.sending(response)
-                        ws.send(overTheWireMessageLens(response))
+                        ws.send(messageLens(response))
                         logger.sentMessage(response)
                     }
                 }
@@ -118,35 +95,48 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
             }
         }
 
-        synchronized(joinSyncObject) { joinSyncObject.wait() }
-        logger.debug("joined game")
+        ws.onClose { logger.warn("websocket connection closed") }
+        syncer.waitUntil(ackTimeoutMs) { connected }
     }
 
-    // TODO: these 2 can be deleted once I refactor joinGame
-    private fun bid(command: PlaceBid) {
-        sendCommand(command)
-            .onFailure { throw GameException.CannotBid("operation nacked by server") }
-            .onSuccess { logger.debug("bidded ${command.bid}") }
+    override fun perform(command: PlayerCommand) {
+        val message = Message.ToServer(command)
+        val wasSuccessful = acknowledgements.waitFor(message.id) {
+            logger.sending(message)
+            ws.send(messageLens(message))
+            logger.awaitingAck(message)
+        }
+
+        if (wasSuccessful) {
+            logger.info("successfully performed $command")
+            return
+        }
+
+        when (command) {
+            // TODO: it'd be nice if I could include the reason why here
+            is JoinGame -> throw GameException.CannotJoinGame("command failed")
+            is PlaceBid -> throw GameException.CannotBid("command failed")
+            is PlayCard -> throw GameException.CannotPlayCard("command failed")
+        }
     }
 
-    private fun playCard(command: PlayCard) {
-        sendCommand(command)
-            .onFailure { throw GameException.CannotPlayCard("operation nacked by server") }
-            .onSuccess { logger.debug("played ${command.cardName}") }
+    private fun identifyAs(playerId: PlayerId) {
+        this.playerId = playerId
+        this.logger = LoggerFactory.getLogger("$playerId:wsClient")
     }
 
-    private fun handleMessage(message: ServerMessage) {
+    private fun handleMessage(message: Notification) {
         when (message) {
-            is ServerMessage.BidPlaced -> {
+            is Notification.BidPlaced -> {
                 bids[message.playerId] = DisplayBid.Hidden
             }
 
-            is ServerMessage.BiddingCompleted -> {
+            is Notification.BiddingCompleted -> {
                 roundPhase = RoundPhase.BiddingCompleted
                 bids = message.bids.mapValues { DisplayBid.Placed(it.value.bid) }.toMutableMap()
             }
 
-            is ServerMessage.CardPlayed -> {
+            is Notification.CardPlayed -> {
                 currentPlayer = message.nextPlayer
                 trick.add(message.card.playedBy(message.playerId))
                 if (message.playerId == playerId) {
@@ -154,64 +144,54 @@ class WebsocketDriver(private val httpClient: HttpHandler, host: String, private
                 }
             }
 
-            is ServerMessage.GameCompleted -> {
+            is Notification.GameCompleted -> {
                 gameState = GameState.Complete
             }
 
-            is ServerMessage.GameStarted -> {
+            is Notification.GameStarted -> {
                 playersInRoom = message.players.toMutableList()
                 gameState = GameState.InProgress
             }
 
-            is ServerMessage.PlayerJoined -> {
+            is Notification.PlayerJoined -> {
                 playersInRoom.add(message.playerId)
                 gameState =
                     if (message.waitingForMorePlayers) GameState.WaitingForMorePlayers else GameState.WaitingToStart
             }
 
-            is ServerMessage.RoundCompleted -> {
+            is Notification.RoundCompleted -> {
                 winsOfTheRound = message.wins
             }
 
-            is ServerMessage.RoundStarted -> {
+            is Notification.RoundStarted -> {
                 roundNumber = message.roundNumber
                 roundPhase = RoundPhase.Bidding
                 hand = message.cardsDealt.toMutableList()
                 bids = playersInRoom.associateWith { DisplayBid.None }.toMutableMap()
             }
 
-            is ServerMessage.TrickCompleted -> {
+            is Notification.TrickCompleted -> {
                 roundPhase = RoundPhase.TrickCompleted
                 trickWinner = message.winner
             }
 
-            is ServerMessage.TrickStarted -> {
+            is Notification.TrickStarted -> {
                 roundPhase = RoundPhase.TrickTaking
                 trickNumber = message.trickNumber
                 currentPlayer = message.firstPlayer
                 trick.clear()
             }
 
-            // TODO: get rid of this. Let the client send a JoinGame message requiring acknowledgement instead
-            is ServerMessage.YouJoined -> {
+            is Notification.YouJoined -> {
+                identifyAs(message.playerId)
                 playersInRoom = message.players.toMutableList()
                 gameState =
                     if (message.waitingForMorePlayers) GameState.WaitingForMorePlayers else GameState.WaitingToStart
             }
 
-            is ServerMessage.YourTurn -> {
+            is Notification.YourTurn -> {
                 hand = message.cards.toMutableList()
             }
-        }
-    }
-
-    private fun sendCommand(command: PlayerCommand): Result<Unit> {
-        val otwMessage = OverTheWireMessage.ToServer(command)
-
-        return acknowledgements.waitFor(otwMessage.id) {
-            logger.sending(otwMessage)
-            ws.send(overTheWireMessageLens(otwMessage))
-            logger.awaitingAck(otwMessage)
         }
     }
 }
@@ -221,4 +201,22 @@ private fun <T> MutableList<T>.removeFirstIf(predicate: (T) -> Boolean): Boolean
     if (firstMatchingIndex < 0) return false
     removeAt(firstMatchingIndex)
     return true
+}
+
+class Syncer {
+    private val syncObject = Object()
+
+    fun wake() = synchronized(syncObject) { syncObject.notify() }
+
+    fun waitUntil(timeoutMs: Long, backoffMs: Long = timeoutMs / 5, predicate: () -> Boolean) {
+        synchronized(syncObject) {
+            val mustEndBy = now().plusMillis(timeoutMs)
+            do {
+                if (predicate()) return@synchronized
+                syncObject.wait(backoffMs)
+            } while (mustEndBy > now())
+
+            error("predicate never succeeded")
+        }
+    }
 }

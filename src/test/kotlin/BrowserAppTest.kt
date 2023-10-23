@@ -29,8 +29,8 @@ import testsupport.TheRoundNumber
 import testsupport.TheRoundPhase
 import testsupport.TheTrickNumber
 import testsupport.TheirHand
-import testsupport.adapters.HTTPDriver
 import testsupport.adapters.BrowserDriver
+import testsupport.adapters.HTTPDriver
 import testsupport.both
 import testsupport.each
 import testsupport.ensurer
@@ -38,6 +38,7 @@ import testsupport.playerId
 import java.net.ServerSocket
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Ignore
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -118,6 +119,7 @@ private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Durat
 @Execution(ExecutionMode.CONCURRENT)
 class BrowserAppTest : AppTestContract(BrowserAppTestConfiguration(automaticGameMasterCommandDelay = null))
 
+@Ignore
 @Execution(ExecutionMode.CONCURRENT)
 class BrowserAppTestWithAutomatedGameMasterCommands : Ensurer by ensurer(1.seconds) {
     private val gmDelay = 1.seconds

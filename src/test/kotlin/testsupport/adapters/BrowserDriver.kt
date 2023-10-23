@@ -35,12 +35,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         driver.findElement(By.id("joinGame")).submit().apply {
             val errorElements = driver.findElements(By.id("errorMessage"))
             if (errorElements.isNotEmpty()) {
-                when (val errorMessage = errorElements.single().text) {
-                    GameException.PlayerWithSameNameAlreadyJoined::class.simpleName!! ->
-                        throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
-
-                    else -> error("unknown error message: $errorMessage")
-                }
+                throw GameException.CannotJoinGame(errorElements.single().text)
             }
         }
     }

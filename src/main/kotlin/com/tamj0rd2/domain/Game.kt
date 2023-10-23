@@ -56,7 +56,7 @@ class Game {
     }
 
     private fun addPlayer(playerId: PlayerId) = playerCommand(playerId) {
-        if (_players.contains(playerId)) throw GameException.PlayerWithSameNameAlreadyJoined(playerId)
+        if (_players.contains(playerId)) throw GameException.CannotJoinGame("player with the same id has already joined")
 
         _players += playerId
         if (!waitingForMorePlayers) state = GameState.WaitingToStart
@@ -183,6 +183,8 @@ data class PlayerId(val playerId: String) {
     override fun toString(): String = playerId
 
     companion object {
+        val unidentified = PlayerId("unidentified")
+
         fun from(playerId: String) = PlayerId(playerId)
     }
 }

@@ -1,12 +1,12 @@
 
 import com.tamj0rd2.webapp.Server
 import org.eclipse.jetty.client.HttpClient
-import org.http4k.client.JettyClient
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.adapters.HTTPDriver
 import testsupport.adapters.WebsocketDriver
 import java.net.ServerSocket
+import kotlin.test.Ignore
 import kotlin.time.Duration
 
 class WebAppTest : AppTestContract(WebAppTestConfiguration())
@@ -41,7 +41,6 @@ class WebAppTestConfiguration : TestConfiguration {
     override fun participateInGames(): ParticipateInGames {
         return ParticipateInGames(
             WebsocketDriver(
-                httpClient = JettyClient.invoke(httpClient),
                 host = host,
                 ackTimeoutMs = acknowledgementTimeoutMs
             )

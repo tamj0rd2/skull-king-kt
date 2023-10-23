@@ -24,23 +24,23 @@ class CustomJacksonTest {
 
     @Test
     fun `can serialize and deserialize messages to the client`() {
-        val expected = ServerMessage.BidPlaced(PlayerId("somePlayer"))
+        val expected = Notification.BidPlaced(PlayerId("somePlayer"))
         val jsonString = expected.asJsonObject().asCompactJsonString()
         println(jsonString)
-        jsonString shouldBe """{"type":"MessageToClient${"$"}BidPlaced","playerId":"somePlayer"}"""
+        jsonString.replace("$", "_") shouldBe """{"type":"Notification_BidPlaced","playerId":"somePlayer"}"""
 
-        val result = jsonString.asJsonObject().asA(ServerMessage::class)
+        val result = jsonString.asJsonObject().asA(Notification::class)
         result shouldBe expected
     }
 
     @Test
     fun `can serialize and deserialize messages to the client - sanity check`() {
-        val expected = ServerMessage.BiddingCompleted(mapOf(PlayerId("somePlayer") to Bid(1), PlayerId("someOtherPlayer") to Bid(2)))
+        val expected = Notification.BiddingCompleted(mapOf(PlayerId("somePlayer") to Bid(1), PlayerId("someOtherPlayer") to Bid(2)))
         val jsonString = expected.asJsonObject().asCompactJsonString()
         println(jsonString)
-        jsonString.replace("$", "_") shouldBe """{"type":"MessageToClient_BiddingCompleted","bids":{"somePlayer":1,"someOtherPlayer":2}}"""
+        jsonString.replace("$", "_") shouldBe """{"type":"Notification_BiddingCompleted","bids":{"somePlayer":1,"someOtherPlayer":2}}"""
 
-        val result = jsonString.asJsonObject().asA(ServerMessage::class)
+        val result = jsonString.asJsonObject().asA(Notification::class)
         result shouldBe expected
     }
 

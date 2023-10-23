@@ -23,7 +23,7 @@ class Acknowledgements(private val timeoutMs: Long) {
         }
     }
 
-    fun waitFor(id: MessageId, before: () -> Unit): Result<Unit> {
+    fun waitFor(id: MessageId, before: () -> Unit): Boolean {
         val backoff = timeoutMs / 5
 
         return synchronized(syncObject) {
@@ -33,8 +33,8 @@ class Acknowledgements(private val timeoutMs: Long) {
 
             val mustEndBy = Instant.now().plusMillis(timeoutMs)
             while (Instant.now() < mustEndBy) {
-                if (nacks.contains(id)) return@synchronized Result.failure<Unit>(NackException(id))
-                if (!outstanding.contains(id)) return@synchronized Result.success(Unit)
+                if (nacks.contains(id)) return@synchronized false
+                if (!outstanding.contains(id)) return@synchronized true
                 syncObject.wait(backoff)
             }
 
