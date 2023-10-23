@@ -80,7 +80,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
 
     @AfterTest fun teardown() = c.teardown()
 
-    @Test @Wip
+    @Test
     fun `sitting at an empty table and waiting for more players to join`() {
         freddy(
             SitsAtTheTable,
@@ -128,7 +128,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 
-    @Test
+    @Test @Wip
     fun `winning a trick`() {
         freddy and sally both SitAtTheTable
         gary(

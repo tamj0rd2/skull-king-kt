@@ -1,5 +1,6 @@
-import {DisconnectGameEventListener, NotificationType, listenToNotifications} from "../GameEvents";
+import {NotificationType, listenToNotifications} from "../GameEvents";
 import {GamePhase} from "../Constants";
+import {DisconnectGameEventListener} from "../Socket";
 
 export class GamePhaseElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener

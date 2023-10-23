@@ -1,7 +1,14 @@
-import {Command} from "./GameEvents";
+import {Command, NotificationType} from "./GameEvents";
 import {PlayerId} from "./Constants";
 
-export const socket = new WebSocket(INITIAL_STATE.endpoint)
+const socket = new WebSocket(INITIAL_STATE.endpoint)
+
+socket.addEventListener("error", (event) => console.error(event))
+socket.addEventListener("message", (event) => console.log(`${getPlayerId()} received ${event.data}`, JSON.parse(event.data)))
+socket.addEventListener("close", (event) => console.warn(`disconnected from ws - ${event.reason}`, event))
+socket.addEventListener("open", () => console.log("connected to ws"))
+
+export { socket }
 
 export enum MessageType {
     AckFromClient = "Message$Ack$FromClient",
@@ -13,11 +20,59 @@ export enum MessageType {
 
 export interface Message {
     type: MessageType
+    id: String
     [key: string]: any
 }
 
-export function sendCommand(command: Command) {
-    socket.send(JSON.stringify({ type: MessageType.ToServer, command }))
+const spinner = document.querySelector("#spinner")!!
+
+const listeners = new Map<string, NotificationListeners>()
+export function registerNotificationListeners(id: string, listenersToAdd: NotificationListeners) {
+    listeners.set(id, listenersToAdd)
+}
+export function removeNotificationListeners(id: string) {
+    listeners.delete(id)
+}
+
+export function sendCommand(command: Command): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        spinner.classList.remove("u-hidden")
+
+        const messageId = crypto.randomUUID()
+        const signal = AbortSignal.timeout(5000)
+
+        socket.addEventListener("message", function handler(event) {
+            if (signal.aborted) {
+                this.removeEventListener("message", handler)
+                return reject(new Error("timed out"))
+            }
+
+            const message = JSON.parse(event.data) as Message
+            if (message.id !== messageId) return
+            if (message.type === MessageType.Nack) return reject(new Error("server nacked the command. handle this..."))
+            if (message.type !== MessageType.AckFromServer) return reject(new Error(`invalid message type ${message.type}`))
+
+            this.removeEventListener("message", handler)
+
+            const notifications: Notification[] = message.notifications
+            notifications.forEach((notification) => {
+                listeners.forEach((listeners) => {
+                    const listener = listeners[notification.type]
+                    if (!!listener) listener(notification)
+                })
+            })
+
+            listeners.forEach((listener) => listener)
+
+            spinner.classList.add("u-hidden")
+            resolve()
+        })
+
+        const message = { id: messageId, type: MessageType.ToServer, command };
+        const json = JSON.stringify(message);
+        console.log(`sending ${json}`, message)
+        socket.send(json)
+    })
 }
 
 let playerId: PlayerId = "unidentified"
@@ -30,16 +85,12 @@ export function setPlayerId(newId: PlayerId) {
     playerId = newId
 }
 
-socket.addEventListener("error", (event) => console.error(event))
-socket.addEventListener("open", () => {
-    console.log("connected to ws")
+export interface Notification {
+    type: NotificationType
 
-    // TODO: this needs to move elsewhere
-    // sendCommand({ type: CommandType.JoinGame, playerId: INITIAL_STATE.playerId })
-})
+    [key: string]: any
+}
 
-socket.addEventListener("message", (event) => {
-    let data = JSON.parse(event.data);
-    console.log(`${getPlayerId()} received ${event.data}`, data)
-})
-socket.addEventListener("close", (event) => console.warn(`disconnected from ws - ${event.reason}`, event))
+export type NotificationListener = (notification: Notification) => void
+export type NotificationListeners = { [key in NotificationType]?: NotificationListener }
+export type DisconnectGameEventListener = () => void

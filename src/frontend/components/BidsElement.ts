@@ -1,5 +1,6 @@
-import {DisconnectGameEventListener, NotificationType, listenToNotifications} from "../GameEvents";
+import {NotificationType, listenToNotifications} from "../GameEvents";
 import {ActualBids, PlayerId, PlayerIds} from "../Constants";
+import {DisconnectGameEventListener} from "../Socket";
 
 export class BidsElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener

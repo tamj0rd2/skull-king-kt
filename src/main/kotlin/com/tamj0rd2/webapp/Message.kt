@@ -54,7 +54,7 @@ sealed class Message {
     data class ToServer(val command: PlayerCommand) : Message() {
         override val id: MessageId = MessageId.next()
 
-        fun acknowledge(messages: List<Notification> = emptyList()) = Ack.FromServer(id, messages)
+        fun acknowledge(messages: List<Notification>) = Ack.FromServer(id, messages)
 
         override fun toString(): String {
             return "$id - $command"
@@ -65,7 +65,7 @@ sealed class Message {
 fun Logger.receivedMessage(message: Message) =
     when (message) {
         is Message.Ack -> debug("got ack: {}", message.id)
-        is Message.ToServer -> debug("received: {}", message.id)
+        is Message.ToServer -> debug("received: {}", message)
         is Message.ToClient -> debug("received: {}", message.id)
         is Message.Nack -> debug("received: {}", message)
     }

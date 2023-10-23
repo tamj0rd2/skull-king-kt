@@ -18,34 +18,40 @@ import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
 import testsupport.ApplicationDriver
+import java.time.Instant.now
 
-private const val debug = true
+private const val debug = false
 
 class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
     private var playerId = PlayerId.unidentified
 
-    override fun perform(command: Command.PlayerCommand): Unit = when(command) {
+    override fun perform(command: Command.PlayerCommand): Unit = when (command) {
         is Command.PlayerCommand.JoinGame -> joinGame(command.actor)
         is Command.PlayerCommand.PlaceBid -> bid(command.bid.bid)
         is Command.PlayerCommand.PlayCard -> playCard(command.cardName)
     }
 
     private fun joinGame(playerId: PlayerId) = debugException {
-        driver.findElement(By.name("playerId")).sendKeys(playerId.playerId)
-        this.playerId = playerId
-
-        driver.findElement(By.id("joinGame")).submit()
-
-        val errorElements = driver.findElements(By.id("errorMessage"))
-        if (errorElements.isNotEmpty()) {
-            throw GameException.CannotJoinGame(errorElements.single().text)
-        }
-
         withClue("the game page didn't load successfully") {
             driver.title shouldBe "Playing Skull King"
         }
-        Unit
+
+        withClue("another command is still in progress") {
+            noCommandsAreInProgress shouldBe true
+        }
+
+        this.playerId = playerId
+        driver.findElement(By.name("playerId")).sendKeys(playerId.playerId)
+        driver.findElement(By.id("joinGame")).submit()
+
+        withClue("another command is still in progress") {
+            noCommandsAreInProgress shouldBe false
+        }
+
+        waitUntil({ noCommandsAreInProgress }, "the command is still in progress")
     }
+
+    private val noCommandsAreInProgress get() = !driver.findElement(By.id("spinner")).isDisplayed
 
     private fun bid(bid: Int) = debugException {
         try {
@@ -198,4 +204,13 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
     }
 
     private fun WebElement.toCard() = Card.from(this.getAttribute("suit"), this.getAttribute("number")?.toInt())
+}
+
+private fun waitUntil(predicate: () -> Boolean, errorMessage: String = "predicate not met within timeout") {
+    val mustEndBy = now().plusSeconds(1)
+    do {
+        if (predicate()) return
+        Thread.sleep(100)
+    } while (mustEndBy > now())
+    error(errorMessage)
 }

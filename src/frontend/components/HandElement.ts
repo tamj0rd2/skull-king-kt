@@ -1,6 +1,6 @@
-import {DisconnectGameEventListener, NotificationType, listenToNotifications, CommandType} from "../GameEvents";
+import {NotificationType, listenToNotifications, CommandType} from "../GameEvents";
 import {Card} from "../Constants";
-import {sendCommand} from "../Socket";
+import {DisconnectGameEventListener, sendCommand} from "../Socket";
 
 export class HandElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -56,10 +56,10 @@ export class HandElement extends HTMLElement {
 
             const button = document.createElement("button")
             button.innerText = "Play"
-            button.onclick = () => {
+            button.onclick = async () => {
                 li.remove()
                 this.makeCardsUnplayable()
-                sendCommand({
+                await sendCommand({
                     type: CommandType.PlayCard,
                     cardName: cardName,
                 })

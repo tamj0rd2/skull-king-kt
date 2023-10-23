@@ -34,6 +34,7 @@ import testsupport.adapters.HTTPDriver
 import testsupport.both
 import testsupport.each
 import testsupport.ensurer
+import testsupport.logger
 import testsupport.playerId
 import java.net.ServerSocket
 import kotlin.test.AfterTest
@@ -102,8 +103,7 @@ private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Durat
         val chromeDriver = ChromeDriver(Config.chromeOptions).apply {
             devTools.createSession()
             devTools.domains.events().addJavascriptExceptionListener { j: JavascriptException ->
-                val stackTrace = j.stackTrace.joinToString("\n") { it.toString().replace("$baseUrl/", "") }
-                error("JAVASCRIPT ERROR!: ${j.rawMessage}\n$stackTrace")
+                logger.error("JS error", j)
             }
             devTools.domains.events().addConsoleListener { println(it.messages.joinToString(" ")) }
 

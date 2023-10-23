@@ -1,4 +1,12 @@
-import {Message, MessageType, socket} from "./Socket";
+import {
+    DisconnectGameEventListener,
+    Message,
+    MessageType,
+    Notification,
+    NotificationListeners, registerNotificationListeners,
+    removeNotificationListeners,
+    socket
+} from "./Socket";
 
 export enum NotificationType {
     PlayerJoined = "Notification$PlayerJoined",
@@ -18,8 +26,8 @@ export enum NotificationType {
 // const knownNotificationTypes = Object.values(NotificationType)
 // TODO: work my way through these one by one in whatever order makes sense, then remove this whole thing, prefering the above
 const knownNotificationTypes = [
-    // NotificationType.PlayerJoined,
-    // NotificationType.GameStarted,
+    NotificationType.PlayerJoined,
+    NotificationType.GameStarted,
     // NotificationType.RoundStarted,
     // NotificationType.BidPlaced,
     // NotificationType.BiddingCompleted,
@@ -45,22 +53,13 @@ export interface Command {
     [key: string]: any
 }
 
-// TODO: bad naming
-export interface Notification {
-    type: NotificationType
-    [key: string]: any
-}
-
-export type NotificationListener = (event: Notification) => void
-export type NotificationListeners = { [key in NotificationType]?: NotificationListener }
-export type DisconnectGameEventListener = () => void
-
 export function listenToNotifications(notificationListeners: NotificationListeners): DisconnectGameEventListener {
     function readNotificationsFrom(message: Message): Notification[] {
         switch (message.type) {
             case MessageType.ToClient:
+                return message.notifications
             case MessageType.AckFromServer:
-                return message.notifications ?? []
+                return []
             case MessageType.Nack:
                 throw Error("handle nacks from server")
             case MessageType.AckFromClient:
@@ -95,6 +94,12 @@ export function listenToNotifications(notificationListeners: NotificationListene
         }
     }
 
+    const listenerId = crypto.randomUUID()
+    registerNotificationListeners(listenerId, notificationListeners)
     socket.addEventListener("message", listener)
-    return () => socket.removeEventListener("message", listener)
+
+    return () => {
+        removeNotificationListeners(listenerId)
+        socket.removeEventListener("message", listener)
+    }
 }
