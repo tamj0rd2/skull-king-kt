@@ -8,6 +8,10 @@
 - `flyctl auth login`
 - `flyctl deploy`
 
+### Other helpful commands
+
+- Suspend the app using - `flyctl scale count 0`
+
 ## Development
 
 ### Setting up ChromeDriver
