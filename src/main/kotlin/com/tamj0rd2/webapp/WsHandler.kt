@@ -1,50 +1,18 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.Command.GameMasterCommand.*
 import com.tamj0rd2.domain.Command.PlayerCommand.JoinGame
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.webapp.Message.*
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.http4k.routing.RoutingWsHandler
 import org.http4k.routing.websockets
 import org.http4k.routing.ws.bind
 import org.http4k.websocket.WsResponse
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
-import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.concurrent.timerTask
 import kotlin.time.Duration
-
-class LockedValue<T> {
-    private val lock = Mutex()
-
-    var lockedValue: T? = null
-        set(newValue) {
-            require(lock.isLocked) { "cannot set the value without first initialising it with use()" }
-            field = newValue
-        }
-
-    fun use(initialValue: T? = null, block: LockedValue<T>.() -> Unit) {
-        require(lockedValue == null) { "the locked value is already erroneously set" }
-
-        runBlocking {
-            lock.withLock(this) {
-                lockedValue = initialValue
-                try {
-                    block()
-                } finally {
-                    lockedValue = null
-                }
-            }
-        }
-    }
-}
 
 internal fun wsHandler(
     game: Game,
@@ -201,58 +169,3 @@ fun GameEvent.notifications(game: Game, thisPlayerId: PlayerId): List<Notificati
         }
     }
 
-private class AutomatedGameMaster(private val game: Game, private val delayOverride: Duration?) {
-    private val allGameEvents = CopyOnWriteArrayList<GameEvent>()
-    private val logger = LoggerFactory.getLogger(this::class.simpleName)
-
-    fun start() {
-        val timer = Timer()
-
-        game.subscribeToGameEvents { events, _ ->
-            events.forEach { event ->
-                allGameEvents.add(event)
-
-                when (event) {
-                    is GameEvent.PlayerJoined -> {
-                        if (game.state != GameState.WaitingToStart) return@subscribeToGameEvents
-                        timer.schedule(timerTask {
-                            if (allGameEvents.last() != event) return@timerTask
-
-                            logger.info("Starting the game")
-                            game.perform(StartGame)
-                            game.perform(StartNextRound)
-                        }, delayOverride?.inWholeMilliseconds ?: 5000)
-                    }
-
-                    is GameEvent.BiddingCompleted -> {
-                        timer.schedule(timerTask {
-                            val lastEvent = allGameEvents.last()
-                            require(lastEvent == event) { "last event was not bidding completed, it was $lastEvent" }
-
-                            logger.info("Starting the first trick")
-                            game.perform(StartNextTrick)
-                        }, delayOverride?.inWholeMilliseconds ?: 3000)
-                    }
-
-                    is GameEvent.TrickCompleted -> {
-                        timer.schedule(timerTask {
-                            val lastEvent = allGameEvents.last()
-                            require(lastEvent == event) { "last event was not trick completed, it was $lastEvent" }
-
-                            // TODO: need to write a test for what happens after round 10 trick 10
-                            if (game.roundNumber == game.trickNumber) {
-                                logger.info("Starting the next round")
-                                game.perform(StartNextRound)
-                            } else {
-                                logger.info("Starting the next trick")
-                                game.perform(StartNextTrick)
-                            }
-                        }, delayOverride?.inWholeMilliseconds ?: 3000)
-                    }
-
-                    else -> {}
-                }
-            }
-        }
-    }
-}
