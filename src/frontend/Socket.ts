@@ -23,14 +23,7 @@ socket.addEventListener("message", (event) => {
         message.notifications!!.forEach((notification) => {
             listenerRegistry.forEach((listeners) => {
                 if (!knownNotificationTypes.includes(notification.type)) {
-                    // TODO: do something about this
-                    socket.send(JSON.stringify({
-                        type: "UnknownMessageFromServer",
-                        offender: notification.type,
-                    }))
-                    console.error(`Unknown message from server: ${notification.type}`)
-                    socket.close(4000, `Unknown message from server: ${notification.type}`)
-                    return
+                    throw Error(`Unknown message from server: ${notification.type}`)
                 }
 
                 listeners[notification.type]?.(notification)
@@ -39,11 +32,7 @@ socket.addEventListener("message", (event) => {
 
         acknowledgeMessage(message)
     } catch(e) {
-        // TODO: do something about this
-        socket.send(JSON.stringify({
-            stackTrace: (e as Error).stack,
-            type: "ClientError",
-        }))
+        socket.close(4000, (e as Error).message)
         throw e
     }
 })

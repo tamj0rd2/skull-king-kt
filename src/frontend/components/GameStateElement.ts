@@ -18,8 +18,6 @@ export class GameStateElement extends HTMLElement {
         })
 
         this.innerHTML = `<h2 id="gameState"></h2>`
-        // TODO: replace this
-        // this.setBasedOnPlayers(INITIAL_STATE.waitingForMorePlayers)
     }
 
     setBasedOnPlayers = (waitingForMorePlayers: boolean) => {
