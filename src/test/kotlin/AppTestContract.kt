@@ -23,6 +23,7 @@ import testsupport.Is
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.Play
+import testsupport.Playing
 import testsupport.Plays
 import testsupport.RigsTheDeck
 import testsupport.SaysTheGameCanStart
@@ -31,6 +32,7 @@ import testsupport.SaysTheRoundCanStart
 import testsupport.SaysTheTrickCanStart
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
+import testsupport.SittingAtTheTable
 import testsupport.TheCurrentPlayer
 import testsupport.TheCurrentTrick
 import testsupport.TheGameState
@@ -207,7 +209,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         skipToTrickTaking(theGameMaster = theGameMaster, thePlayers = thePlayers, this)
 
         freddy(Plays(1.blue))
-        sally.attemptsTo(Play(4.red).expectingFailure(PlayingCardWouldBreakSuitRules))
+        sally(Playing(4.red) wouldFailBecause PlayingCardWouldBreakSuitRules)
 
         // recovery
         sally(ensures(HerHand, sizeIs(2)))
@@ -245,13 +247,13 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         playUpToStartOf(round = 2, trick = 1, theGameMaster = gary, thePlayers = thePlayers, this)
 
         thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
-        sally.attemptsTo(Play.theirFirstPlayableCard.expectingFailure(NotYourTurn))
+        sally(Playing.theirFirstPlayableCard wouldFailBecause NotYourTurn)
 
         thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
         freddy(Plays.theirFirstPlayableCard)
 
         thePlayers each ensure(TheCurrentPlayer, Is(sally.playerId))
-        thirzah.attemptsTo(Play.theirFirstPlayableCard.expectingFailure(NotYourTurn))
+        thirzah(Playing.theirFirstPlayableCard wouldFailBecause NotYourTurn)
 
         // recovery
         thePlayers each ensure(TheCurrentPlayer, Is(sally.playerId))
@@ -262,7 +264,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
     @Test
     fun `cannot bid before the game has started`() {
         freddy and sally both SitAtTheTable
-        freddy.attemptsTo(Bid(1).expectingFailure(GameNotInProgress))
+        freddy(Bidding(1) wouldFailBecause GameNotInProgress)
         freddy and sally both ensure(TheGameState, Is(WaitingToStart))
     }
 
@@ -282,21 +284,21 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
         freddy(Bids(1))
-        freddy.attemptsTo(Bid(1).expectingFailure(AlreadyPlacedABid))
+        freddy(Bidding(1) wouldFailBecause AlreadyPlacedABid)
     }
 
     @Test
     fun `cannot bid more than the current round number`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
-        freddy.attemptsTo(Bid(2).expectingFailure(BidLessThan0OrGreaterThanRoundNumber))
+        freddy(Bidding(2) wouldFailBecause BidLessThan0OrGreaterThanRoundNumber)
     }
 
     @Test
     fun `a player can't join twice`() {
         freddy(SitsAtTheTable)
         val freddyOnASecondDevice = Actor(freddy.name).whoCan(c.participateInGames())
-        freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure(PlayerWithSameNameAlreadyInGame))
+        freddyOnASecondDevice(SittingAtTheTable wouldFailBecause PlayerWithSameNameAlreadyInGame)
     }
 
     @Test

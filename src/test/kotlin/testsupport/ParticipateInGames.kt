@@ -8,6 +8,7 @@ import com.tamj0rd2.domain.PlayerId
 class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
 
 val Play = Plays
+val Playing = Plays
 object Plays {
     operator fun invoke(card: Card) = Activity("play ${card.name}") {actor ->
         actor.use<ParticipateInGames>().perform(PlayerCommand.PlayCard(actor.playerId, card.name))
@@ -30,5 +31,6 @@ val SitsAtTheTable = Activity("join the game") { actor ->
     actor.use<ParticipateInGames>().perform(PlayerCommand.JoinGame(actor.playerId))
 }
 val SitAtTheTable = SitsAtTheTable
+val SittingAtTheTable = SitsAtTheTable
 
 val Actor.playerId get() = PlayerId(name.lowercase().replace(" ", "_"))
