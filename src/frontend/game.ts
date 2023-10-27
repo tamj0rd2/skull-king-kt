@@ -21,7 +21,7 @@ joinGameEl.addEventListener("submit", (e) => {
     sendCommand({type: CommandType.JoinGame, actor: playerId})
         .catch((e) => {
             console.error(`${playerId} failed to join game`)
-            if (e instanceof NackError) showErrorMessage("Failed to join the game", e.errorCode)
+            if (e instanceof NackError) showErrorMessage("Failed to join the game", e.reason)
             else showErrorMessage(`Failed to join the game - ${e}`)
         })
 })

@@ -1,5 +1,5 @@
 import {
-    DisconnectGameEventListener,
+    DisconnectGameEventListener, ErrorCode,
     getPlayerId,
     listenToNotifications,
     Notification,
@@ -43,11 +43,13 @@ export class BiddingElement extends HTMLElement {
             if (bid >= 0 && bid <= roundNumber) {
                 placeBidBtn.disabled = false
                 biddingError.innerText = ""
+                biddingError.removeAttribute("errorCode")
                 return
             }
 
             placeBidBtn.disabled = true
             biddingError.innerText = `Bid must be between 0 and ${roundNumber}`
+            biddingError.setAttribute("errorCode", ErrorCode.BidLessThan0OrGreaterThanRoundNumber)
         }
 
         placeBidBtn.onclick = () => {

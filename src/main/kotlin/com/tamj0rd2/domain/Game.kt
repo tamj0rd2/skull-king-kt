@@ -1,5 +1,6 @@
 package com.tamj0rd2.domain
 
+import com.tamj0rd2.domain.GameErrorCode.*
 import com.tamj0rd2.domain.RoundPhase.*
 
 fun interface GameEventListener {
@@ -56,7 +57,7 @@ class Game {
     }
 
     private fun addPlayer(playerId: PlayerId) = playerCommand(playerId) {
-        if (_players.contains(playerId)) GameErrorCode.PlayerWithSameNameAlreadyInGame.throwException()
+        if (_players.contains(playerId)) PlayerWithSameNameAlreadyInGame.throwException()
 
         _players += playerId
         if (!waitingForMorePlayers) state = GameState.WaitingToStart
@@ -72,10 +73,13 @@ class Game {
     }
 
     private fun bid(playerId: PlayerId, bid: Int) = playerCommand(playerId) {
-        if (state != GameState.InProgress) throw GameException.CannotBid("game not in progress")
-        if (phase != Bidding) throw GameException.CannotBid("not in bidding phase")
-        if (bid < 0 || bid > roundNumber) throw GameException.CannotBid("bid $bid is greater than the round number ($roundNumber)")
-        if (_bids.hasPlayerAlreadyBid(playerId)) throw GameException.CannotBid("player $playerId has already bid")
+        when {
+            state != GameState.InProgress -> GameNotInProgress
+            phase != Bidding -> BiddingIsNotInProgress
+            bid < 0 || bid > roundNumber -> BidLessThan0OrGreaterThanRoundNumber
+            _bids.hasPlayerAlreadyBid(playerId) -> AlreadyPlacedABid
+            else -> null
+        }?.throwException()
 
         _bids.place(playerId, bid)
         recordEvent(GameEvent.BidPlaced(playerId, Bid(bid)))
@@ -87,16 +91,17 @@ class Game {
     }
 
     private fun playCard(playerId: PlayerId, cardName: CardName) = playerCommand(playerId) {
-        if (phase != TrickTaking) throw GameException.CannotPlayCard("not in trick taking phase - phase is $phase")
-        if (currentPlayersTurn != playerId) throw GameException.CannotPlayCard("it is not $playerId's turn to play a card")
+        when {
+            phase != TrickTaking -> TrickNotInProgress
+            currentPlayersTurn != playerId -> NotYourTurn
+            else -> null
+        }?.throwException()
 
         val hand = hands[playerId] ?: error("player $playerId somehow doesn't have a hand")
         val card = hand.find { it.name == cardName }
         requireNotNull(card) { "card $cardName not in $playerId's hand" }
 
-        if (!trick.isCardPlayable(card, hand.excluding(card))) {
-            throw GameException.CannotPlayCard("$card does not match suit of trick")
-        }
+        if (!trick.isCardPlayable(card, hand.excluding(card))) PlayingCardWouldBreakSuitRules.throwException()
 
         hand.remove(card)
         trick.add(PlayedCard(playerId, card))

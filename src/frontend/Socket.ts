@@ -144,16 +144,15 @@ export function listenToNotifications(notificationListeners: NotificationListene
 
 export enum ErrorCode {
     PlayerWithSameNameAlreadyInGame = "PlayerWithSameNameAlreadyInGame",
+    BidLessThan0OrGreaterThanRoundNumber = "BidLessThan0OrGreaterThanRoundNumber",
 }
 const knownErrorCodes = Object.keys(ErrorCode)
 
 export class NackError extends Error {
-    public readonly errorCode: ErrorCode
+    public readonly reason: string
 
     constructor(reason: string) {
         super(reason.toString())
-
-        if (!knownErrorCodes.includes(reason)) throw Error(`unknown error code ${reason}`)
-        this.errorCode = ErrorCode[reason as keyof typeof ErrorCode]
+        this.reason = reason
     }
 }

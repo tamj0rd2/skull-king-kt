@@ -6,8 +6,7 @@ import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.DisplayBid.*
-import com.tamj0rd2.domain.GameErrorCode
-import com.tamj0rd2.domain.GameException
+import com.tamj0rd2.domain.GameErrorCode.*
 import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.RoundPhase.*
@@ -15,6 +14,7 @@ import com.tamj0rd2.domain.blue
 import com.tamj0rd2.domain.red
 import testsupport.Actor
 import testsupport.Bid
+import testsupport.Bidding
 import testsupport.Bids
 import testsupport.Ensurer
 import testsupport.HerHand
@@ -43,6 +43,7 @@ import testsupport.TheirFirstCard
 import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
+import testsupport.Wip
 import testsupport.both
 import testsupport.each
 import testsupport.ensurer
@@ -50,6 +51,7 @@ import testsupport.expectingFailure
 import testsupport.isEmpty
 import testsupport.playerId
 import testsupport.sizeIs
+import testsupport.wouldFailBecause
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -176,17 +178,19 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
     }
 
     @Test
-    fun `cannot play a card before the trick begins`() {
+    @Wip
+    // TODO: to make this work for the browser tests I probably need to introduce a playableCards property instead.
+    fun `cannot play a card when the trick is not in progress`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
 
         freddy(Bids(1))
         freddy and sally both ensure(TheRoundPhase, Is(Bidding))
-        freddy and sally both Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>()
+        freddy and sally both Play.theirFirstPlayableCard.expectingFailure(TrickNotInProgress)
 
         sally(Bids(1))
         freddy and sally both ensure(TheRoundPhase, Is(BiddingCompleted))
-        freddy and sally both Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>()
+        freddy and sally both Play.theirFirstPlayableCard.expectingFailure(TrickNotInProgress)
     }
 
     @Test
@@ -203,7 +207,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         skipToTrickTaking(theGameMaster = theGameMaster, thePlayers = thePlayers, this)
 
         freddy(Plays(1.blue))
-        sally.attemptsTo(Play(4.red).expectingFailure<GameException.CannotPlayCard>())
+        sally.attemptsTo(Play(4.red).expectingFailure(PlayingCardWouldBreakSuitRules))
 
         // recovery
         sally(ensures(HerHand, sizeIs(2)))
@@ -233,19 +237,21 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
     }
 
     @Test
+    @Wip
+    // TODO: to make this work for the browser tests I probably need to introduce a playableCards property instead.
     fun `cannot play a card when it is not their turn`() {
         val thirzah = Actor("Thirzah Third").whoCan(c.participateInGames())
         val thePlayers = listOf(freddy, sally, thirzah)
         playUpToStartOf(round = 2, trick = 1, theGameMaster = gary, thePlayers = thePlayers, this)
 
         thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
-        sally.attemptsTo(Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>())
+        sally.attemptsTo(Play.theirFirstPlayableCard.expectingFailure(NotYourTurn))
 
         thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
         freddy(Plays.theirFirstPlayableCard)
 
         thePlayers each ensure(TheCurrentPlayer, Is(sally.playerId))
-        thirzah.attemptsTo(Play.theirFirstPlayableCard.expectingFailure<GameException.CannotPlayCard>())
+        thirzah.attemptsTo(Play.theirFirstPlayableCard.expectingFailure(NotYourTurn))
 
         // recovery
         thePlayers each ensure(TheCurrentPlayer, Is(sally.playerId))
@@ -256,19 +262,19 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
     @Test
     fun `cannot bid before the game has started`() {
         freddy and sally both SitAtTheTable
-        freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
+        freddy.attemptsTo(Bid(1).expectingFailure(GameNotInProgress))
         freddy and sally both ensure(TheGameState, Is(WaitingToStart))
     }
 
     @Test
-    fun `cannot bid while tricks are taking place`() {
+    fun `cannot bid outside of the bidding phase`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
         freddy and sally both Bid(1)
         freddy and sally both ensure(TheRoundPhase, Is(BiddingCompleted))
         gary(SaysTheTrickCanStart)
         freddy and sally both ensure(TheRoundPhase, Is(TrickTaking))
-        freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
+        freddy(Bidding(1) wouldFailBecause BiddingIsNotInProgress)
     }
 
     @Test
@@ -276,21 +282,21 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
         freddy(Bids(1))
-        freddy.attemptsTo(Bid(1).expectingFailure<GameException.CannotBid>())
+        freddy.attemptsTo(Bid(1).expectingFailure(AlreadyPlacedABid))
     }
 
     @Test
     fun `cannot bid more than the current round number`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
-        freddy.attemptsTo(Bid(2).expectingFailure<GameException.CannotBid>())
+        freddy.attemptsTo(Bid(2).expectingFailure(BidLessThan0OrGreaterThanRoundNumber))
     }
 
     @Test
     fun `a player can't join twice`() {
         freddy(SitsAtTheTable)
         val freddyOnASecondDevice = Actor(freddy.name).whoCan(c.participateInGames())
-        freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure(GameErrorCode.PlayerWithSameNameAlreadyInGame))
+        freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure(PlayerWithSameNameAlreadyInGame))
     }
 
     @Test

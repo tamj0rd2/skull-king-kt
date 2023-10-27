@@ -14,18 +14,14 @@ import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
-inline fun <reified T : Throwable> Activity.expectingFailure() = EnsureActivity { actor ->
-    withClue("$actor expected activity '$this' to fail") {
-        shouldThrow<T> { actor.invoke(this@expectingFailure) }
-    }
-}
-
 fun Activity.expectingFailure(errorCode: GameErrorCode) = EnsureActivity { actor ->
     withClue("$actor expected activity '$this' to fail with $errorCode") {
         val ex = shouldThrow<GameErrorCodeException> { actor.invoke(this@expectingFailure) }
         ex.errorCode shouldBe errorCode
     }
 }
+
+infix fun Activity.wouldFailBecause(errorCode: GameErrorCode) = expectingFailure(errorCode)
 
 fun interface Assertion<T> {
     fun T?.assert()

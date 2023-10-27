@@ -6,7 +6,6 @@ import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.Command
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameErrorCode
-import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
@@ -67,11 +66,23 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         try {
             driver.findElement(By.name("bid")).sendKeys(bid.toString())
             driver.findElement(By.id("placeBid")).let {
-                if (!it.isEnabled) throw GameException.CannotBid("bid button is disabled")
-                it.click()
+                if (it.isEnabled) {
+                    it.click()
+                    return@let
+                }
+
+                driver.findElementOrNull(By.id("biddingError"))
+                    ?.getAttributeOrNull("errorCode")
+                    ?.let { GameErrorCode.fromString(it).throwException() }
+                    ?: error("bid button is disabled for unknown reasons")
             }
         } catch (e: NoSuchElementException) {
-            throw GameException.CannotBid(e.message)
+            when {
+                gameState == GameState.WaitingToStart -> GameErrorCode.GameNotInProgress
+                roundPhase != RoundPhase.Bidding -> GameErrorCode.BiddingIsNotInProgress
+                bids[playerId] is DisplayBid.Hidden || bids[playerId] is DisplayBid.Placed -> GameErrorCode.AlreadyPlacedABid
+                else -> error("cannot bid")
+            }.throwException()
         }
     }
 
@@ -85,7 +96,11 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         try {
             li.findElement(By.tagName("button")).click()
         } catch (e: NoSuchElementException) {
-            throw GameException.CannotPlayCard(e.message)
+            when {
+                // TODO: probably not quite right...
+                !hand.first { it.card.name == cardName }.isPlayable -> GameErrorCode.PlayingCardWouldBreakSuitRules
+                else -> error("no play card button")
+            }.throwException()
         }
     }
 
