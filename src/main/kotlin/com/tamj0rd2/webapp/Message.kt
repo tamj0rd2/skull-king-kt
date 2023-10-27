@@ -1,6 +1,7 @@
 package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Command.PlayerCommand
+import com.tamj0rd2.domain.GameErrorCode
 import org.slf4j.Logger
 import java.util.*
 
@@ -17,12 +18,13 @@ data class MessageId(val value: UUID) {
 sealed class Message {
     abstract val id: MessageId
 
-    fun nack(): Message =
+    fun nack(reason: GameErrorCode): Message = nack(reason.name)
+    fun nack(reason: String): Message =
         when (this) {
             is Ack -> error("ack cannot be nacked")
             is Nack -> error("nack cannot be nacked")
-            is ToServer -> Nack(id)
-            is ToClient -> Nack(id)
+            is ToServer,
+            is ToClient -> Nack(id, reason)
         }
 
     sealed class Ack : Message() {
@@ -39,7 +41,9 @@ sealed class Message {
         }
     }
 
-    data class Nack(override val id: MessageId) : Message()
+    data class Nack(override val id: MessageId, val reason: String) : Message() {
+        constructor(id: MessageId, errorCode: GameErrorCode) : this(id, errorCode.name)
+    }
 
     data class ToClient(val notifications: List<Notification>) : Message() {
         override val id: MessageId = MessageId.next()

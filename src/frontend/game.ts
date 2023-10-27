@@ -1,5 +1,6 @@
-import {listenToNotifications, sendCommand, setPlayerId} from "./Socket";
+import {listenToNotifications, NackError, sendCommand, setPlayerId} from "./Socket";
 import {CommandType, NotificationType, PlayerId} from "./Constants";
+import {showErrorMessage} from "./ErrorHandling";
 
 export {BiddingElement} from "./components/BiddingElement";
 export {BidsElement} from "./components/BidsElement";
@@ -11,25 +12,19 @@ export {TrickElement} from "./components/TrickElement";
 export {WinsElement} from "./components/WinsElement";
 
 const joinGameEl = document.forms.namedItem("joinGame")!!
-joinGameEl.addEventListener("submit",  (e) => {
+joinGameEl.addEventListener("submit", (e) => {
     e.preventDefault()
     e.stopImmediatePropagation()
     const formData = new FormData(joinGameEl)
     const playerId = formData.get("playerId") as PlayerId
     setPlayerId(playerId)
     sendCommand({type: CommandType.JoinGame, actor: playerId})
-        .catch((reason) => {
+        .catch((e) => {
             console.error(`${playerId} failed to join game`)
-            showErrorMessage("Failed to join the game. Try choosing a different name", "CannotJoinGame")
+            if (e instanceof NackError) showErrorMessage("Failed to join the game", e.errorCode)
+            else showErrorMessage(`Failed to join the game - ${e}`)
         })
 })
-
-function showErrorMessage(message: string, code: string) {
-    const el = document.querySelector("#errorMessage")!!
-    el.setAttribute("errorCode", code)
-    el.textContent = message
-    el.classList.remove("u-hidden")
-}
 
 const roundNumberEl = document.querySelector("#roundNumber") as HTMLHeadingElement
 const trickNumberEl = document.querySelector("#trickNumber") as HTMLHeadingElement

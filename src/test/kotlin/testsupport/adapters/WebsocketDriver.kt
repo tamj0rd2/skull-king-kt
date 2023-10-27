@@ -2,9 +2,8 @@ package testsupport.adapters
 
 import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.Command.PlayerCommand
-import com.tamj0rd2.domain.Command.PlayerCommand.*
 import com.tamj0rd2.domain.DisplayBid
-import com.tamj0rd2.domain.GameException
+import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
@@ -76,7 +75,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
                 }
 
                 is Message.Nack -> {
-                    acknowledgements.nack(message.id)
+                    acknowledgements.nack(message.id, message.reason)
                 }
 
                 is Message.ToClient -> {
@@ -101,23 +100,18 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
 
     override fun perform(command: PlayerCommand) {
         val message = Message.ToServer(command)
-        val wasSuccessful = acknowledgements.waitFor(message.id) {
+        val nackReason = acknowledgements.waitFor(message.id) {
             logger.sending(message)
             ws.send(messageLens(message))
             logger.awaitingAck(message)
         }
 
-        if (wasSuccessful) {
+        if (nackReason == null) {
             logger.info("success: $command")
             return
         }
 
-        when (command) {
-            // TODO: it'd be nice if I could include the reason why here
-            is JoinGame -> throw GameException.CannotJoinGame("command failed")
-            is PlaceBid -> throw GameException.CannotBid("command failed")
-            is PlayCard -> throw GameException.CannotPlayCard("command failed")
-        }
+        GameErrorCode.fromString(nackReason).throwException()
     }
 
     private fun identifyAs(playerId: PlayerId) {

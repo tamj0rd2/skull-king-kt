@@ -56,7 +56,7 @@ class Game {
     }
 
     private fun addPlayer(playerId: PlayerId) = playerCommand(playerId) {
-        if (_players.contains(playerId)) throw GameException.CannotJoinGame("player with the same id has already joined")
+        if (_players.contains(playerId)) GameErrorCode.PlayerWithSameNameAlreadyInGame.throwException()
 
         _players += playerId
         if (!waitingForMorePlayers) state = GameState.WaitingToStart

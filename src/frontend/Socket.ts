@@ -47,11 +47,19 @@ export enum MessageType {
     ToServer = "Message$ToServer"
 }
 
-export interface Message {
+export type Message = GenericMessage | Nack
+
+export interface GenericMessage {
     type: MessageType
     id: String
     notifications?: Notification[]
     [key: string]: any
+}
+
+export interface Nack {
+    type: MessageType.Nack
+    id: string
+    reason: string
 }
 
 const spinner = document.querySelector("#spinner")!!
@@ -82,7 +90,7 @@ export function sendCommand(command: Command): Promise<void> {
 
             this.removeEventListener("message", handler)
 
-            if (message.type === MessageType.Nack) return reject(new Error("server nacked the command. handle this..."))
+            if (message.type === MessageType.Nack) return reject(new NackError(message.reason))
             if (message.type !== MessageType.AckFromServer) return reject(new Error(`invalid message type ${message.type}`))
 
             message.notifications!!.forEach((notification) => {
@@ -132,4 +140,20 @@ export function listenToNotifications(notificationListeners: NotificationListene
     const listenerId = crypto.randomUUID()
     registerNotificationListeners(listenerId, notificationListeners)
     return () => removeNotificationListeners(listenerId)
+}
+
+export enum ErrorCode {
+    PlayerWithSameNameAlreadyInGame = "PlayerWithSameNameAlreadyInGame",
+}
+const knownErrorCodes = Object.keys(ErrorCode)
+
+export class NackError extends Error {
+    public readonly errorCode: ErrorCode
+
+    constructor(reason: string) {
+        super(reason.toString())
+
+        if (!knownErrorCodes.includes(reason)) throw Error(`unknown error code ${reason}`)
+        this.errorCode = ErrorCode[reason as keyof typeof ErrorCode]
+    }
 }

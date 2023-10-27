@@ -2,6 +2,7 @@ package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Command.PlayerCommand.JoinGame
 import com.tamj0rd2.domain.Game
+import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerId
@@ -41,7 +42,7 @@ internal fun wsHandler(
                 val messagesToClient = LockedValue<List<Notification>>()
 
                 ws.onClose { logger.warn("$playerId disconnected - ${it.description}") }
-                ws.onError { logger.error(it.message, it) }
+                ws.onError { logger.error(it.localizedMessage, it) }
 
                 ws.onMessage {
                     val message = messageLens(it)
@@ -68,12 +69,12 @@ internal fun wsHandler(
                                     }
 
                                     val otwMessage = ToClient(messages)
-                                    val wasSuccessful = acknowledgements.waitFor(otwMessage.id) {
+                                    val nackReason = acknowledgements.waitFor(otwMessage.id) {
                                         logger.sending(otwMessage)
                                         ws.send(messageLens(otwMessage))
                                         logger.awaitingAck(otwMessage)
                                     }
-                                    if (!wasSuccessful) error("client nacked the message")
+                                    if (nackReason != null) error("client nacked the message which should never happpend - $nackReason")
                                 }
                             }
 
@@ -84,8 +85,11 @@ internal fun wsHandler(
                                         message.acknowledge(lockedValue.orEmpty())
                                     },
                                     onFailure = {
-                                        logger.error("processing message failed - $message - $it")
-                                        message.nack()
+                                        logger.error("processing message failed - $message", it)
+                                        when(it) {
+                                            is GameErrorCodeException -> message.nack(it.errorCode)
+                                            else -> message.nack(it.localizedMessage)
+                                        }
                                     }
                                 )
 

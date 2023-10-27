@@ -5,6 +5,7 @@ import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.Command
 import com.tamj0rd2.domain.DisplayBid
+import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
@@ -50,13 +51,12 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         driver.findElement(By.name("playerId")).sendKeys(playerId.playerId)
         driver.findElement(By.id("joinGame")).submit()
         waitUntil({
-            driver.findElementOrNull(By.id("errorMessage"))?.let {
-                if (!it.isDisplayed) return@let
+            driver.findElementOrNull(By.id("errorMessage"))?.let { el ->
+                if (!el.isDisplayed) return@let
 
-                when(it.getAttributeOrNull("errorCode")) {
-                    GameException.CannotJoinGame::class.simpleName -> throw GameException.CannotJoinGame(it.text)
-                    else -> error("failed to join the game due to unknown reasons")
-                }
+                el.getAttributeOrNull("errorCode")
+                    ?.let { GameErrorCode.fromString(it).throwException() }
+                    ?: error("failed to join the game due to unknown reasons")
             }
 
             driver.findElement(By.tagName("h1")).text == "Game Page - $playerId"

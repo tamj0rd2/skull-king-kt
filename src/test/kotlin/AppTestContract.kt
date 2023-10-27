@@ -6,6 +6,7 @@ import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.DisplayBid.*
+import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameException
 import com.tamj0rd2.domain.GameState.*
 import com.tamj0rd2.domain.PlayedCard
@@ -289,7 +290,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
     fun `a player can't join twice`() {
         freddy(SitsAtTheTable)
         val freddyOnASecondDevice = Actor(freddy.name).whoCan(c.participateInGames())
-        freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure<GameException.CannotJoinGame>())
+        freddyOnASecondDevice.attemptsTo(SitAtTheTable.expectingFailure(GameErrorCode.PlayerWithSameNameAlreadyInGame))
     }
 
     @Test

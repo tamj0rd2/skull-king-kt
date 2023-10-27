@@ -1,5 +1,7 @@
 package testsupport
 
+import com.tamj0rd2.domain.GameErrorCode
+import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.PlayerId
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -15,6 +17,13 @@ import kotlin.time.toJavaDuration
 inline fun <reified T : Throwable> Activity.expectingFailure() = EnsureActivity { actor ->
     withClue("$actor expected activity '$this' to fail") {
         shouldThrow<T> { actor.invoke(this@expectingFailure) }
+    }
+}
+
+fun Activity.expectingFailure(errorCode: GameErrorCode) = EnsureActivity { actor ->
+    withClue("$actor expected activity '$this' to fail with $errorCode") {
+        val ex = shouldThrow<GameErrorCodeException> { actor.invoke(this@expectingFailure) }
+        ex.errorCode shouldBe errorCode
     }
 }
 

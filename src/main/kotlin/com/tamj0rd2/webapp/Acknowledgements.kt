@@ -3,9 +3,11 @@ package com.tamj0rd2.webapp
 import com.tamj0rd2.webapp.AcknowledgementException.*
 import java.time.Instant
 
+typealias NackReason = String
+
 class Acknowledgements(private val timeoutMs: Long) {
     private val outstanding = mutableSetOf<MessageId>()
-    private val nacks = mutableSetOf<MessageId>()
+    private val nacks = mutableMapOf<MessageId, String>()
     private val syncObject = Object()
 
     fun ack(id: MessageId) {
@@ -15,15 +17,16 @@ class Acknowledgements(private val timeoutMs: Long) {
         }
     }
 
-    fun nack(id: MessageId) {
+    fun nack(id: MessageId, reason: String) {
         synchronized(syncObject) {
             if (!outstanding.remove(id)) throw ReAckException(id)
-            if (!nacks.add(id)) throw ReNackException(id)
+            if (nacks.contains(id)) throw ReNackException(id)
+            nacks[id] = reason
             syncObject.notify()
         }
     }
 
-    fun waitFor(id: MessageId, before: () -> Unit): Boolean {
+    fun waitFor(id: MessageId, before: () -> Unit): NackReason? {
         val backoff = timeoutMs / 5
 
         return synchronized(syncObject) {
@@ -33,8 +36,8 @@ class Acknowledgements(private val timeoutMs: Long) {
 
             val mustEndBy = Instant.now().plusMillis(timeoutMs)
             while (Instant.now() < mustEndBy) {
-                if (nacks.contains(id)) return@synchronized false
-                if (!outstanding.contains(id)) return@synchronized true
+                nacks[id]?.let { return@synchronized it }
+                if (!outstanding.contains(id)) return@synchronized null
                 syncObject.wait(backoff)
             }
 
