@@ -21,7 +21,6 @@ import testsupport.Play
 import testsupport.Question
 import testsupport.SitAtTheTable
 import testsupport.SitsAtTheTable
-import testsupport.SkipWip
 import testsupport.TheCurrentPlayer
 import testsupport.TheGameState
 import testsupport.ThePlayersAtTheTable
@@ -31,6 +30,8 @@ import testsupport.TheTrickNumber
 import testsupport.TheirHand
 import testsupport.adapters.BrowserDriver
 import testsupport.adapters.HTTPDriver
+import testsupport.annotations.SkipUnhappyPathTests
+import testsupport.annotations.SkipWipTests
 import testsupport.are
 import testsupport.both
 import testsupport.each
@@ -117,11 +118,12 @@ private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Durat
     override fun manageGames(): ManageGames = ManageGames(HTTPDriver(baseUrl, httpClient))
 }
 
-@SkipWip
+@SkipWipTests
+@SkipUnhappyPathTests
 @Execution(ExecutionMode.SAME_THREAD)
 class BrowserAppTest : AppTestContract(BrowserAppTestConfiguration(automaticGameMasterCommandDelay = null))
 
-@SkipWip
+@SkipWipTests
 @Execution(ExecutionMode.SAME_THREAD)
 class BrowserAppTestWithAutomatedGameMasterCommands : Ensurer by ensurer(Duration.ZERO) {
     private val gmDelay = 1.seconds

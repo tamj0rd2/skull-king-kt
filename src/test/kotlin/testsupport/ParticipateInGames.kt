@@ -16,7 +16,8 @@ object Plays {
 
     val theirFirstPlayableCard = Activity("play their first playable card") { actor ->
         val ability = actor.use<ParticipateInGames>()
-        val card = ability.hand.firstOrNull { it.isPlayable }?.card ?: error("no playable cards in hand")
+        val hand = ability.hand
+        val card = hand.firstOrNull { it.isPlayable }?.card ?: error("no playable cards in hand")
         ability.perform(PlayerCommand.PlayCard(actor.playerId, card.name))
     }
 }

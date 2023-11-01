@@ -44,7 +44,7 @@ import testsupport.TheirFirstCard
 import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
-import testsupport.Wip
+import testsupport.annotations.UnhappyPathTest
 import testsupport.both
 import testsupport.each
 import testsupport.ensurer
@@ -178,9 +178,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
     }
 
-    @Test
-    @Wip
-    // TODO: to make this work for the browser tests I probably need to introduce a playableCards property instead.
+    @UnhappyPathTest
     fun `cannot play a card when the trick is not in progress`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -194,7 +192,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy and sally both Play.theirFirstPlayableCard.expectingFailure(TrickNotInProgress)
     }
 
-    @Test
+    @UnhappyPathTest
     fun `cannot play a card that would break suit rules`() {
         val thePlayers = listOf(freddy, sally)
         val theGameMaster = gary
@@ -237,9 +235,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         thePlayers each ensure(TheRoundPhase, Is(TrickCompleted))
     }
 
-    @Test
-    @Wip
-    // TODO: to make this work for the browser tests I probably need to introduce a playableCards property instead.
+    @UnhappyPathTest
     fun `cannot play a card when it is not their turn`() {
         val thirzah = Actor("Thirzah Third").whoCan(c.participateInGames())
         val thePlayers = listOf(freddy, sally, thirzah)
@@ -260,14 +256,14 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         thirzah(Plays.theirFirstPlayableCard)
     }
 
-    @Test
+    @UnhappyPathTest
     fun `cannot bid before the game has started`() {
         freddy and sally both SitAtTheTable
         freddy(Bidding(1) wouldFailBecause GameNotInProgress)
         freddy and sally both ensure(TheGameState, Is(WaitingToStart))
     }
 
-    @Test
+    @UnhappyPathTest
     fun `cannot bid outside of the bidding phase`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -278,7 +274,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy(Bidding(1) wouldFailBecause BiddingIsNotInProgress)
     }
 
-    @Test
+    @UnhappyPathTest
     fun `cannot bid twice`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
@@ -286,14 +282,14 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         freddy(Bidding(1) wouldFailBecause AlreadyPlacedABid)
     }
 
-    @Test
+    @UnhappyPathTest
     fun `cannot bid more than the current round number`() {
         freddy and sally both SitAtTheTable
         gary(SaysTheGameCanStart)
         freddy(Bidding(2) wouldFailBecause BidLessThan0OrGreaterThanRoundNumber)
     }
 
-    @Test
+    @UnhappyPathTest
     fun `a player can't join twice`() {
         freddy(SitsAtTheTable)
         val freddyOnASecondDevice = Actor(freddy.name).whoCan(c.participateInGames())
