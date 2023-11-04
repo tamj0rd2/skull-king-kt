@@ -43,7 +43,5 @@ bin/
 
 .chrome/
 .chromedriver/
-game.js
-game.js.map
-admin.js
-admin.js.map
+src/main/resources/public/game.*
+src/main/resources/public/entry.*

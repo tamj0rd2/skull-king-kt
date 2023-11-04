@@ -19,6 +19,7 @@ object Server {
         automaticGameMasterDelayOverride: Duration? = null,
         acknowledgementTimeoutMs: Long = 300,
         gracefulShutdownTimeout: Duration = 1.seconds,
+        useSvelte: Boolean = false,
     ): Http4kServer {
         val game = Game()
         val http = httpHandler(
@@ -27,6 +28,7 @@ object Server {
             hotReload = hotReload,
             automateGameMasterCommands = automateGameMasterCommands,
             ackTimeoutMs = acknowledgementTimeoutMs,
+            useSvelte = useSvelte,
         )
 
         val ws = wsHandler(
@@ -43,11 +45,13 @@ object Server {
 fun main() {
     val port = System.getenv("PORT")?.toInt() ?: 8080
     val host = System.getenv("HOST") ?: "localhost"
+    val useSvelte = System.getenv("SVELTE") == "true"
     Server.make(
         port = port,
         host = host,
         hotReload = true,
         automateGameMasterCommands = true,
         acknowledgementTimeoutMs = 3000,
+        useSvelte = useSvelte,
     ).start().apply { println("Server started on port $host:$port") }
 }

@@ -50,6 +50,7 @@ import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
 import testsupport.annotations.AutomatedGameMasterTests
 import testsupport.annotations.UnhappyPathTest
+import testsupport.annotations.Wip
 import testsupport.are
 import testsupport.both
 import testsupport.each
@@ -120,6 +121,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
             }
         }
 
+        @Wip
         @Test
         fun `playing a card and waiting for the next player to do the same`() {
             freddy and sally both SitAtTheTable
@@ -146,6 +148,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
             }
         }
 
+        @Wip
         @Test
         fun `winning a trick`() {
             freddy and sally both SitAtTheTable
@@ -233,6 +236,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
             sally(Plays(4.red))
         }
 
+        @Wip
         @Test
         fun `can play special cards when you have a card for the correct suit - sanity check`() {
             val thePlayers = listOf(freddy, sally)
@@ -312,6 +316,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
             freddyOnASecondDevice(SittingAtTheTable wouldFailBecause GameErrorCode.PlayerWithSameNameAlreadyInGame)
         }
 
+        @Wip
         @Test
         fun `playing a game from start to finish`() {
             freddy and sally both SitAtTheTable
@@ -441,6 +446,7 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
     @Nested
     @Suppress("unused")
     @AutomatedGameMasterTests
+    @Wip
     inner class GivenAutomatedGameMasterCommandsAreEnabled {
         init {
             c.automateGameMasterCommands()

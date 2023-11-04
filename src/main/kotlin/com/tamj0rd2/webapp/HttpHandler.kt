@@ -27,6 +27,7 @@ import org.http4k.template.viewModel
 import org.slf4j.LoggerFactory
 
 private data class Play(val host: String, val ackTimeoutMs: Long) : ViewModel
+private data class PlaySvelte(val host: String, val ackTimeoutMs: Long) : ViewModel
 
 internal fun httpHandler(
     game: Game,
@@ -34,6 +35,7 @@ internal fun httpHandler(
     hotReload: Boolean,
     automateGameMasterCommands: Boolean,
     ackTimeoutMs: Long,
+    useSvelte: Boolean,
 ): HttpHandler {
     val logger = LoggerFactory.getLogger("httpHandler")
     val (renderer, resourceLoader) = buildResourceLoaders(hotReload)
@@ -76,7 +78,8 @@ internal fun httpHandler(
                 Response(Status.MOVED_PERMANENTLY).with(Header.LOCATION of Uri.of("/play"))
             },
             "/play" bind Method.GET to {
-                Response(Status.OK).with(negotiator.outbound(it) of Play(host, ackTimeoutMs))
+                val vm = if (useSvelte) PlaySvelte(host, ackTimeoutMs) else Play(host, ackTimeoutMs)
+                Response(Status.OK).with(negotiator.outbound(it) of vm)
             },
             "/do-game-master-command" bind Method.POST to ::gameMasterCommandHandler
         )

@@ -77,11 +77,21 @@ task("buildFrontend") {
             workingDir = file("src/frontend")
             commandLine = listOf("npm", "install")
         }
+
+        exec {
+            workingDir = file("src/svelte-frontend")
+            commandLine = listOf("npm", "install")
+        }
     }
 
     doLast("build js") {
         exec {
             workingDir = file("src/frontend")
+            commandLine = listOf("npm", "run", "build")
+        }
+
+        exec {
+            workingDir = file("src/svelte-frontend")
             commandLine = listOf("npm", "run", "build")
         }
     }

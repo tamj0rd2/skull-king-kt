@@ -13,7 +13,6 @@ import testsupport.ParticipateInGames
 import testsupport.adapters.BrowserDriver
 import testsupport.adapters.HTTPDriver
 import testsupport.annotations.SkipUnhappyPathTests
-import testsupport.annotations.SkipWipTests
 import testsupport.logger
 import java.net.ServerSocket
 import kotlin.time.Duration
@@ -40,10 +39,7 @@ private object Config {
         }
 }
 
-@SkipWipTests
-@SkipUnhappyPathTests
-@Execution(ExecutionMode.SAME_THREAD)
-class BrowserAppTest : AppTestContract(object : TestConfiguration {
+class BrowserTestConfiguration(useSvelte: Boolean = false) : TestConfiguration {
     private val port by lazy {
         ServerSocket(0).run {
             close()
@@ -59,7 +55,8 @@ class BrowserAppTest : AppTestContract(object : TestConfiguration {
             hotReload = false,
             automateGameMasterCommands = automateGameMasterCommands,
             automaticGameMasterDelayOverride = automaticGameMasterDelay,
-            acknowledgementTimeoutMs = 2000
+            acknowledgementTimeoutMs = 2000,
+            useSvelte = useSvelte,
         )
     }
     private val baseUrl by lazy { "http://localhost:$port" }
@@ -103,4 +100,8 @@ class BrowserAppTest : AppTestContract(object : TestConfiguration {
     }
 
     override fun manageGames(): ManageGames = ManageGames(HTTPDriver(baseUrl, httpClient))
-})
+}
+
+@SkipUnhappyPathTests
+@Execution(ExecutionMode.SAME_THREAD)
+class BrowserAppTest : AppTestContract(BrowserTestConfiguration())

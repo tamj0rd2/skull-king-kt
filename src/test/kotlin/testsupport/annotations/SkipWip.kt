@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 annotation class SkipWipTests
 
 @Test
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
 @ExtendWith(WipExtension::class)
 annotation class Wip
 
