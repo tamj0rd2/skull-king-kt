@@ -66,14 +66,13 @@ interface AbilityFactory {
 interface TestConfiguration : AbilityFactory {
     fun setup()
     fun teardown()
-    val assertionTimeout get() = Duration.ZERO
 }
 
 // things for the future:
 // TODO: turn order
 // TODO: scoring
 
-sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensurer(c.assertionTimeout) {
+sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensurer() {
     protected val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
     protected val sally by lazy { Actor("Sally Second").whoCan(c.participateInGames()) }
     protected val gary by lazy { Actor("Gary GameMaster").whoCan(c.manageGames()) }

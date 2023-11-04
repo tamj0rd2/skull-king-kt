@@ -59,8 +59,7 @@ interface Ensurer {
     operator fun <T> invoke(question: Question<T>, assertion: Assertion<T>, within: Duration? = null) = ensure(question, assertion, within)
 }
 
-fun ensurer(within: Duration): Ensurer {
-    val outerWithin = within
+fun ensurer(): Ensurer {
     return object : Ensurer {
         override fun ensure(block: Ensure.() -> Unit) = EnsureActivity { actor ->
             object : Ensure {
@@ -92,7 +91,7 @@ fun ensurer(within: Duration): Ensurer {
         }
 
         override fun <T> ensure(question: Question<T>, assertion: Assertion<T>, within: Duration?) = EnsureActivity { actor ->
-            val mustEndBy = Instant.now().plus((within ?: outerWithin).toJavaDuration())
+            val mustEndBy = Instant.now().plus((within ?: Duration.ZERO).toJavaDuration())
             logger.debug("${actor.playerId} - Running assertion for $question")
 
             do {

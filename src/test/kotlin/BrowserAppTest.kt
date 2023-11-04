@@ -66,8 +66,6 @@ private object Config {
 }
 
 private class BrowserAppTestConfiguration(automaticGameMasterCommandDelay: Duration?) : TestConfiguration {
-    override val assertionTimeout get() = 1.seconds
-
     private val port = ServerSocket(0).run {
         close()
         localPort
@@ -125,7 +123,7 @@ class BrowserAppTest : AppTestContract(BrowserAppTestConfiguration(automaticGame
 
 @SkipWipTests
 @Execution(ExecutionMode.SAME_THREAD)
-class BrowserAppTestWithAutomatedGameMasterCommands : Ensurer by ensurer(Duration.ZERO) {
+class BrowserAppTestWithAutomatedGameMasterCommands : Ensurer by ensurer() {
     private val gmDelay = 1.seconds
     private val expectedDelay = gmDelay * 2
     private val c = BrowserAppTestConfiguration(automaticGameMasterCommandDelay = gmDelay)
