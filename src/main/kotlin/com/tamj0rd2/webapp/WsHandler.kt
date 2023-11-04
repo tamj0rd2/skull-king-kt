@@ -42,7 +42,7 @@ internal fun wsHandler(
                 val messagesToClient = LockedValue<List<Notification>>()
 
                 ws.onClose { logger.warn("$playerId disconnected - ${it.description}") }
-                ws.onError { logger.error(it.localizedMessage, it) }
+                ws.onError { it?.let { logger.error(it.localizedMessage, it) } }
 
                 ws.onMessage {
                     val message = messageLens(it)

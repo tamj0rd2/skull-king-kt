@@ -21,7 +21,7 @@ sealed class SkipCondition<C : Annotation, T : Annotation>(
     private val testLevelAnnotation: KClass<T>
 ) : ExecutionCondition {
     override fun evaluateExecutionCondition(context: ExtensionContext): ConditionEvaluationResult {
-        val canSkipTests = AnnotationUtils.findAnnotation(context.testClass, classLevelAnnotation.java).isPresent
+        val canSkipTests = context.hasTestClassAnnotation(classLevelAnnotation.java)
         val shouldSkipTest = AnnotationUtils.findAnnotation(context.element, testLevelAnnotation.java).isPresent
 
         return if (canSkipTests && shouldSkipTest) ConditionEvaluationResult.disabled("This test has the ${classLevelAnnotation.simpleName} and ${testLevelAnnotation.simpleName} annotations")

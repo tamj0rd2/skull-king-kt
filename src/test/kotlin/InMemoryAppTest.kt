@@ -5,14 +5,19 @@ import org.junit.jupiter.api.parallel.ExecutionMode
 import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.adapters.DomainDriver
+import testsupport.annotations.DoesNotSupportAutomatedGameMaster
+import kotlin.time.Duration
 
 @Execution(ExecutionMode.SAME_THREAD)
+@DoesNotSupportAutomatedGameMaster
 class InMemoryAppTest : AppTestContract(object : TestConfiguration {
     override fun setup() {}
 
     override fun teardown() {}
 
-    private val game = Game()
+    override var automaticGameMasterDelay: Duration = Duration.ZERO
+
+    private val game by lazy { Game() }
 
     override fun participateInGames(): ParticipateInGames = ParticipateInGames(DomainDriver(game))
 

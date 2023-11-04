@@ -160,6 +160,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
             is Notification.RoundStarted -> {
                 roundNumber = message.roundNumber
                 roundPhase = RoundPhase.Bidding
+                trickNumber = null
                 hand = message.cardsDealt.toMutableList()
                 bids = playersInRoom.associateWith { DisplayBid.None }.toMutableMap()
             }
