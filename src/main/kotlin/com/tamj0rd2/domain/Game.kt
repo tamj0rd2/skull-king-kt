@@ -46,7 +46,7 @@ class Game {
 
     fun isInState(state: GameState) = this.state == state
 
-    fun perform(command: Command): List<GameEvent> = when(command) {
+    fun perform(command: Command) = when(command) {
         is Command.GameMasterCommand.RigDeck -> rigDeck(command.playerId, command.cards)
         is Command.GameMasterCommand.StartGame -> start()
         is Command.GameMasterCommand.StartNextRound -> startNextRound()
@@ -165,12 +165,11 @@ class Game {
     private fun gameMasterCommand(block: () -> Unit) = command(null, block)
     private fun playerCommand(playerId: PlayerId, block: () -> Unit) = command(playerId, block)
 
-    private fun command(triggeredBy: PlayerId?, block: () -> Unit): List<GameEvent> {
+    private fun command(triggeredBy: PlayerId?, block: () -> Unit) {
         block()
         val events = eventsBuffer.toList()
         eventsBuffer.clear()
         eventListeners.forEach { listener -> listener.handle(events, triggeredBy) }
-        return events
     }
 
     private val eventsBuffer = mutableListOf<GameEvent>()
