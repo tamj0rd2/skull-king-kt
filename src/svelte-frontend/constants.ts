@@ -5,4 +5,11 @@ export const enum GameState {
     Complete = "Complete",
 }
 
+export const enum RoundPhase {
+    Bidding = "Bidding",
+    BiddingCompleted = "BiddingCompleted",
+    TrickTaking = "TrickTaking",
+    TrickCompleted = "TrickCompleted",
+}
+
 export type PlayerId = string

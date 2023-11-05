@@ -1,4 +1,4 @@
-import {type Readable, readonly, writable} from 'svelte/store'
+import {get, type Readable, readonly, writable} from 'svelte/store'
 import type {PlayerId} from "./constants";
 
 declare global {
@@ -22,7 +22,8 @@ enum MessageType {
     AckFromServer = "Message$Ack$FromServer",
     Nack = "Message$Nack",
     ToClient = "Message$ToClient",
-    ToServer = "Message$ToServer"
+    ToServer = "Message$ToServer",
+    KeepAlive = "Message$KeepAlive"
 }
 
 interface Command {
@@ -39,6 +40,8 @@ export enum CommandType {
 
 interface Notification {
     type: NotificationType
+    players?: PlayerId[]
+    playerId?: PlayerId
     [key: string]: any
 }
 
@@ -61,27 +64,65 @@ interface MessageStore extends Readable<ReadonlyArray<Notification>> {
     send: (command: Command) => Promise<void>
 }
 
+const playerIdRw = writable<PlayerId>(undefined)
+export const playerId = readonly(playerIdRw)
+
 const waitingForServerResponseRW = writable(false)
 export const waitingForServerResponse = readonly(waitingForServerResponseRW)
 
 function createMessageStore(): MessageStore {
     let socket: WebSocket
+    const knownNotificationTypes = Object.values(NotificationType)
 
     const {subscribe, update} = writable<ReadonlyArray<Notification>>(undefined, (set) => {
-        console.log({INITIAL_STATE})
         socket = new WebSocket(INITIAL_STATE.endpoint)
         set([])
+        socket.addEventListener("close", (event) => console.warn(`disconnected from ws - ${event.reason}`, event))
+        socket.addEventListener("error", (event) => console.error(event))
+        socket.addEventListener("message", (event) => {
+            try {
+                const message = JSON.parse(event.data) as Message
+                switch (message.type) {
+                    case MessageType.ToClient:
+                        break
+                    // acks and nacks are handled as part of `sendCommand`
+                    case MessageType.AckFromServer:
+                    case MessageType.Nack:
+                    // keep alive messages don't need handling
+                    case MessageType.KeepAlive:
+                        return
+                    default:
+                        throw Error(`unhandled message type - ${message.type}`)
+                }
+                logInfo(`received ${event.data}`, message)
+
+                const firstUnknownNotification = message.notifications!!.find((n) => !knownNotificationTypes.includes(n.type))
+                if (!!firstUnknownNotification) throw Error(`Unknown message type from server: ${firstUnknownNotification.type}`)
+
+                update((notifications) => [...notifications, ...(message.notifications ?? [])])
+                // TODO: how can I make it so that I can process the message before sending the ack? Is it even a problem?
+                // if it is, one dumb solution could be to delay the below line of code for 500ms so that some time is given to update the UI.
+                // but I should find out if there's a better way to do it. Magic numbers bad.
+                sendMessage({ type: MessageType.AckFromClient, id: message.id })
+            } catch(e) {
+                socket.close(4000, (e as Error).message)
+                throw e
+            }
+        })
+
         return () => socket.close()
     })
 
     function sendMessage(message: Message) {
         const json = JSON.stringify(message)
-        console.log(`SOMEONE is sending ${json}`, message)
+        logInfo(`sending ${json}`, message)
         socket.send(json)
     }
 
     async function sendCommand(command: Command) {
         try {
+            if (command.type === CommandType.JoinGame) playerIdRw.set(command.actor)
+
             waitingForServerResponseRW.set(true)
             let messageId = crypto.randomUUID()
 
@@ -101,10 +142,8 @@ function createMessageStore(): MessageStore {
                 if (message.type === MessageType.Nack) throw new NackError(message.reason)
                 if (message.type !== MessageType.AckFromServer) throw new Error(`invalid message type ${message.type}`)
 
-                console.log("received response", message)
-
+                logInfo(`received ${event.data}`, message)
                 update((notifications) => [...notifications, ...(message.notifications ?? [])])
-                console.log("done processing")
             })
             sendMessage({id: messageId, type: MessageType.ToServer, command})
         } finally {
@@ -127,4 +166,10 @@ export class NackError extends Error {
         super(reason)
         this.reason = reason
     }
+}
+
+export function logInfo(message: string, extra: any = undefined) {
+    const date = new Date()
+    const timestamp = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}.${date.getMilliseconds()}xxx`
+    console.log(`${timestamp} INFO  wsClient:${get(playerId) ?? "unidentified"} -- ${message}`, extra)
 }

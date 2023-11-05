@@ -19,4 +19,8 @@ enum class GameErrorCode {
     }
 }
 
-data class GameErrorCodeException(val errorCode: GameErrorCode) : Exception(errorCode.name)
+data class GameErrorCodeException(val errorCode: GameErrorCode) : Exception(errorCode.name) {
+    override fun toString(): String {
+        return errorCode.name
+    }
+}

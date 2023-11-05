@@ -50,7 +50,7 @@ internal fun wsHandler(
                     isConnected = false
                     logger.warn("$playerId disconnected - ${it.description}")
                 }
-                ws.onError { logger.error(it.message ?: it::class.simpleName ?: "unknown error", it) }
+                ws.onError { logger.error(it.message ?: it::class.simpleName ?: "unknown error") }
 
                 ws.onMessage {
                     val message = messageLens(it)
@@ -96,7 +96,7 @@ internal fun wsHandler(
                                         logger.error("processing message failed - $message", it)
                                         when(it) {
                                             is GameErrorCodeException -> message.nack(it.errorCode)
-                                            else -> message.nack(it.localizedMessage)
+                                            else -> message.nack(it.message ?: it::class.simpleName ?: "unknown error")
                                         }
                                     }
                                 )

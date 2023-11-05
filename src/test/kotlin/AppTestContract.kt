@@ -111,10 +111,10 @@ sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensu
         }
 
         @Test
-        @Wip
         fun `waiting for sally to bid`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)
+            freddy and sally both ensure(TheRoundPhase, Is(Bidding))
             freddy(Bids(1))
             freddy and sally both ensure {
                 that(TheRoundPhase, Is(Bidding))

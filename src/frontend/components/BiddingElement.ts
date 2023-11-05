@@ -27,11 +27,14 @@ export class BiddingElement extends HTMLElement {
     showForm = ({roundNumber}: Notification) => {
         this.replaceChildren()
         this.innerHTML = `
-            <label>Bid <input type="number" name="bid" min="0" max="${roundNumber}"></label>
-            <button id="placeBid" type="button" onclick="onBidSubmit()" disabled>Place Bid</button>
-            <p id="biddingError"></p>
+            <form id="placeBid">
+                <label>Bid <input type="number" name="bid" min="0" max="${roundNumber}"></label>
+                <button type="button" disabled>Place Bid</button>
+                <p id="biddingError"></p>
+            </form>
         `
 
+        const placeBidForm = this.querySelector("#placeBid") as HTMLFormElement;
         const placeBidBtn = this.querySelector("#placeBid") as HTMLButtonElement;
         const bidInput = this.querySelector(`input[name="bid"]`) as HTMLInputElement;
         const biddingError = this.querySelector("#biddingError") as HTMLParagraphElement;
@@ -52,7 +55,9 @@ export class BiddingElement extends HTMLElement {
             biddingError.setAttribute("errorCode", ErrorCode.BidLessThan0OrGreaterThanRoundNumber)
         }
 
-        placeBidBtn.onclick = () => {
+        placeBidForm.onsubmit = (e) => {
+            e.preventDefault()
+            e.stopImmediatePropagation()
             this.hideForm()
             sendCommand({
                 type: CommandType.PlaceBid,

@@ -73,7 +73,7 @@ sealed class Message {
 fun Logger.receivedMessage(message: Message) =
     when (message) {
         is Message.Ack -> debug("got ack: {}", message.id)
-        is Message.ToServer -> debug("received: {}", message)
+        is Message.ToServer -> info("received: {}", message)
         is Message.ToClient -> debug("received: {}", message.id)
         is Message.Nack -> debug("received: {}", message)
         is Message.KeepAlive -> {}

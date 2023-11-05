@@ -59,7 +59,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             }
 
             driver.findElement(By.tagName("h1")).text == "Game Page - $playerId"
-        }, "the new player id isn't showing up")
+        }, "the player's id hasn't shown up in the header")
     }
 
     private fun bid(bid: Int) = debugException {
@@ -67,7 +67,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             driver.findElement(By.name("bid")).sendKeys(bid.toString())
             driver.findElement(By.id("placeBid")).let {
                 if (it.isEnabled) {
-                    it.click()
+                    it.submit()
                     return@let
                 }
 
@@ -81,7 +81,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 gameState == GameState.WaitingToStart -> GameErrorCode.GameNotInProgress
                 roundPhase != RoundPhase.Bidding -> GameErrorCode.BiddingIsNotInProgress
                 bids[playerId] is DisplayBid.Hidden || bids[playerId] is DisplayBid.Placed -> GameErrorCode.AlreadyPlacedABid
-                else -> error("cannot bid")
+                else -> error("cannot bid - ${e.rawMessage}")
             }.throwException()
         }
     }
@@ -99,7 +99,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             when {
                 // TODO: probably not quite right...
                 !hand.first { it.card.name == cardName }.isPlayable -> GameErrorCode.PlayingCardWouldBreakSuitRules
-                else -> error("no play card button")
+                else -> error("no play card button - ${e.rawMessage}")
             }.throwException()
         }
     }
@@ -170,6 +170,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             driver.findElement(By.id("bids"))
                 .findElements(By.tagName("li"))
                 .associate {
+                    println("bid li: ${it.getAttribute("outerHTML")}")
                     val (name, bid) = it.text.split(":")
                         .apply { if (size < 2) return@associate PlayerId(this[0]) to DisplayBid.None }
                     val playerId = PlayerId(name)
@@ -235,7 +236,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
 }
 
 private fun waitUntil(predicate: () -> Boolean, errorMessage: String = "predicate not met within timeout") {
-    val mustEndBy = now().plusSeconds(1)
+    val mustEndBy = now().plusSeconds(2)
     do {
         if (predicate()) return
     } while (mustEndBy > now())

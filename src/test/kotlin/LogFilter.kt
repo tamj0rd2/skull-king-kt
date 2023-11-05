@@ -7,6 +7,8 @@ import ch.qos.logback.core.spi.FilterReply
 class LogFilter : EvaluatorFilter<ILoggingEvent>() {
     private val allowedTerms = listOf("wsHandler", "httpHandler", "wsClient", "TEST")
 
+    override fun getName(): String = "LogFilter"
+
     override fun decide(event: ILoggingEvent): FilterReply {
         if (event.level.isGreaterOrEqual(Level.WARN)) return FilterReply.NEUTRAL
 
