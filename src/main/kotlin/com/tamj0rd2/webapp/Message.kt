@@ -23,9 +23,13 @@ sealed class Message {
         when (this) {
             is Ack -> error("ack cannot be nacked")
             is Nack -> error("nack cannot be nacked")
+            is KeepAlive -> error("keepAlive cannot be nacked")
             is ToServer,
             is ToClient -> Nack(id, reason)
         }
+
+    // TODO: Look into using the RFC instead. https://www.rfc-editor.org/rfc/rfc6455#section-5.5.2
+    data class KeepAlive(override val id: MessageId = MessageId.next()) : Message()
 
     sealed class Ack : Message() {
         data class FromServer(override val id: MessageId, val notifications: List<Notification>) : Ack() {
@@ -72,6 +76,7 @@ fun Logger.receivedMessage(message: Message) =
         is Message.ToServer -> debug("received: {}", message)
         is Message.ToClient -> debug("received: {}", message.id)
         is Message.Nack -> debug("received: {}", message)
+        is Message.KeepAlive -> {}
     }
 
 fun Logger.processedMessage(message: Message) =
@@ -80,6 +85,7 @@ fun Logger.processedMessage(message: Message) =
         is Message.ToServer -> debug("processed: {}", message.id)
         is Message.ToClient -> debug("processed: {}", message.id)
         is Message.Nack -> TODO()
+        is Message.KeepAlive -> {}
     }
 
 fun Logger.sending(message: Message) =
@@ -92,6 +98,7 @@ fun Logger.sending(message: Message) =
         is Message.ToServer -> info("sending: $message")
         is Message.ToClient -> info("sending: $message")
         is Message.Nack -> info("sending: $message")
+        is Message.KeepAlive -> {}
     }
 
 fun Logger.awaitingAck(message: Message) =
@@ -100,6 +107,7 @@ fun Logger.awaitingAck(message: Message) =
         is Message.ToServer -> debug("awaiting ack: {}", message.id)
         is Message.ToClient -> debug("awaiting ack: {}", message.id)
         is Message.Nack -> error("cannot await an ack of a proessing failure")
+        is Message.KeepAlive -> {}
     }
 
 fun Logger.sentMessage(message: Message) =
@@ -108,4 +116,5 @@ fun Logger.sentMessage(message: Message) =
         is Message.ToServer -> debug("sent message: {}", message.id)
         is Message.ToClient -> debug("sent message: {}", message.id)
         is Message.Nack -> debug("sent processing failure: {}", message)
+        is Message.KeepAlive -> {}
     }

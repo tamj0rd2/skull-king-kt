@@ -15,9 +15,10 @@ socket.addEventListener("message", (event) => {
             // acks and nacks are handled as part of `sendCommand`
             case MessageType.AckFromServer:
             case MessageType.Nack:
+            case MessageType.KeepAlive:
                 return
             default:
-                throw Error("unhandled message type")
+                throw Error(`unhandled message type - ${message.type}`)
         }
 
         message.notifications!!.forEach((notification) => {
@@ -44,7 +45,8 @@ export enum MessageType {
     AckFromServer = "Message$Ack$FromServer",
     Nack = "Message$Nack",
     ToClient = "Message$ToClient",
-    ToServer = "Message$ToServer"
+    ToServer = "Message$ToServer",
+    KeepAlive = "Message$KeepAlive"
 }
 
 export type Message = GenericMessage | Nack

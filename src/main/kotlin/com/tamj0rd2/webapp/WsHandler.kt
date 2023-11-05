@@ -13,7 +13,11 @@ import org.http4k.routing.ws.bind
 import org.http4k.websocket.WsResponse
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
+import kotlin.concurrent.timerTask
 import kotlin.time.Duration
+
+private const val serverIdleTimeout = 30000L
 
 internal fun wsHandler(
     game: Game,
@@ -41,7 +45,11 @@ internal fun wsHandler(
                 val acknowledgements = Acknowledgements(acknowledgementTimeoutMs)
                 val messagesToClient = LockedValue<List<Notification>>()
 
-                ws.onClose { logger.warn("$playerId disconnected - ${it.description}") }
+                var isConnected = true
+                ws.onClose {
+                    isConnected = false
+                    logger.warn("$playerId disconnected - ${it.description}")
+                }
                 ws.onError { it?.let { logger.error(it.localizedMessage, it) } }
 
                 ws.onMessage {
@@ -102,6 +110,15 @@ internal fun wsHandler(
                         else -> error("invalid message from client to server: $message")
                     }
                 }
+
+                val timer = Timer()
+                timer.schedule(timerTask {
+                    if (!isConnected) {
+                        timer.cancel()
+                        return@timerTask
+                    }
+                    ws.send(messageLens(KeepAlive()))
+                }, 0, serverIdleTimeout / 2)
 
                 logger.info("connected")
             }

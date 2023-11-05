@@ -60,8 +60,6 @@ export const knownNotificationTypes = Object.values(NotificationType)
 export enum CommandType {
     PlaceBid = "Command$PlayerCommand$PlaceBid",
     PlayCard = "Command$PlayerCommand$PlayCard",
-    // UnhandledServerMessage = "MessageFromClient$UnhandledServerMessage",
-    // Error = "MessageFromClient$Error",
     JoinGame = "Command$PlayerCommand$JoinGame"
 }
 

@@ -90,6 +90,8 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
                     }
                 }
 
+                is Message.KeepAlive -> {}
+
                 else -> error("invalid message from server to client: $message")
             }
         }
