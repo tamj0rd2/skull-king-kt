@@ -50,7 +50,7 @@ internal fun wsHandler(
                     isConnected = false
                     logger.warn("$playerId disconnected - ${it.description}")
                 }
-                ws.onError { it?.let { logger.error(it.localizedMessage, it) } }
+                ws.onError { logger.error(it.message ?: it::class.simpleName ?: "unknown error", it) }
 
                 ws.onMessage {
                     val message = messageLens(it)

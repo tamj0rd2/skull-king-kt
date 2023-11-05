@@ -1,44 +1,58 @@
 <script lang="ts">
-  import {haha} from "./fun";
-  import type {Joke} from "./fun";
-  import Second from "./second.svelte";
-  let inputBinding : HTMLInputElement;
+    import {CommandType, gameState, messageStore, playerId, players} from "./socket";
 
-  const jo : Joke = {
-    rating: 2, joke: "123",
-  }
+    let playerIdInput = ""
 
-  function add(a: number, b: number) : number {
-    return a + b;
-  }
-
-  function change() {
-    inputBinding.value = "testing" + Math.round(Math.random() * 100);
-  }
+    function joinGame(e: Event) {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        messageStore.send({type: CommandType.JoinGame, actor: playerIdInput})
+    }
 </script>
 
+<div id="spinner" class="lds-ring u-hidden">
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+</div>
+
+<form id="joinGame" on:submit={joinGame}>
+    <label>
+        Player ID:
+        <input bind:value={playerIdInput} name="playerId" placeholder="Enter a name"/>
+    </label>
+    <input type="submit" value="Submit"/>
+</form>
+
+<h1>
+    {#if $playerId}
+        Game Page - {$playerId}
+    {:else}
+        Game Page
+    {/if}
+</h1>
+
+<ul id="players">
+    {#each $players as player}
+        <li>{player}</li>
+    {/each}
+</ul>
+
+<h2 id="gameState" data-state={$gameState}>{$gameState}</h2>
+
+<ul>
+    {#each $messageStore as message}
+        <li class="message"><pre>{JSON.stringify(message)}</pre></li>
+    {/each}
+</ul>
+
 <style>
-  .test {
-    display: inline-block;
-    background-color: #ff3e00;
-    color: white;
-  }
+    .message pre {
+        white-space: break-spaces;
+    }
 
-  .secondStyle {
-    display: block;
-  }
+    .u-hidden {
+        display: none;
+    }
 </style>
-
-<div class="test">
-  <label for="testingInput">This gets changed when you press the button:
-  </label>
-  <input type="text" name="testingInput" bind:this={inputBinding} />
-</div>
-
-<div class="secondStyle">
-  <button on:click={change}>Click this button!</button>
-  <p>{haha()}</p>
-  <p>{add(1,4)}</p>
-  <p>{JSON.stringify(jo)}</p>
-  <Second />
-</div>

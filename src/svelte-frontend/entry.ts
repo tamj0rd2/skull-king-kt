@@ -1,5 +1,3 @@
-import Test from "./index.svelte";
-import { haha } from "./fun";
+import Test from "./index.svelte"
 
-new Test({ target: document.body });
-console.log(haha());
+new Test({ target: document.body })
