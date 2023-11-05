@@ -1,5 +1,5 @@
-import {derived, type Readable, writable} from 'svelte/store'
-import {GameState} from "./constants";
+import {type Readable, readonly, writable} from 'svelte/store'
+import type {PlayerId} from "./constants";
 
 declare global {
     const INITIAL_STATE: {
@@ -13,13 +13,11 @@ type MessageId = string
 interface Message {
     id: MessageId
     type: MessageType
-
     [key: string]: any
-
     notifications?: ReadonlyArray<Notification>
 }
 
-export enum MessageType {
+enum MessageType {
     AckFromClient = "Message$Ack$FromClient",
     AckFromServer = "Message$Ack$FromServer",
     Nack = "Message$Nack",
@@ -27,12 +25,9 @@ export enum MessageType {
     ToServer = "Message$ToServer"
 }
 
-type PlayerId = string
-
-export interface Command {
+interface Command {
     type: CommandType
     actor: PlayerId
-
     [key: string]: any
 }
 
@@ -44,7 +39,6 @@ export enum CommandType {
 
 interface Notification {
     type: NotificationType
-
     [key: string]: any
 }
 
@@ -67,6 +61,9 @@ interface MessageStore extends Readable<ReadonlyArray<Notification>> {
     send: (command: Command) => Promise<void>
 }
 
+const waitingForServerResponseRW = writable(false)
+export const waitingForServerResponse = readonly(waitingForServerResponseRW)
+
 function createMessageStore(): MessageStore {
     let socket: WebSocket
 
@@ -85,6 +82,7 @@ function createMessageStore(): MessageStore {
 
     async function sendCommand(command: Command) {
         try {
+            waitingForServerResponseRW.set(true)
             let messageId = crypto.randomUUID()
 
             const signal = AbortSignal.timeout(INITIAL_STATE.ackTimeoutMs)
@@ -110,7 +108,7 @@ function createMessageStore(): MessageStore {
             })
             sendMessage({id: messageId, type: MessageType.ToServer, command})
         } finally {
-            // TODO: remove the spinner
+            waitingForServerResponseRW.set(false)
         }
     }
 
@@ -121,49 +119,6 @@ function createMessageStore(): MessageStore {
 }
 
 export const messageStore = createMessageStore()
-
-// TODO: all of these non-ws things can move to a separate file for readability
-function createPlayerIdStore() {
-    let hasPlayerIdBeenSet = false
-
-    return derived<typeof messageStore, PlayerId>(messageStore, (messages, set, update) => {
-        if (hasPlayerIdBeenSet) return
-
-        const playerId = messages.find((message) => message.type === NotificationType.YouJoined)?.playerId
-        if (!!playerId) {
-            hasPlayerIdBeenSet = true
-            set(playerId)
-        }
-    })
-}
-
-export const playerId = createPlayerIdStore()
-
-export const players = derived<typeof messageStore, ReadonlyArray<PlayerId>>(messageStore, (messages, set) => {
-    set(messages.reduce<PlayerId[]>((accum, message) => {
-        switch (message.type) {
-            case NotificationType.PlayerJoined:
-                return [...accum, message.playerId]
-            case NotificationType.GameStarted:
-            case NotificationType.YouJoined:
-                return message.players
-            default:
-                return accum
-        }
-    }, []))
-})
-
-export const gameState = derived<typeof messageStore, GameState>(messageStore, (messages, set) => {
-    set(messages.reduce<GameState>((accum, message) => {
-        switch (message.type) {
-            case NotificationType.YouJoined:
-                if (message.waitingForMorePlayers) return GameState.WaitingForMorePlayers
-                return GameState.WaitingToStart
-            default:
-                return accum
-        }
-    }, GameState.WaitingForMorePlayers))
-})
 
 export class NackError extends Error {
     public readonly reason: string

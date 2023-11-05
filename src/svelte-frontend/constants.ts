@@ -4,3 +4,5 @@ export const enum GameState {
     InProgress = "InProgress",
     Complete = "Complete",
 }
+
+export type PlayerId = string

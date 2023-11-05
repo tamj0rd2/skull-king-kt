@@ -184,7 +184,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 ?: error("no player id for the current player")
         }
 
-    private val noCommandsAreInProgress get() = !driver.findElement(By.id("spinner")).isDisplayed
+    private val noCommandsAreInProgress get() = driver.findElementOrNull(By.id("spinner"))?.let { !it.isDisplayed } ?: true
 
     private fun WebElement.getAttributeOrNull(attributeName: String): String? = getAttribute(attributeName)
 
