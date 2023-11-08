@@ -1,6 +1,8 @@
 
 import com.tamj0rd2.webapp.Server
 import org.eclipse.jetty.client.HttpClient
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import org.openqa.selenium.JavascriptException
@@ -103,5 +105,7 @@ class BrowserTestConfiguration(useSvelte: Boolean = false) : TestConfiguration {
 }
 
 @SkipUnhappyPathTests
-@Execution(ExecutionMode.SAME_THREAD)
+// NOTE: change this to ExecutionMode.SAME_THREAD if you want to debug tests. The output is much more useful.
+@Execution(ExecutionMode.CONCURRENT)
+@DisabledIfEnvironmentVariable(named = "QUICK", matches = "true")
 class BrowserAppTest : AppTestContract(BrowserTestConfiguration())
