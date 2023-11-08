@@ -44,4 +44,7 @@ bin/
 .chrome/
 .chromedriver/
 src/main/resources/public/game.*
-src/main/resources/public/entry.*
+src/main/resources/public/game.*
+
+src/jvmMain/resources/public/entry.*
+src/jvmMain/resources/public/game.*

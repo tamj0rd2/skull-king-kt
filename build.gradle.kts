@@ -26,23 +26,19 @@ kotlin {
         withJava()
         testRuns.named("test") {
             executionTask.configure {
-                systemProperty("junit.jupiter.execution.parallel.enabled", "true")
-                systemProperty("junit.jupiter.execution.parallel.mode.default", "same_thread")
-                systemProperty("junit.jupiter.execution.parallel.mode.classes.default", "concurrent")
-                systemProperty("junit.platform.output.capture.stdout", "true")
-                systemProperty("junit.platform.output.capture.stderr", "true")
                 useJUnitPlatform()
             }
         }
     }
 
-    //js {
-    //    browser {
-    //    }
-    //    binaries.executable()
-    //}
-
     sourceSets {
+        val commonMain by getting {}
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
         val jvmMain by getting {
             dependencies {
                 implementation(project.dependencies.platform("org.http4k:http4k-bom:5.8.5.1"))
@@ -78,6 +74,16 @@ tasks.named<Test>("jvmTest") {
     Instrumented.systemProperty("junit.platform.output.capture.stdout", "true")
     Instrumented.systemProperty("junit.platform.output.capture.stderr", "true")
     useJUnitPlatform()
+}
+
+//tasks.named<Copy>("jvmProcessResources") {
+//    val jsBrowserDistribution = tasks.named("jsBrowserDistribution")
+//    from(jsBrowserDistribution)
+//}
+
+tasks.named<JavaExec>("run") {
+    dependsOn(tasks.named<Jar>("jvmJar"))
+    classpath(tasks.named<Jar>("jvmJar"))
 }
 
 /*

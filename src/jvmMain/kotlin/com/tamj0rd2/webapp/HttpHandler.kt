@@ -87,6 +87,6 @@ internal fun httpHandler(
 }
 
 private fun buildResourceLoaders(hotReload: Boolean) = when {
-    hotReload -> HandlebarsTemplates().HotReload("./src/main/resources") to ResourceLoader.Classpath("public")
+    hotReload -> HandlebarsTemplates().HotReload("./src/jvmMain/resources") to ResourceLoader.Classpath("public")
     else -> HandlebarsTemplates().CachingClasspath() to ResourceLoader.Classpath("public")
 }
