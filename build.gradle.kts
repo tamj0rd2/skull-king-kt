@@ -1,7 +1,7 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.internal.classpath.Instrumented
 
 plugins {
-    kotlin("jvm") version "1.8.21"
+    kotlin("multiplatform") version "1.9.20"
     application
 }
 
@@ -10,12 +10,78 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven("https://maven.pkg.jetbrains.space/public/p/kotlinx-html/maven")
 }
 
-dependencies {
-    val seleniumVersion = "4.12.0"
-    val chromeVersion = "v114"
+val seleniumVersion = "4.12.0"
+val chromeVersion = "v114"
 
+application {
+    mainClass.set("com.tamj0rd2.webapp.ServerKt")
+}
+
+kotlin {
+    jvm {
+        jvmToolchain(17)
+        withJava()
+        testRuns.named("test") {
+            executionTask.configure {
+                systemProperty("junit.jupiter.execution.parallel.enabled", "true")
+                systemProperty("junit.jupiter.execution.parallel.mode.default", "same_thread")
+                systemProperty("junit.jupiter.execution.parallel.mode.classes.default", "concurrent")
+                systemProperty("junit.platform.output.capture.stdout", "true")
+                systemProperty("junit.platform.output.capture.stderr", "true")
+                useJUnitPlatform()
+            }
+        }
+    }
+
+    //js {
+    //    browser {
+    //    }
+    //    binaries.executable()
+    //}
+
+    sourceSets {
+        val jvmMain by getting {
+            dependencies {
+                implementation(project.dependencies.platform("org.http4k:http4k-bom:5.8.5.1"))
+                implementation("ch.qos.logback:logback-classic:1.4.11")
+                implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
+                implementation("org.http4k:http4k-core")
+                implementation("org.http4k:http4k-format-core")
+                implementation("org.http4k:http4k-format-jackson")
+                implementation("org.http4k:http4k-server-jetty")
+                implementation("org.http4k:http4k-template-handlebars")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.seleniumhq.selenium:selenium-devtools-$chromeVersion:$seleniumVersion")
+                implementation("org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion")
+                implementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
+                implementation("org.http4k:http4k-client-jetty")
+                implementation("org.http4k:http4k-client-websocket")
+                implementation("io.kotest:kotest-assertions-core-jvm:5.7.2")
+            }
+        }
+    }
+}
+
+tasks.named<Test>("jvmTest") {
+    Instrumented.systemProperty("junit.jupiter.execution.parallel.enabled", "true")
+    Instrumented.systemProperty("junit.jupiter.execution.parallel.mode.default", "same_thread")
+    Instrumented.systemProperty("junit.jupiter.execution.parallel.mode.classes.default", "concurrent")
+    Instrumented.systemProperty("junit.platform.output.capture.stdout", "true")
+    Instrumented.systemProperty("junit.platform.output.capture.stderr", "true")
+    useJUnitPlatform()
+}
+
+/*
+dependencies {
     implementation(platform("org.http4k:http4k-bom:5.8.5.1"))
     implementation("ch.qos.logback:logback-classic:1.4.11")
     implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
@@ -49,10 +115,6 @@ tasks.withType<KotlinCompile> {
 
     kotlinOptions.jvmTarget = "17"
     kotlinOptions.languageVersion = "1.9"
-}
-
-application {
-    mainClass.set("com.tamj0rd2.webapp.ServerKt")
 }
 
 tasks.withType<Jar> {
@@ -102,3 +164,4 @@ task("buildFrontend") {
 // https://gist.github.com/dellisd/a1e2ae1a7e6b61590bef4b2542a555a0
 // https://kotlinlang.org/docs/whatsnew-eap.html#share-your-feedback-on-the-new-k2-compiler
 // this goes into gradle.properties - kotlin.experimental.tryK2=true
+*/
