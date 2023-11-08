@@ -2,9 +2,6 @@
   "name": "frontend",
   "version": "1.0.0",
   "description": "",
-  "directories": {
-    "test": "../test"
-  },
   "scripts": {
     "build": "tsc && npm run build:game",
     "build:game": "esbuild game.ts --outfile=../main/resources/public/game.js --bundle --minify --sourcemap"
