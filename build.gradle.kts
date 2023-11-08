@@ -48,6 +48,7 @@ tasks.withType<KotlinCompile> {
     dependsOn("buildFrontend")
 
     kotlinOptions.jvmTarget = "17"
+    kotlinOptions.languageVersion = "1.9"
 }
 
 application {
