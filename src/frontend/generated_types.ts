@@ -206,35 +206,37 @@ export namespace Message {
   
   export interface AckFromClient {
     type: Message.Type.AckFromClient
-    id: string
+    id: MessageId
   }
   
   export interface AckFromServer {
     type: Message.Type.AckFromServer
-    id: string
+    id: MessageId
     notifications: Notification[]
   }
   
   export interface KeepAlive {
     type: Message.Type.KeepAlive
-    id: string
+    id: MessageId
   }
   
   export interface Nack {
     type: Message.Type.Nack
-    id: string
+    id: MessageId
     reason: string
   }
   
   export interface ToClient {
     type: Message.Type.ToClient
     notifications: Notification[]
-    id: string
+    id: MessageId
   }
   
   export interface ToServer {
     type: Message.Type.ToServer
     command: PlayerCommand
-    id: string
+    id: MessageId
   }
 }
+
+export type MessageId = string

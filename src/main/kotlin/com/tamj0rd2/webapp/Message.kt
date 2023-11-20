@@ -13,26 +13,15 @@ import kotlinx.serialization.encoding.Encoder
 import org.slf4j.Logger
 import java.util.*
 
-@Serializable(with = MessageIdSerializer::class)
-data class MessageId(val value: String) {
+@JvmInline
+@Serializable
+value class MessageId(val value: String) {
     override fun toString(): String {
         return value
     }
 
     companion object {
         fun next() = MessageId(UUID.randomUUID().toString())
-    }
-}
-
-object MessageIdSerializer : KSerializer<MessageId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MessageId", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: MessageId) {
-        encoder.encodeString(value.value)
-    }
-
-    override fun deserialize(decoder: Decoder): MessageId {
-        return MessageId(decoder.decodeString())
     }
 }
 
