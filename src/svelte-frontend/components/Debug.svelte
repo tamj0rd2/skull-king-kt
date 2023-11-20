@@ -1,5 +1,5 @@
 <script>
-import {messageStore} from "../socket.js";
+    import {messageStore} from "../socket";
 </script>
 
 <h4>Messages for debugging:</h4>

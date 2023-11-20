@@ -1,6 +1,7 @@
 import {listenToNotifications, NackError, sendCommand, setPlayerId} from "./Socket";
-import {CommandType, NotificationType, PlayerId} from "./Constants";
+import {PlayerId} from "./types";
 import {showErrorMessage} from "./ErrorHandling";
+import {Notification, PlayerCommand} from "./generated_types";
 
 export {BiddingElement} from "./components/BiddingElement";
 export {BidsElement} from "./components/BidsElement";
@@ -18,7 +19,7 @@ joinGameEl.addEventListener("submit", (e) => {
     const formData = new FormData(joinGameEl)
     const playerId = formData.get("playerId") as PlayerId
     setPlayerId(playerId)
-    sendCommand({type: CommandType.JoinGame, actor: playerId})
+    sendCommand({type: PlayerCommand.Type.JoinGame, actor: playerId})
         .catch((e) => {
             console.error(`${playerId} failed to join game`)
             if (e instanceof NackError) showErrorMessage("Failed to join the game", e.reason)
@@ -31,13 +32,13 @@ const trickNumberEl = document.querySelector("#trickNumber") as HTMLHeadingEleme
 const playerWhoseTurnItIsEl = document.querySelector("#currentPlayer") as HTMLHeadingElement
 const trickWinnerEl = document.querySelector("#trickWinner") as HTMLHeadingElement
 listenToNotifications({
-    [NotificationType.YouJoined]: ({playerId}) => {
+    [Notification.Type.YouJoined]: ({playerId}) => {
         setPlayerId(playerId)
         document.querySelector("h1")!!.textContent = `Game Page - ${playerId}`
     },
-    [NotificationType.RoundStarted]: ({roundNumber}) => {
+    [Notification.Type.RoundStarted]: ({roundNumber}) => {
         roundNumberEl.innerText = `Round ${roundNumber}`
-        roundNumberEl.setAttribute("data-roundNumber", roundNumber)
+        roundNumberEl.setAttribute("data-roundNumber", roundNumber.toString())
 
         trickNumberEl.innerText = ""
         trickNumberEl.removeAttribute("data-trickNumber")
@@ -45,9 +46,9 @@ listenToNotifications({
         trickWinnerEl.innerText = ""
         trickWinnerEl.removeAttribute("data-playerId")
     },
-    [NotificationType.TrickStarted]: ({trickNumber, firstPlayer}) => {
+    [Notification.Type.TrickStarted]: ({trickNumber, firstPlayer}) => {
         trickNumberEl.innerText = `Trick ${trickNumber}`
-        trickNumberEl.setAttribute("data-trickNumber", trickNumber)
+        trickNumberEl.setAttribute("data-trickNumber", trickNumber.toString())
 
         playerWhoseTurnItIsEl.innerText = `Current player: ${firstPlayer}`
         playerWhoseTurnItIsEl.setAttribute("data-playerId", firstPlayer)
@@ -55,11 +56,11 @@ listenToNotifications({
         trickWinnerEl.innerText = ""
         trickWinnerEl.removeAttribute("data-playerId")
     },
-    [NotificationType.CardPlayed]: ({nextPlayer}) => {
+    [Notification.Type.CardPlayed]: ({nextPlayer}) => {
         playerWhoseTurnItIsEl.innerText = nextPlayer ? `Current player: ${nextPlayer}` : ""
-        playerWhoseTurnItIsEl.setAttribute("data-playerId", nextPlayer)
+        nextPlayer && playerWhoseTurnItIsEl.setAttribute("data-playerId", nextPlayer)
     },
-    [NotificationType.TrickCompleted]: ({winner}) => {
+    [Notification.Type.TrickCompleted]: ({winner}) => {
         trickWinnerEl.innerText = `Winner: ${winner}`
         trickWinnerEl.setAttribute("data-playerId", winner)
     }

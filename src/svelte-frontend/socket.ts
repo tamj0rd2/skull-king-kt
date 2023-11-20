@@ -1,5 +1,5 @@
 import {get, type Readable, readonly, writable} from 'svelte/store'
-import type {PlayerId} from "./constants";
+import {PlayerCommand, Notification, Message} from "./generated_types";
 
 declare global {
     const INITIAL_STATE: {
@@ -8,63 +8,11 @@ declare global {
     }
 }
 
-type MessageId = string
-
-interface Message {
-    id: MessageId
-    type: MessageType
-    [key: string]: any
-    notifications?: ReadonlyArray<Notification>
-}
-
-enum MessageType {
-    AckFromClient = "Message$Ack$FromClient",
-    AckFromServer = "Message$Ack$FromServer",
-    Nack = "Message$Nack",
-    ToClient = "Message$ToClient",
-    ToServer = "Message$ToServer",
-    KeepAlive = "Message$KeepAlive"
-}
-
-interface Command {
-    type: CommandType
-    actor: PlayerId
-    [key: string]: any
-}
-
-export enum CommandType {
-    PlaceBid = "Command$PlayerCommand$PlaceBid",
-    PlayCard = "Command$PlayerCommand$PlayCard",
-    JoinGame = "Command$PlayerCommand$JoinGame"
-}
-
-interface Notification {
-    type: NotificationType
-    players?: PlayerId[]
-    playerId?: PlayerId
-    [key: string]: any
-}
-
-export enum NotificationType {
-    PlayerJoined = "Notification$PlayerJoined",
-    GameStarted = "Notification$GameStarted",
-    RoundStarted = "Notification$RoundStarted",
-    BidPlaced = "Notification$BidPlaced",
-    BiddingCompleted = "Notification$BiddingCompleted",
-    CardPlayed = "Notification$CardPlayed",
-    TrickCompleted = "Notification$TrickCompleted",
-    TrickStarted = "Notification$TrickStarted",
-    GameCompleted = "Notification$GameCompleted",
-    YourTurn = "Notification$YourTurn",
-    RoundCompleted = "Notification$RoundCompleted",
-    YouJoined = "Notification$YouJoined",
-}
-
 interface MessageStore extends Readable<ReadonlyArray<Notification>> {
-    send: (command: Command) => Promise<void>
+    send: (command: PlayerCommand) => Promise<void>
 }
 
-const playerIdRw = writable<PlayerId>(undefined)
+const playerIdRw = writable<string>(undefined)
 export const playerId = readonly(playerIdRw)
 
 const waitingForServerResponseRW = writable(false)
@@ -72,7 +20,7 @@ export const waitingForServerResponse = readonly(waitingForServerResponseRW)
 
 function createMessageStore(): MessageStore {
     let socket: WebSocket
-    const knownNotificationTypes = Object.values(NotificationType)
+    const knownNotificationTypes = Object.values(Notification.Type)
 
     const {subscribe, update} = writable<ReadonlyArray<Notification>>(undefined, (set) => {
         socket = new WebSocket(INITIAL_STATE.endpoint)
@@ -82,14 +30,16 @@ function createMessageStore(): MessageStore {
         socket.addEventListener("message", (event) => {
             try {
                 const message = JSON.parse(event.data) as Message
+
+                logInfo(`message type: ${message.type}`)
                 switch (message.type) {
-                    case MessageType.ToClient:
+                    case Message.Type.ToClient:
                         break
                     // acks and nacks are handled as part of `sendCommand`
-                    case MessageType.AckFromServer:
-                    case MessageType.Nack:
+                    case Message.Type.AckFromServer:
+                    case Message.Type.Nack:
                     // keep alive messages don't need handling
-                    case MessageType.KeepAlive:
+                    case Message.Type.KeepAlive:
                         return
                     default:
                         throw Error(`unhandled message type - ${message.type}`)
@@ -103,7 +53,7 @@ function createMessageStore(): MessageStore {
                 // TODO: how can I make it so that I can process the message before sending the ack? Is it even a problem?
                 // if it is, one dumb solution could be to delay the below line of code for 500ms so that some time is given to update the UI.
                 // but I should find out if there's a better way to do it. Magic numbers bad.
-                sendMessage({ type: MessageType.AckFromClient, id: message.id })
+                sendMessage({ type: Message.Type.AckFromClient, id: message.id })
             } catch(e) {
                 socket.close(4000, (e as Error).message)
                 throw e
@@ -119,9 +69,9 @@ function createMessageStore(): MessageStore {
         socket.send(json)
     }
 
-    async function sendCommand(command: Command) {
+    async function sendCommand(command: PlayerCommand) {
         try {
-            if (command.type === CommandType.JoinGame) playerIdRw.set(command.actor)
+            if (command.type === PlayerCommand.Type.JoinGame) playerIdRw.set(command.actor)
 
             waitingForServerResponseRW.set(true)
             let messageId = crypto.randomUUID()
@@ -139,13 +89,18 @@ function createMessageStore(): MessageStore {
 
                 this.removeEventListener("message", handler)
 
-                if (message.type === MessageType.Nack) throw new NackError(message.reason)
-                if (message.type !== MessageType.AckFromServer) throw new Error(`invalid message type ${message.type}`)
-
-                logInfo(`received ${event.data}`, message)
-                update((notifications) => [...notifications, ...(message.notifications ?? [])])
+                switch (message.type) {
+                    case Message.Type.AckFromServer:
+                        logInfo(`received ${event.data}`, message)
+                        update((notifications) => [...notifications, ...(message.notifications ?? [])])
+                        break
+                    case Message.Type.Nack:
+                        throw new NackError(message.reason)
+                    default:
+                        throw new Error(`invalid message type ${message.type}`)
+                }
             })
-            sendMessage({id: messageId, type: MessageType.ToServer, command})
+            sendMessage({id: messageId, type: Message.Type.ToServer, command})
         } finally {
             waitingForServerResponseRW.set(false)
         }

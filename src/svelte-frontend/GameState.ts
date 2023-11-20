@@ -1,17 +1,18 @@
 import {derived} from "svelte/store";
-import {GameState, type PlayerId, RoundPhase} from "./constants";
-import {logInfo, messageStore, NotificationType} from "./socket";
+import {GameState, RoundPhase} from "./generated_types";
+import {Notification} from "./generated_types";
+import {messageStore} from "./socket";
 
 // TODO: with every new message, each of these stores need to recompute their values which is inefficient.
 // probably not a big deal though since there aren't _that_ many notifications that are received.
 
-export const players = derived<typeof messageStore, PlayerId[]>(messageStore, (messages, set) => {
-    set(messages.reduce<PlayerId[]>((accum, message) => {
+export const players = derived<typeof messageStore, string[]>(messageStore, (messages, set) => {
+    set(messages.reduce<string[]>((accum, message) => {
         switch (message.type) {
-            case NotificationType.PlayerJoined:
+            case Notification.Type.PlayerJoined:
                 return [...accum, message.playerId!!]
-            case NotificationType.GameStarted:
-            case NotificationType.YouJoined:
+            case Notification.Type.GameStarted:
+            case Notification.Type.YouJoined:
                 return message.players!!
             default:
                 return accum
@@ -20,27 +21,24 @@ export const players = derived<typeof messageStore, PlayerId[]>(messageStore, (m
 })
 
 export const gameState = derived<typeof messageStore, GameState>(messageStore, (messages, set) => {
-    set(messages.reduce<GameState>((accum, message) => {
-        switch (message.type) {
-            case NotificationType.YouJoined:
-                if (message.waitingForMorePlayers) return GameState.WaitingForMorePlayers
-                return GameState.WaitingToStart
-            default:
-                return accum
+    for (const message of messages) {
+        if (message.type === Notification.Type.YouJoined) {
+            set(message.waitingForMorePlayers ? GameState.WaitingForMorePlayers : GameState.WaitingToStart)
+            return
         }
-    }, GameState.WaitingForMorePlayers))
-})
+    }
+}, GameState.WaitingForMorePlayers)
 
 export const roundPhase = derived<typeof messageStore, RoundPhase | undefined>(messageStore, (messages, set) => {
     set(messages.reduce<RoundPhase | undefined>((accum, message) => {
         switch (message.type) {
-            case NotificationType.RoundStarted:
+            case Notification.Type.RoundStarted:
                 return RoundPhase.Bidding
-            case NotificationType.BiddingCompleted:
+            case Notification.Type.BiddingCompleted:
                 return RoundPhase.BiddingCompleted
-            case NotificationType.TrickStarted:
+            case Notification.Type.TrickStarted:
                 return RoundPhase.TrickTaking
-            case NotificationType.TrickCompleted:
+            case Notification.Type.TrickCompleted:
                 return RoundPhase.TrickCompleted
             default:
                 return accum
@@ -48,8 +46,12 @@ export const roundPhase = derived<typeof messageStore, RoundPhase | undefined>(m
     }, undefined))
 })
 
-export const roundNumber = derived<typeof messageStore, PlayerId>(messageStore, (messages, set) => {
-    set(messages.slice().reverse().find(m => m.type === NotificationType.RoundStarted)?.roundNumber)
+export const roundNumber = derived<typeof messageStore, number | undefined>(messageStore, (messages, set) => {
+    for (const message of messages) {
+        if (message.type === Notification.Type.RoundStarted) {
+            set(message.roundNumber)
+        }
+    }
 })
 
 export enum BidState {
@@ -62,22 +64,19 @@ export type DisplayBid = {
     bidState: BidState
     bid: number | undefined
 }
-type Bids = Record<PlayerId, DisplayBid>
+type Bids = Record<string, DisplayBid>
 
 export const bids = derived<typeof messageStore, Bids>(messageStore, (messages, set) => {
-    let updatedBids = messages.reduce<Bids>((accum, message) => {
+    set(messages.reduce<Bids>((accum, message) => {
         switch (message.type) {
-            case NotificationType.GameStarted:
+            case Notification.Type.GameStarted:
                 return message.players!!.reduce<Bids>((accum, playerId) =>
                     ({...accum, [playerId]: {bidState: BidState.None, bid: undefined}}), {})
-            case NotificationType.BidPlaced:
+            case Notification.Type.BidPlaced:
                 if (!message.playerId) throw new Error("bid placed notification missing playerId")
                 return {...accum, [message.playerId]: {bidState: BidState.Hidden, bid: undefined}}
             default:
                 return accum
         }
-    }, {});
-    set(updatedBids)
-    logInfo(`recomputed bids to ${JSON.stringify(updatedBids)}`, updatedBids)
+    }, {}))
 })
-

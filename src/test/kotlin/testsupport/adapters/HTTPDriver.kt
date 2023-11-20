@@ -1,6 +1,6 @@
 package testsupport.adapters
 
-import com.tamj0rd2.domain.Command.GameMasterCommand
+import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.webapp.gameMasterCommandLens
 import org.eclipse.jetty.client.HttpClient
 import org.http4k.client.JettyClient

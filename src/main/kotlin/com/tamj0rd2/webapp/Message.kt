@@ -1,68 +1,97 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.Command.PlayerCommand
+import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.GameErrorCode
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Required
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import org.slf4j.Logger
 import java.util.*
 
-data class MessageId(val value: UUID) {
+@Serializable(with = MessageIdSerializer::class)
+data class MessageId(val value: String) {
     override fun toString(): String {
-        return value.toString()
+        return value
     }
 
     companion object {
-        fun next() = MessageId(UUID.randomUUID())
+        fun next() = MessageId(UUID.randomUUID().toString())
     }
 }
 
+object MessageIdSerializer : KSerializer<MessageId> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MessageId", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: MessageId) {
+        encoder.encodeString(value.value)
+    }
+
+    override fun deserialize(decoder: Decoder): MessageId {
+        return MessageId(decoder.decodeString())
+    }
+}
+
+@Serializable
 sealed class Message {
     abstract val id: MessageId
 
     fun nack(reason: GameErrorCode): Message = nack(reason.name)
     fun nack(reason: String): Message =
         when (this) {
-            is Ack -> error("ack cannot be nacked")
+            is AckFromClient,
+            is AckFromServer -> error("ack cannot be nacked")
+
             is Nack -> error("nack cannot be nacked")
             is KeepAlive -> error("keepAlive cannot be nacked")
             is ToServer,
             is ToClient -> Nack(id, reason)
         }
 
-    // TODO: Look into using the RFC instead. https://www.rfc-editor.org/rfc/rfc6455#section-5.5.2
-    data class KeepAlive(override val id: MessageId = MessageId.next()) : Message()
+    @Serializable
+    data class KeepAlive(@Required override val id: MessageId = MessageId.next()) : Message()
 
-    sealed class Ack : Message() {
-        data class FromServer(override val id: MessageId, val notifications: List<Notification>) : Ack() {
-            override fun toString(): String {
-                return "$id - ${notifications.joinToString(", ")}"
-            }
-        }
-
-        data class FromClient(override val id: MessageId) : Ack() {
-            override fun toString(): String {
-                return "$id"
-            }
+    @Serializable
+    data class AckFromServer(override val id: MessageId, val notifications: List<Notification>) : Message() {
+        override fun toString(): String {
+            return "$id - ${notifications.joinToString(", ")}"
         }
     }
 
+    @Serializable
+    data class AckFromClient(override val id: MessageId) : Message() {
+        override fun toString(): String {
+            return "$id"
+        }
+    }
+
+    @Serializable
     data class Nack(override val id: MessageId, val reason: String) : Message() {
         constructor(id: MessageId, errorCode: GameErrorCode) : this(id, errorCode.name)
     }
 
+    @Serializable
     data class ToClient(val notifications: List<Notification>) : Message() {
+        @Required
         override val id: MessageId = MessageId.next()
 
-        fun acknowledge() = Ack.FromClient(id)
+        fun acknowledge() = AckFromClient(id)
 
         override fun toString(): String {
             return "$id - ${notifications.joinToString(", ")}"
         }
     }
 
+    @Serializable
     data class ToServer(val command: PlayerCommand) : Message() {
+        @Required
         override val id: MessageId = MessageId.next()
 
-        fun acknowledge(messages: List<Notification>) = Ack.FromServer(id, messages)
+        fun acknowledge(messages: List<Notification>) = AckFromServer(id, messages)
 
         override fun toString(): String {
             return "$id - $command"
@@ -72,7 +101,9 @@ sealed class Message {
 
 fun Logger.receivedMessage(message: Message) =
     when (message) {
-        is Message.Ack -> debug("got ack: {}", message.id)
+        is Message.AckFromClient,
+        is Message.AckFromServer -> debug("got ack: {}", message.id)
+
         is Message.ToServer -> info("received: {}", message)
         is Message.ToClient -> debug("received: {}", message.id)
         is Message.Nack -> debug("received: {}", message)
@@ -81,7 +112,9 @@ fun Logger.receivedMessage(message: Message) =
 
 fun Logger.processedMessage(message: Message) =
     when (message) {
-        is Message.Ack -> debug(">> completed << {}", message.id)
+        is Message.AckFromClient,
+        is Message.AckFromServer -> debug(">> completed << {}", message.id)
+
         is Message.ToServer -> debug("processed: {}", message.id)
         is Message.ToClient -> debug("processed: {}", message.id)
         is Message.Nack -> TODO()
@@ -90,8 +123,8 @@ fun Logger.processedMessage(message: Message) =
 
 fun Logger.sending(message: Message) =
     when (message) {
-        is Message.Ack.FromClient -> debug("acking: {}", message)
-        is Message.Ack.FromServer -> {
+        is Message.AckFromClient -> debug("acking: {}", message)
+        is Message.AckFromServer -> {
             if (message.notifications.isNotEmpty()) info("acking: $message") else debug("acking: {}", message)
         }
 
@@ -103,7 +136,9 @@ fun Logger.sending(message: Message) =
 
 fun Logger.awaitingAck(message: Message) =
     when (message) {
-        is Message.Ack -> error("cannot await an ack of an ack")
+        is Message.AckFromClient,
+        is Message.AckFromServer -> error("cannot await an ack of an ack")
+
         is Message.ToServer -> debug("awaiting ack: {}", message.id)
         is Message.ToClient -> debug("awaiting ack: {}", message.id)
         is Message.Nack -> error("cannot await an ack of a proessing failure")
@@ -112,7 +147,9 @@ fun Logger.awaitingAck(message: Message) =
 
 fun Logger.sentMessage(message: Message) =
     when (message) {
-        is Message.Ack -> debug("sent ack: {}", message)
+        is Message.AckFromClient,
+        is Message.AckFromServer -> debug("sent ack: {}", message)
+
         is Message.ToServer -> debug("sent message: {}", message.id)
         is Message.ToClient -> debug("sent message: {}", message.id)
         is Message.Nack -> debug("sent processing failure: {}", message)

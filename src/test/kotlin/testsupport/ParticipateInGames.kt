@@ -2,7 +2,7 @@ package testsupport
 
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.Command.PlayerCommand
+import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.PlayerId
 
 class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver

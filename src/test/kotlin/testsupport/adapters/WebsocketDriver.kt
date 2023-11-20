@@ -1,7 +1,7 @@
 package testsupport.adapters
 
 import com.tamj0rd2.domain.CardWithPlayability
-import com.tamj0rd2.domain.Command.PlayerCommand
+import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameState
@@ -68,7 +68,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
             logger.receivedMessage(message)
 
             when (message) {
-                is Message.Ack.FromServer -> {
+                is Message.AckFromServer -> {
                     message.notifications.forEach(::handleMessage)
                     acknowledgements.ack(message.id)
                     logger.processedMessage(message)

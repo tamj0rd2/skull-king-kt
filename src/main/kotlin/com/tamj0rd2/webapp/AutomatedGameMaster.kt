@@ -1,8 +1,8 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.Command
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameEvent
+import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.domain.GameState
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -28,8 +28,8 @@ class AutomatedGameMaster(private val game: Game, private val delayOverride: Dur
                             if (allGameEvents.last() != event) return@timerTask
 
                             logger.info("Starting the game")
-                            game.perform(Command.GameMasterCommand.StartGame)
-                            game.perform(Command.GameMasterCommand.StartNextRound)
+                            game.perform(GameMasterCommand.StartGame)
+                            game.perform(GameMasterCommand.StartNextRound)
                         }, delayOverride?.inWholeMilliseconds ?: 5000)
                     }
 
@@ -39,7 +39,7 @@ class AutomatedGameMaster(private val game: Game, private val delayOverride: Dur
                             require(lastEvent == event) { "last event was not bidding completed, it was $lastEvent" }
 
                             logger.info("Starting the first trick")
-                            game.perform(Command.GameMasterCommand.StartNextTrick)
+                            game.perform(GameMasterCommand.StartNextTrick)
                         }, delayOverride?.inWholeMilliseconds ?: 3000)
                     }
 
@@ -51,10 +51,10 @@ class AutomatedGameMaster(private val game: Game, private val delayOverride: Dur
                             // TODO: need to write a test for what happens after round 10 trick 10
                             if (game.roundNumber == game.trickNumber) {
                                 logger.info("Starting the next round")
-                                game.perform(Command.GameMasterCommand.StartNextRound)
+                                game.perform(GameMasterCommand.StartNextRound)
                             } else {
                                 logger.info("Starting the next trick")
-                                game.perform(Command.GameMasterCommand.StartNextTrick)
+                                game.perform(GameMasterCommand.StartNextTrick)
                             }
                         }, delayOverride?.inWholeMilliseconds ?: 3000)
                     }

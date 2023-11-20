@@ -1,8 +1,8 @@
 package testsupport
 
 import com.tamj0rd2.domain.CardWithPlayability
-import com.tamj0rd2.domain.Command.GameMasterCommand
-import com.tamj0rd2.domain.Command.PlayerCommand
+import com.tamj0rd2.domain.GameMasterCommand
+import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard

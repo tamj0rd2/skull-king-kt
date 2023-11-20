@@ -1,7 +1,7 @@
 <script lang="ts">
-    import {CommandType, waitingForServerResponse, messageStore, playerId} from "./socket";
+    import {waitingForServerResponse, playerId} from "./socket";
     import {bids, BidState, type DisplayBid, gameState, players, roundPhase} from "./GameState";
-    import {RoundPhase, GameState, type PlayerId} from "./constants";
+    import {RoundPhase, GameState} from "./generated_types";
     import Spinner from "./components/Spinner.svelte";
     import JoinGame from "./components/JoinGame.svelte";
     import Debug from "./components/Debug.svelte";
@@ -21,7 +21,7 @@
         TrickCompleted: ""
     }
 
-    function bidText(playerId: PlayerId, displayBid: DisplayBid): string {
+    function bidText(playerId: string, displayBid: DisplayBid): string {
         switch (displayBid.bidState) {
             case BidState.None:
                 return `${playerId}`

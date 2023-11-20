@@ -3,11 +3,11 @@ package testsupport.adapters
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.CardWithPlayability
-import com.tamj0rd2.domain.Command
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
+import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
 import io.kotest.assertions.withClue
@@ -31,15 +31,15 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    override fun perform(command: Command.PlayerCommand) {
+    override fun perform(command: PlayerCommand) {
         withClue("another command is still in progress") {
             noCommandsAreInProgress shouldBe true
         }
 
         when (command) {
-            is Command.PlayerCommand.JoinGame -> joinGame(command.actor)
-            is Command.PlayerCommand.PlaceBid -> bid(command.bid.bid)
-            is Command.PlayerCommand.PlayCard -> playCard(command.cardName)
+            is PlayerCommand.JoinGame -> joinGame(command.actor)
+            is PlayerCommand.PlaceBid -> bid(command.bid.bid)
+            is PlayerCommand.PlayCard -> playCard(command.cardName)
         }
 
         waitUntil({ noCommandsAreInProgress }, "the command is still in progress")

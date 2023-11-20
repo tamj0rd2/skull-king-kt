@@ -1,5 +1,6 @@
-import {GameState, NotificationType} from "../Constants";
+import {Notification} from "../generated_types";
 import {DisconnectGameEventListener, listenToNotifications} from "../Socket";
+import {GameState} from "../generated_types";
 
 export class GameStateElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -11,10 +12,10 @@ export class GameStateElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToNotifications({
-            [NotificationType.YouJoined]: ({waitingForMorePlayers}) => this.setBasedOnPlayers(waitingForMorePlayers),
-            [NotificationType.PlayerJoined]: ({waitingForMorePlayers}) => this.setBasedOnPlayers(waitingForMorePlayers),
-            [NotificationType.GameStarted]: () => this.set(GameState.InProgress),
-            [NotificationType.GameCompleted]: () => this.set(GameState.Complete),
+            [Notification.Type.YouJoined]: ({waitingForMorePlayers}) => this.setBasedOnPlayers(waitingForMorePlayers),
+            [Notification.Type.PlayerJoined]: ({waitingForMorePlayers}) => this.setBasedOnPlayers(waitingForMorePlayers),
+            [Notification.Type.GameStarted]: () => this.set(GameState.InProgress),
+            [Notification.Type.GameCompleted]: () => this.set(GameState.Complete),
         })
 
         this.innerHTML = `<h2 id="gameState"></h2>`

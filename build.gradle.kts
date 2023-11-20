@@ -1,7 +1,9 @@
+import org.gradle.internal.classpath.Instrumented.systemProperty
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.8.21"
+    kotlin("jvm") version "1.9.0"
+    kotlin("plugin.serialization") version "1.9.0"
     application
 }
 
@@ -21,10 +23,12 @@ dependencies {
     implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
     implementation("org.http4k:http4k-core")
     implementation("org.http4k:http4k-format-core")
-    implementation("org.http4k:http4k-format-jackson")
+    implementation("org.http4k:http4k-format-kotlinx-serialization")
     implementation("org.http4k:http4k-server-jetty")
     implementation("org.http4k:http4k-template-handlebars")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("dev.adamko.kxstsgen:kxs-ts-gen-core:0.2.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 
     testImplementation(kotlin("test"))
     testImplementation("org.seleniumhq.selenium:selenium-devtools-$chromeVersion:$seleniumVersion")
@@ -44,10 +48,14 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.withType<KotlinCompile> {
-    dependsOn("buildFrontend")
+tasks.register<JavaExec>("buildFrontend") {
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("BuildFrontendKt")
+}
 
+tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "17"
+    finalizedBy("buildFrontend")
 }
 
 application {
@@ -69,32 +77,6 @@ tasks.withType<Jar> {
     from({
         configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
     })
-}
-
-task("buildFrontend") {
-    doFirst("npm install") {
-        exec {
-            workingDir = file("src/frontend")
-            commandLine = listOf("npm", "install")
-        }
-
-        exec {
-            workingDir = file("src/svelte-frontend")
-            commandLine = listOf("npm", "install")
-        }
-    }
-
-    doLast("build js") {
-        exec {
-            workingDir = file("src/frontend")
-            commandLine = listOf("npm", "run", "build")
-        }
-
-        exec {
-            workingDir = file("src/svelte-frontend")
-            commandLine = listOf("npm", "run", "build")
-        }
-    }
 }
 
 // if I want backing fields:

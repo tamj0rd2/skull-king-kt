@@ -1,9 +1,9 @@
 package testsupport.adapters
 
-import com.tamj0rd2.domain.Command
-import com.tamj0rd2.domain.Command.PlayerCommand
+import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.Game
+import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
@@ -20,7 +20,7 @@ class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver
         game.perform(command)
     }
 
-    override fun perform(command: Command.GameMasterCommand) {
+    override fun perform(command: GameMasterCommand) {
         game.perform(command)
     }
 

@@ -1,8 +1,8 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.Command.GameMasterCommand
+import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.domain.Game
-import com.tamj0rd2.webapp.CustomJackson.auto
+import com.tamj0rd2.webapp.CustomJsonSerializer.auto
 import org.http4k.core.Body
 import org.http4k.core.ContentType
 import org.http4k.core.Filter

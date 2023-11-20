@@ -1,10 +1,10 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.Command.PlayerCommand.JoinGame
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
+import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.webapp.Message.*
 import org.http4k.routing.RoutingWsHandler
@@ -50,20 +50,20 @@ internal fun wsHandler(
                     isConnected = false
                     logger.warn("$playerId disconnected - ${it.description}")
                 }
-                ws.onError { logger.error(it.message ?: it::class.simpleName ?: "unknown error") }
+                ws.onError { logger.error(it.message ?: it::class.simpleName ?: "unknown error", it) }
 
                 ws.onMessage {
                     val message = messageLens(it)
                     logger.receivedMessage(message)
 
                     when (message) {
-                        is Ack.FromClient -> {
+                        is AckFromClient -> {
                             acknowledgements.ack(message.id)
                             logger.processedMessage(message)
                         }
                         // TODO: this desperately needs refactoring
                         is ToServer -> {
-                            if (message.command is JoinGame) {
+                            if (message.command is PlayerCommand.JoinGame) {
                                 identifyAs(message.command.actor)
 
                                 game.subscribeToGameEvents { events, triggeredBy ->
@@ -147,7 +147,7 @@ fun GameEvent.notifications(game: Game, thisPlayerId: PlayerId): List<Notificati
         }
 
         is GameEvent.CardsDealt -> TODO("add cards dealt event")
-        is GameEvent.GameCompleted -> listOf(Notification.GameCompleted())
+        is GameEvent.GameCompleted -> listOf(Notification.GameCompleted)
         is GameEvent.GameStarted -> listOf(Notification.GameStarted(players))
         is GameEvent.PlayerJoined -> buildList {
             val waitingForMorePlayers = game.isInState(GameState.WaitingForMorePlayers)

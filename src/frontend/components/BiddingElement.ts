@@ -2,12 +2,10 @@ import {
     DisconnectGameEventListener, ErrorCode,
     getPlayerId,
     listenToNotifications,
-    Notification,
     sendCommand,
     socket
 } from "../Socket";
-import {randomFill} from "crypto";
-import {CommandType, NotificationType} from "../Constants";
+import {Notification, PlayerCommand} from "../generated_types";
 
 export class BiddingElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -19,12 +17,12 @@ export class BiddingElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToNotifications({
-            [NotificationType.RoundStarted]: this.showForm,
-            [NotificationType.BiddingCompleted]: this.hideForm,
+            [Notification.Type.RoundStarted]: this.showForm,
+            [Notification.Type.BiddingCompleted]: this.hideForm,
         })
     }
 
-    showForm = ({roundNumber}: Notification) => {
+    showForm = ({roundNumber}: Notification.RoundStarted) => {
         this.replaceChildren()
         this.innerHTML = `
             <form id="placeBid">
@@ -60,7 +58,7 @@ export class BiddingElement extends HTMLElement {
             e.stopImmediatePropagation()
             this.hideForm()
             sendCommand({
-                type: CommandType.PlaceBid,
+                type: PlayerCommand.Type.PlaceBid,
                 bid: parseInt(bidInput.value),
                 actor: getPlayerId(),
             }).catch((reason) => { throw reason })

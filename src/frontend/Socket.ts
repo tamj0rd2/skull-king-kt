@@ -1,6 +1,9 @@
-import {Command, knownNotificationTypes, NotificationType, PlayerId} from "./Constants";
+import {PlayerId} from "./types";
+import {Notification, PlayerCommand} from "./generated_types";
 
 const socket = new WebSocket(INITIAL_STATE.endpoint)
+
+const knownNotificationTypes = Object.values(Notification.Type)
 
 socket.addEventListener("close", (event) => console.warn(`disconnected from ws - ${event.reason}`, event))
 socket.addEventListener("error", (event) => console.error(event))
@@ -27,7 +30,8 @@ socket.addEventListener("message", (event) => {
                     throw Error(`Unknown message from server: ${notification.type}`)
                 }
 
-                listeners[notification.type]?.(notification)
+                // TODO: what's the correct way to do this? can't remember
+                listeners[notification.type]?.(notification as any)
             })
         })
 
@@ -41,12 +45,12 @@ socket.addEventListener("message", (event) => {
 export { socket }
 
 export enum MessageType {
-    AckFromClient = "Message$Ack$FromClient",
-    AckFromServer = "Message$Ack$FromServer",
-    Nack = "Message$Nack",
-    ToClient = "Message$ToClient",
-    ToServer = "Message$ToServer",
-    KeepAlive = "Message$KeepAlive"
+    AckFromClient = "com.tamj0rd2.webapp.Message.AckFromClient",
+    AckFromServer = "com.tamj0rd2.webapp.Message.AckFromServer",
+    Nack = "com.tamj0rd2.webapp.Message.Nack",
+    ToClient = "com.tamj0rd2.webapp.Message.ToClient",
+    ToServer = "com.tamj0rd2.webapp.Message.ToServer",
+    KeepAlive = "com.tamj0rd2.webapp.Message.KeepAlive"
 }
 
 export type Message = GenericMessage | Nack
@@ -74,7 +78,7 @@ export function removeNotificationListeners(id: string) {
     listenerRegistry.delete(id)
 }
 
-export function sendCommand(command: Command): Promise<void> {
+export function sendCommand(command: PlayerCommand): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         spinner.classList.remove("u-hidden")
 
@@ -97,7 +101,8 @@ export function sendCommand(command: Command): Promise<void> {
 
             message.notifications!!.forEach((notification) => {
                 listenerRegistry.forEach((listeners) => {
-                    listeners[notification.type]?.(notification)
+                    // TODO: what's the correct way to do this? can't remember
+                    listeners[notification.type]?.(notification as any)
                 })
             })
 
@@ -129,13 +134,8 @@ export function setPlayerId(newId: PlayerId) {
     playerId = newId
 }
 
-export interface Notification {
-    type: NotificationType
-    [key: string]: any
-}
 
-export type NotificationListener = (notification: Notification) => void
-export type NotificationListeners = { [key in NotificationType]?: NotificationListener }
+export type NotificationListeners = { [key in Notification.Type]?: (notification: Extract<Notification, { type: key }>) => void }
 export type DisconnectGameEventListener = () => void
 
 export function listenToNotifications(notificationListeners: NotificationListeners): DisconnectGameEventListener {

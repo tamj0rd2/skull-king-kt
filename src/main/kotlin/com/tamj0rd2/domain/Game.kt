@@ -2,6 +2,7 @@ package com.tamj0rd2.domain
 
 import com.tamj0rd2.domain.GameErrorCode.*
 import com.tamj0rd2.domain.RoundPhase.*
+import kotlinx.serialization.Serializable
 
 fun interface GameEventListener {
     fun handle(events: List<GameEvent>, triggeredBy: PlayerId?)
@@ -46,14 +47,17 @@ class Game {
 
     fun isInState(state: GameState) = this.state == state
 
-    fun perform(command: Command) = when(command) {
-        is Command.GameMasterCommand.RigDeck -> rigDeck(command.playerId, command.cards)
-        is Command.GameMasterCommand.StartGame -> start()
-        is Command.GameMasterCommand.StartNextRound -> startNextRound()
-        is Command.GameMasterCommand.StartNextTrick -> startNextTrick()
-        is Command.PlayerCommand.JoinGame -> addPlayer(command.actor)
-        is Command.PlayerCommand.PlaceBid -> bid(command.actor, command.bid.bid)
-        is Command.PlayerCommand.PlayCard -> playCard(command.actor, command.cardName)
+    fun perform(command: GameMasterCommand) = when(command) {
+        is GameMasterCommand.RigDeck -> rigDeck(command.playerId, command.cards)
+        is GameMasterCommand.StartGame -> start()
+        is GameMasterCommand.StartNextRound -> startNextRound()
+        is GameMasterCommand.StartNextTrick -> startNextTrick()
+    }
+
+    fun perform(command: PlayerCommand) = when(command) {
+        is PlayerCommand.JoinGame -> addPlayer(command.actor)
+        is PlayerCommand.PlaceBid -> bid(command.actor, command.bid.bid)
+        is PlayerCommand.PlayCard -> playCard(command.actor, command.cardName)
     }
 
     private fun addPlayer(playerId: PlayerId) = playerCommand(playerId) {
@@ -183,16 +187,7 @@ private fun <E> List<E>.excluding(element: E): List<E> {
     return filter { it != element }
 }
 
-data class PlayerId(val playerId: String) {
-    override fun toString(): String = playerId
-
-    companion object {
-        val unidentified = PlayerId("unidentified")
-
-        fun from(playerId: String) = PlayerId(playerId)
-    }
-}
-
+@Serializable
 enum class GameState {
     WaitingForMorePlayers,
     WaitingToStart,
@@ -200,11 +195,12 @@ enum class GameState {
     Complete;
 
     companion object {
-        private val mapper = values().associateBy { it.name }
+        private val mapper = entries.associateBy { it.name }
         fun from(state: String) = mapper[state] ?: error("unknown state $state")
     }
 }
 
+@Serializable
 enum class RoundPhase {
     Bidding,
     BiddingCompleted,
@@ -212,20 +208,19 @@ enum class RoundPhase {
     TrickCompleted;
 
     companion object {
-        private val mapper = values().associateBy { it.name }
+        private val mapper = entries.associateBy { it.name }
         fun from(phase: String) = mapper[phase] ?: error("unknown phase $phase")
     }
 }
 
 typealias Hand = List<Card>
 
+@Serializable
 data class PlayedCard(val playerId: PlayerId, val card: Card) {
     override fun toString(): String {
         return "${card.name} played by $playerId"
     }
 }
-
-data class Bid(val bid: Int)
 
 // TODO: should make this a data class that gets copied...
 private class Bids {

@@ -1,8 +1,10 @@
 package com.tamj0rd2.domain
 
 import com.tamj0rd2.domain.Suit.*
+import kotlinx.serialization.Serializable
 import java.util.*
 
+@Serializable
 sealed class Card(val name: CardName) {
 
     fun playedBy(playerId: PlayerId): PlayedCard = PlayedCard(playerId, this)
@@ -14,6 +16,7 @@ sealed class Card(val name: CardName) {
         }
     }
 
+    @Serializable
     data class NumberedCard(val suit: Suit, val number: Int) : Card("$suit-$number") {
         init {
             require(number in 1..13) { "number must be between 1 and 13" }
@@ -24,6 +27,7 @@ sealed class Card(val name: CardName) {
         }
     }
 
+    @Serializable
     data class SpecialCard(val suit: SpecialSuit) : Card(suit.name) {
         override fun toString(): String {
             return name.lowercase(Locale.getDefault())
@@ -38,8 +42,10 @@ sealed class Card(val name: CardName) {
     }
 }
 
+// TODO: make this a tiny type
 typealias CardName = String
 
+@Serializable
 enum class Suit() {
     Red,
     Yellow,
@@ -60,13 +66,10 @@ val Int.yellow get() = Card.NumberedCard(Yellow, this)
 val Int.red get() = Card.NumberedCard(Red, this)
 val Int.black get() = Card.NumberedCard(Black, this)
 
-data class CardWithPlayability(val card: Card, val isPlayable: Boolean) {
-    fun playedBy(playerId: PlayerId): PlayedCard {
-        require(isPlayable) { "card $card is not playable by $playerId" }
-        return card.playedBy(playerId)
-    }
-}
+@Serializable
+data class CardWithPlayability(val card: Card, val isPlayable: Boolean)
 
+@Serializable
 enum class SpecialSuit() {
     Escape,
     Pirate,

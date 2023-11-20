@@ -1,5 +1,6 @@
-import {Card, NotificationType, PlayerId} from "../Constants";
+import {PlayerId} from "../types";
 import {DisconnectGameEventListener, listenToNotifications} from "../Socket";
+import {Notification, Card} from "../generated_types";
 
 export class TrickElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -11,9 +12,9 @@ export class TrickElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToNotifications({
-            [NotificationType.TrickStarted]: this.initialiseTrick,
-            [NotificationType.CardPlayed]: ({playerId, card}) => this.addCard(playerId, card),
-            [NotificationType.RoundStarted]: () => this.replaceChildren(),
+            [Notification.Type.TrickStarted]: this.initialiseTrick,
+            [Notification.Type.CardPlayed]: ({playerId, card}) => this.addCard(playerId, card),
+            [Notification.Type.RoundStarted]: () => this.replaceChildren(),
         })
     }
 
@@ -32,7 +33,9 @@ export class TrickElement extends HTMLElement {
         li.innerText = `${playerId}:${card.name}`
         li.setAttribute("player", playerId)
         li.setAttribute("suit", card.suit)
-        card.number && li.setAttribute("number", card.number.toString())
+        if (card.type === Card.Type.NumberedCard) {
+            card.number && li.setAttribute("number", card.number.toString())
+        }
         this.querySelector("#trick")!!.appendChild(li);
     }
 

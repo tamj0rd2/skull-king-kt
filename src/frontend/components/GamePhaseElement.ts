@@ -1,5 +1,6 @@
-import {GamePhase, NotificationType} from "../Constants";
 import {DisconnectGameEventListener, listenToNotifications} from "../Socket";
+import {RoundPhase} from "../generated_types";
+import {Notification} from "../generated_types";
 
 export class GamePhaseElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -11,20 +12,20 @@ export class GamePhaseElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToNotifications({
-            [NotificationType.GameStarted]: () => {
+            [Notification.Type.GameStarted]: () => {
                 this.replaceChildren()
                 this.innerHTML = `<h2 id="roundPhase"></h2>`
             },
-            [NotificationType.RoundStarted]: () => this.updateGamePhase(GamePhase.Bidding, "Place your bid"),
-            [NotificationType.BiddingCompleted]: () => this.updateGamePhase(GamePhase.BiddingCompleted, "All bids are in"),
-            [NotificationType.TrickStarted]: () => this.updateGamePhase(GamePhase.TrickTaking, ""),
-            [NotificationType.TrickCompleted]: () => this.updateGamePhase(GamePhase.TrickCompleted, ""),
+            [Notification.Type.RoundStarted]: () => this.updateGamePhase(RoundPhase.Bidding, "Place your bid"),
+            [Notification.Type.BiddingCompleted]: () => this.updateGamePhase(RoundPhase.BiddingCompleted, "All bids are in"),
+            [Notification.Type.TrickStarted]: () => this.updateGamePhase(RoundPhase.TrickTaking, ""),
+            [Notification.Type.TrickCompleted]: () => this.updateGamePhase(RoundPhase.TrickCompleted, ""),
         })
     }
 
-    updateGamePhase = (gamePhase: GamePhase, text: string) => {
+    updateGamePhase = (roundPhase: RoundPhase, text: string) => {
         const gamePhaseEl = this.querySelector("#roundPhase") as HTMLHeadingElement
-        gamePhaseEl.setAttribute("data-phase", gamePhase)
+        gamePhaseEl.setAttribute("data-phase", roundPhase)
         gamePhaseEl.innerText = text
     }
 

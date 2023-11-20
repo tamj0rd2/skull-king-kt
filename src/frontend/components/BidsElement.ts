@@ -1,5 +1,6 @@
-import {ActualBids, NotificationType, PlayerId, PlayerIds} from "../Constants";
+import {PlayerId} from "../types";
 import {DisconnectGameEventListener, listenToNotifications} from "../Socket";
+import {Notification} from "../generated_types";
 
 export class BidsElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -11,13 +12,13 @@ export class BidsElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToNotifications({
-            [NotificationType.GameStarted]: ({players}) => this.initialiseForPlayers(players),
-            [NotificationType.BidPlaced]: ({playerId}) => this.indicateThatPlayerHasBid(playerId),
-            [NotificationType.BiddingCompleted]: ({bids}) => this.showActualBids(bids),
+            [Notification.Type.GameStarted]: ({players}) => this.initialiseForPlayers(players),
+            [Notification.Type.BidPlaced]: ({playerId}) => this.indicateThatPlayerHasBid(playerId),
+            [Notification.Type.BiddingCompleted]: ({bids}) => this.showActualBids(bids),
         })
     }
 
-    initialiseForPlayers = (players: PlayerIds) => {
+    initialiseForPlayers = (players: PlayerId[]) => {
         this.innerHTML = `
                 <section id="bidsArea">
                     <h3>Bids</h3>
@@ -40,7 +41,7 @@ export class BidsElement extends HTMLElement {
         span.innerText = ":" + "has bid"
     }
 
-    showActualBids = (bids: ActualBids) => {
+    showActualBids = (bids: {[playerId: PlayerId]: number}) => {
         this.querySelectorAll(`[data-playerBid]`).forEach(el => {
             const playerId = el.getAttribute("data-playerBid") as PlayerId
             const bid = bids[playerId]

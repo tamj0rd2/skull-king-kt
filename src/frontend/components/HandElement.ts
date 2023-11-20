@@ -1,5 +1,5 @@
-import {Card, CardWithPlayability, CommandType, NotificationType} from "../Constants";
 import {DisconnectGameEventListener, getPlayerId, listenToNotifications, sendCommand} from "../Socket";
+import {Notification, CardWithPlayability, Card, PlayerCommand} from "../generated_types";
 
 export class HandElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -11,10 +11,10 @@ export class HandElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToNotifications({
-            [NotificationType.GameStarted]: this.showHand,
-            [NotificationType.RoundStarted]: ({cardsDealt}) => this.initialiseHand(cardsDealt),
-            [NotificationType.YourTurn]: ({cards}) => this.makeCardsPlayable(cards),
-            [NotificationType.TrickCompleted]: () => this.makeCardsUnplayable(),
+            [Notification.Type.GameStarted]: this.showHand,
+            [Notification.Type.RoundStarted]: ({cardsDealt}) => this.initialiseHand(cardsDealt),
+            [Notification.Type.YourTurn]: ({cards}) => this.makeCardsPlayable(cards),
+            [Notification.Type.TrickCompleted]: () => this.makeCardsUnplayable(),
         })
     }
 
@@ -36,7 +36,11 @@ export class HandElement extends HTMLElement {
             li.setAttribute("data-cardType", card.type)
             li.setAttribute("data-cardName", card.name)
             li.setAttribute("suit", card.suit)
-            card.number && li.setAttribute("number", card.number.toString())
+
+            if (card.type === Card.Type.NumberedCard) {
+                card.number && li.setAttribute("number", card.number.toString())
+            }
+
             hand.appendChild(li)
         })
     }
@@ -58,7 +62,7 @@ export class HandElement extends HTMLElement {
                     li.remove()
                     this.makeCardsUnplayable()
                     sendCommand({
-                        type: CommandType.PlayCard,
+                        type: PlayerCommand.Type.PlayCard,
                         cardName: card.name,
                         actor: getPlayerId(),
                     }).catch((reason) => {

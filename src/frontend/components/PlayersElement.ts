@@ -1,5 +1,6 @@
-import {NotificationType, PlayerId} from "../Constants";
+import {PlayerId} from "../types";
 import {DisconnectGameEventListener, listenToNotifications} from "../Socket";
+import {Notification} from "../generated_types";
 
 export class PlayersElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener
@@ -12,9 +13,9 @@ export class PlayersElement extends HTMLElement {
     connectedCallback() {
         this.disconnectedCallback()
         this.disconnectFn = listenToNotifications({
-            [NotificationType.YouJoined]: ({ players }) => players.forEach(this.addPlayer),
-            [NotificationType.PlayerJoined]: ({ playerId }) => this.addPlayer(playerId),
-            [NotificationType.GameStarted]: () => this.parentNode!!.removeChild(this),
+            [Notification.Type.YouJoined]: ({ players }) => players.forEach(this.addPlayer),
+            [Notification.Type.PlayerJoined]: ({ playerId }) => this.addPlayer(playerId),
+            [Notification.Type.GameStarted]: () => this.parentNode!!.removeChild(this),
         })
 
         this.innerHTML = `
