@@ -1,5 +1,5 @@
 import {get, type Readable, readonly, writable} from 'svelte/store'
-import {PlayerCommand, Notification, Message} from "./generated_types";
+import {PlayerCommand, Notification, Message, type PlayerId} from "./generated_types";
 
 declare global {
     const INITIAL_STATE: {
@@ -12,7 +12,7 @@ interface MessageStore extends Readable<ReadonlyArray<Notification>> {
     send: (command: PlayerCommand) => Promise<void>
 }
 
-const playerIdRw = writable<string>(undefined)
+const playerIdRw = writable<PlayerId>(undefined)
 export const playerId = readonly(playerIdRw)
 
 const waitingForServerResponseRW = writable(false)

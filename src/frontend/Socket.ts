@@ -1,5 +1,11 @@
-import {PlayerId} from "./types";
-import {Notification, PlayerCommand} from "./generated_types";
+import {Notification, PlayerCommand, PlayerId} from "./generated_types";
+
+declare global {
+    const INITIAL_STATE: {
+        endpoint: string
+        ackTimeoutMs: number
+    }
+}
 
 const socket = new WebSocket(INITIAL_STATE.endpoint)
 

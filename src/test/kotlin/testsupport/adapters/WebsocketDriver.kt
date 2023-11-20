@@ -32,7 +32,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
     private val wsBaseUrl = "ws://$host"
     private val acknowledgements = Acknowledgements(ackTimeoutMs)
 
-    private lateinit var playerId: PlayerId
+    private var playerId = PlayerId.unidentified
     private lateinit var logger: Logger
     private var ws: Websocket
 

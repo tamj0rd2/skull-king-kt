@@ -47,7 +47,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     private fun joinGame(playerId: PlayerId) = debugException {
         this.playerId = playerId
-        driver.findElement(By.name("playerId")).sendKeys(playerId.playerId)
+        driver.findElement(By.name("playerId")).sendKeys(playerId.value)
         driver.findElement(By.id("joinGame")).submit()
         waitUntil({
             driver.findElementOrNull(By.id("errorMessage"))?.let { el ->

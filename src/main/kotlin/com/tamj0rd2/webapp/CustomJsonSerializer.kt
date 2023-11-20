@@ -19,12 +19,8 @@ import org.http4k.format.withStandardMappings
 import org.http4k.websocket.WsMessage
 
 object CustomJsonSerializer : ConfigurableKotlinxSerialization({
-    //asConfigurable()
-    //    .withStandardMappings()
-    //    .text(::PlayerId, PlayerId::playerId)
-    //    .int(::Bid, Bid::bid)
-    //    .text(::MessageId, MessageId::value)
-    //    .done()
+    ignoreUnknownKeys = true
+    asConfigurable().withStandardMappings().done()
 }) {
     override fun asJsonObject(input: Any): JsonElement = when(input) {
         is Map<*, *> -> JsonObject(

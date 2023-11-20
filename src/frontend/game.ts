@@ -1,7 +1,6 @@
 import {listenToNotifications, NackError, sendCommand, setPlayerId} from "./Socket";
-import {PlayerId} from "./types";
 import {showErrorMessage} from "./ErrorHandling";
-import {Notification, PlayerCommand} from "./generated_types";
+import {Notification, PlayerCommand, PlayerId} from "./generated_types";
 
 export {BiddingElement} from "./components/BiddingElement";
 export {BidsElement} from "./components/BidsElement";

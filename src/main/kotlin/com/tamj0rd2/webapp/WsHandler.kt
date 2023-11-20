@@ -31,7 +31,7 @@ internal fun wsHandler(
 
     return websockets(
         "/play" bind { _ ->
-            lateinit var playerId: PlayerId
+            var playerId = PlayerId.unidentified
             lateinit var logger: Logger
 
             fun identifyAs(id: PlayerId) {

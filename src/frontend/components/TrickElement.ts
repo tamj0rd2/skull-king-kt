@@ -1,6 +1,5 @@
-import {PlayerId} from "../types";
 import {DisconnectGameEventListener, listenToNotifications} from "../Socket";
-import {Notification, Card} from "../generated_types";
+import {Notification, Card, PlayerId} from "../generated_types";
 
 export class TrickElement extends HTMLElement {
     disconnectFn?: DisconnectGameEventListener

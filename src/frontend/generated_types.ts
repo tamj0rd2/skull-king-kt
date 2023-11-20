@@ -55,21 +55,23 @@ export namespace PlayerCommand {
   
   export interface JoinGame {
     type: PlayerCommand.Type.JoinGame
-    actor: string
+    actor: PlayerId
   }
   
   export interface PlaceBid {
     type: PlayerCommand.Type.PlaceBid
-    actor: string
+    actor: PlayerId
     bid: number
   }
   
   export interface PlayCard {
     type: PlayerCommand.Type.PlayCard
-    actor: string
+    actor: PlayerId
     cardName: string
   }
 }
+
+export type PlayerId = string
 
 export enum GameState {
   WaitingForMorePlayers = "WaitingForMorePlayers",
@@ -117,19 +119,19 @@ export namespace Notification {
   
   export interface BidPlaced {
     type: Notification.Type.BidPlaced
-    playerId: string
+    playerId: PlayerId
   }
   
   export interface BiddingCompleted {
     type: Notification.Type.BiddingCompleted
-    bids: { [key: string]: number }
+    bids: { [key: PlayerId]: number }
   }
   
   export interface CardPlayed {
     type: Notification.Type.CardPlayed
-    playerId: string
+    playerId: PlayerId
     card: Card
-    nextPlayer: string | null
+    nextPlayer: PlayerId | null
   }
   
   export interface GameCompleted {
@@ -138,18 +140,18 @@ export namespace Notification {
   
   export interface GameStarted {
     type: Notification.Type.GameStarted
-    players: string[]
+    players: PlayerId[]
   }
   
   export interface PlayerJoined {
     type: Notification.Type.PlayerJoined
-    playerId: string
+    playerId: PlayerId
     waitingForMorePlayers: boolean
   }
   
   export interface RoundCompleted {
     type: Notification.Type.RoundCompleted
-    wins: { [key: string]: number }
+    wins: { [key: PlayerId]: number }
   }
   
   export interface RoundStarted {
@@ -160,19 +162,19 @@ export namespace Notification {
   
   export interface TrickCompleted {
     type: Notification.Type.TrickCompleted
-    winner: string
+    winner: PlayerId
   }
   
   export interface TrickStarted {
     type: Notification.Type.TrickStarted
     trickNumber: number
-    firstPlayer: string
+    firstPlayer: PlayerId
   }
   
   export interface YouJoined {
     type: Notification.Type.YouJoined
-    playerId: string
-    players: string[]
+    playerId: PlayerId
+    players: PlayerId[]
     waitingForMorePlayers: boolean
   }
   

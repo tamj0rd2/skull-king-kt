@@ -1,3 +1,3 @@
-import Test from "./index.svelte"
+import App from "./index.svelte"
 
-new Test({ target: document.body })
+new App({ target: document.body })

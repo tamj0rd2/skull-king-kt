@@ -42,7 +42,7 @@ class JsonSerializationTest {
     fun `can serialize and deserialize GameMasterCommands`() {
         test<GameMasterCommand>(
             GameMasterCommand.RigDeck(PlayerId("somePlayer"), listOf(11.blue)),
-            """{"type":"com.tamj0rd2.domain.GameMasterCommand.RigDeck","playerId":"somePlayer","cards":[{"type":"com.tamj0rd2.domain.Card.NumberedCard","suit":"Blue","number":11,"name":"Blue-11"}]}"""
+            """{"type":"com.tamj0rd2.domain.GameMasterCommand.RigDeck","playerId":"somePlayer","cards":[{"type":"com.tamj0rd2.domain.Card.NumberedCard","name":"Blue-11","suit":"Blue","number":11}]}"""
         )
     }
 
@@ -70,9 +70,11 @@ class JsonSerializationTest {
 
         val normalKotlinxJson = normalKotlinX.encodeToString(obj)
         println("normal kotlinx: $normalKotlinxJson")
+        normalKotlinxJson shouldBe expectedJson
 
         val customKotlinxJson = obj.asJsonObject().asCompactJsonString()
         println("custom serialization: $customKotlinxJson")
+        customKotlinxJson shouldBe expectedJson
 
         withClue("serialized using normal kotlinx") {
             withClue("normal kotlinx deserialization failed") {

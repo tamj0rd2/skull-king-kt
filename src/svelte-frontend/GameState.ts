@@ -1,13 +1,13 @@
 import {derived} from "svelte/store";
-import {GameState, RoundPhase} from "./generated_types";
+import {GameState, type PlayerId, RoundPhase} from "./generated_types";
 import {Notification} from "./generated_types";
 import {messageStore} from "./socket";
 
 // TODO: with every new message, each of these stores need to recompute their values which is inefficient.
 // probably not a big deal though since there aren't _that_ many notifications that are received.
 
-export const players = derived<typeof messageStore, string[]>(messageStore, (messages, set) => {
-    set(messages.reduce<string[]>((accum, message) => {
+export const players = derived<typeof messageStore, PlayerId[]>(messageStore, (messages, set) => {
+    set(messages.reduce<PlayerId[]>((accum, message) => {
         switch (message.type) {
             case Notification.Type.PlayerJoined:
                 return [...accum, message.playerId!!]
@@ -64,7 +64,7 @@ export type DisplayBid = {
     bidState: BidState
     bid: number | undefined
 }
-type Bids = Record<string, DisplayBid>
+type Bids = Record<PlayerId, DisplayBid>
 
 export const bids = derived<typeof messageStore, Bids>(messageStore, (messages, set) => {
     set(messages.reduce<Bids>((accum, message) => {
