@@ -38,7 +38,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
         when (command) {
             is PlayerCommand.JoinGame -> joinGame(command.actor)
-            is PlayerCommand.PlaceBid -> bid(command.bid.bid)
+            is PlayerCommand.PlaceBid -> bid(command.bid.value)
             is PlayerCommand.PlayCard -> playCard(command.cardName)
         }
 

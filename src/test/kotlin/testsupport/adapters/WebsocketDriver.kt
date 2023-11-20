@@ -129,7 +129,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
 
             is Notification.BiddingCompleted -> {
                 roundPhase = RoundPhase.BiddingCompleted
-                bids = message.bids.mapValues { DisplayBid.Placed(it.value.bid) }.toMutableMap()
+                bids = message.bids.mapValues { (_, bid) -> DisplayBid.Placed(bid.value) }.toMutableMap()
             }
 
             is Notification.CardPlayed -> {

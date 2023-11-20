@@ -56,7 +56,7 @@ class Game {
 
     fun perform(command: PlayerCommand) = when(command) {
         is PlayerCommand.JoinGame -> addPlayer(command.actor)
-        is PlayerCommand.PlaceBid -> bid(command.actor, command.bid.bid)
+        is PlayerCommand.PlaceBid -> bid(command.actor, command.bid.value)
         is PlayerCommand.PlayCard -> playCard(command.actor, command.cardName)
     }
 

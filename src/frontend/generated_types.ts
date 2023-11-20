@@ -61,7 +61,7 @@ export namespace PlayerCommand {
   export interface PlaceBid {
     type: PlayerCommand.Type.PlaceBid
     actor: PlayerId
-    bid: number
+    bid: Bid
   }
   
   export interface PlayCard {
@@ -72,6 +72,8 @@ export namespace PlayerCommand {
 }
 
 export type PlayerId = string
+
+export type Bid = number
 
 export enum GameState {
   WaitingForMorePlayers = "WaitingForMorePlayers",
@@ -124,7 +126,7 @@ export namespace Notification {
   
   export interface BiddingCompleted {
     type: Notification.Type.BiddingCompleted
-    bids: { [key: PlayerId]: number }
+    bids: { [key: PlayerId]: Bid }
   }
   
   export interface CardPlayed {
