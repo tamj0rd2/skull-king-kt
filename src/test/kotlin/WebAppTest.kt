@@ -10,8 +10,7 @@ import java.net.ServerSocket
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-@Execution(ExecutionMode.SAME_THREAD)
-class WebAppTest : AppTestContract(object : TestConfiguration {
+class WebAppTestConfiguration : TestConfiguration {
     private val port by lazy {
         ServerSocket(0).run {
             close()
@@ -60,4 +59,7 @@ class WebAppTest : AppTestContract(object : TestConfiguration {
     }
 
     override fun manageGames(): ManageGames = ManageGames(HTTPDriver(baseUrl, httpClient))
-})
+}
+
+@Execution(ExecutionMode.SAME_THREAD)
+class WebAppTest : AppTestContract(WebAppTestConfiguration())

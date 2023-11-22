@@ -8,9 +8,7 @@ import testsupport.adapters.DomainDriver
 import testsupport.annotations.DoesNotSupportAutomatedGameMaster
 import kotlin.time.Duration
 
-@Execution(ExecutionMode.SAME_THREAD)
-@DoesNotSupportAutomatedGameMaster
-class InMemoryAppTest : AppTestContract(object : TestConfiguration {
+class InMemoryTestConfiguration : TestConfiguration {
     override fun setup() {}
 
     override fun teardown() {}
@@ -22,4 +20,8 @@ class InMemoryAppTest : AppTestContract(object : TestConfiguration {
     override fun participateInGames(): ParticipateInGames = ParticipateInGames(DomainDriver(game))
 
     override fun manageGames(): ManageGames = ManageGames(DomainDriver(game))
-})
+}
+
+@Execution(ExecutionMode.SAME_THREAD)
+@DoesNotSupportAutomatedGameMaster
+class InMemoryAppTest : AppTestContract(InMemoryTestConfiguration())

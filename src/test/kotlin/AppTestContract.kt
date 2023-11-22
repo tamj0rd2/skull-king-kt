@@ -83,7 +83,7 @@ interface TestConfiguration : AbilityFactory {
 // TODO: turn order
 // TODO: scoring
 
-sealed class AppTestContract(private val c: TestConfiguration) : Ensurer by ensurer() {
+abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by ensurer() {
     private val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
     private val sally by lazy { Actor("Sally Second").whoCan(c.participateInGames()) }
 
