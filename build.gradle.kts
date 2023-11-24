@@ -37,6 +37,7 @@ dependencies {
     testImplementation("org.http4k:http4k-client-jetty")
     testImplementation("org.http4k:http4k-client-websocket")
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.7.2")
+    implementation("org.jsoup:jsoup:1.16.2")
 }
 
 tasks.test {

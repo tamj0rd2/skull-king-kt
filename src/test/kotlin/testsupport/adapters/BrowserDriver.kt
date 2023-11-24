@@ -12,6 +12,7 @@ import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import org.jsoup.Jsoup
 import org.openqa.selenium.By
 import org.openqa.selenium.NoSuchElementException
 import org.openqa.selenium.WebDriver
@@ -181,9 +182,11 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     override val currentPlayer: PlayerId?
         get() = debugException {
-            driver.findElement(By.id("currentPlayer")).getAttribute("data-playerId")?.let(::PlayerId)
-                ?: error("no player id for the current player")
+            driver.findElementAttributeOrNull(By.id("currentPlayer"), "data-playerId")?.let(::PlayerId)
         }
+
+    private fun WebDriver.findElementAttributeOrNull(by: By, attributeName: String): String? =
+        findElementOrNull(by)?.getAttributeOrNull(attributeName)
 
     private val noCommandsAreInProgress get() = driver.findElementOrNull(By.id("spinner"))?.let { !it.isDisplayed } ?: true
 
@@ -222,7 +225,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         println(
             """
             |===========$playerId's view===========
-            |$html
+            |${Jsoup.parse(html).html()}
             |===========end of $playerId's view===========
         """.trimMargin()
         )

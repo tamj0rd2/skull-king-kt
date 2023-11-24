@@ -21,12 +21,8 @@ export const players = derived<typeof messageStore, PlayerId[]>(messageStore, (m
 })
 
 export const gameState = derived<typeof messageStore, GameState>(messageStore, (messages, set) => {
-    for (const message of messages) {
-        if (message.type === Notification.Type.YouJoined) {
-            set(message.waitingForMorePlayers ? GameState.WaitingForMorePlayers : GameState.WaitingToStart)
-            return
-        }
-    }
+    const message = findLastMessage(messages, Notification.Type.YouJoined)
+    if (!!message) set(message.waitingForMorePlayers ? GameState.WaitingForMorePlayers : GameState.WaitingToStart)
 }, GameState.WaitingForMorePlayers)
 
 export const roundPhase = derived<typeof messageStore, RoundPhase | undefined>(messageStore, (messages, set) => {
@@ -47,11 +43,8 @@ export const roundPhase = derived<typeof messageStore, RoundPhase | undefined>(m
 })
 
 export const roundNumber = derived<typeof messageStore, number | undefined>(messageStore, (messages, set) => {
-    for (const message of messages) {
-        if (message.type === Notification.Type.RoundStarted) {
-            set(message.roundNumber)
-        }
-    }
+    const message = findLastMessage(messages, Notification.Type.RoundStarted)
+    if (!!message) set(message.roundNumber)
 })
 
 export enum BidState {
@@ -80,3 +73,22 @@ export const bids = derived<typeof messageStore, Bids>(messageStore, (messages, 
         }
     }, {}))
 })
+
+export const currentPlayer = derived<typeof messageStore, PlayerId | undefined>(messageStore, (messages, set) => {
+    const message = findLastMessage(messages, [Notification.Type.CardPlayed, Notification.Type.TrickStarted])
+    switch (message?.type) {
+        case Notification.Type.CardPlayed:
+            return set(message.nextPlayer ?? undefined)
+        case Notification.Type.TrickStarted:
+            return set(message.firstPlayer)
+    }
+})
+
+type NotificationByType<T extends Notification.Type> = Extract<Notification, { type: T }>
+
+function findLastMessage<T extends Notification.Type>(messages: readonly Notification[], type: T): NotificationByType<T> | undefined
+function findLastMessage<T extends Notification.Type>(messages: readonly Notification[], type: T[]): NotificationByType<T> | undefined
+function findLastMessage<T extends Notification.Type>(messages: readonly Notification[], type: T | T[]): NotificationByType<T> | undefined {
+    const targetTypes = new Set<Notification.Type>(Array.isArray(type) ? type : [type])
+    return [...messages].reverse().find(message => targetTypes.has(message.type)) as NotificationByType<T> | undefined
+}

@@ -1,6 +1,6 @@
 <script lang="ts">
     import {waitingForServerResponse, playerId} from "./socket";
-    import {bids, BidState, type DisplayBid, gameState, players, roundPhase} from "./GameState";
+    import {bids, BidState, currentPlayer, type DisplayBid, gameState, players, roundPhase} from "./GameState";
     import {RoundPhase, GameState} from "./generated_types";
     import Spinner from "./components/Spinner.svelte";
     import JoinGame from "./components/JoinGame.svelte";
@@ -51,11 +51,16 @@
             <PlaceBid />
         {/if}
 
+        {#if $currentPlayer}
+            <h3 id="currentPlayer" data-playerId={$currentPlayer}>{$currentPlayer}</h3>
+        {/if}
+
         <ul id="bids">
             {#each Object.entries($bids) as [playerId, displayBid]}
                 <li>{bidText(playerId, displayBid)}</li>
             {/each}
         </ul>
+
     {:else}
         <h3>Players:</h3>
         <ul id="players">
