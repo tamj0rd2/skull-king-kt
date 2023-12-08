@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavaScriptLibraryMappings">
+    <excludedPredefinedLibrary name="skull-king-kt/app/src/frontend/node_modules" />
+    <excludedPredefinedLibrary name="skull-king-kt/app/src/svelte-frontend/node_modules" />
+  </component>
+</project>
