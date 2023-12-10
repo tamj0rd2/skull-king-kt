@@ -5,3 +5,19 @@ services:
       PORT: 8000
     ports:
       - "8000:8000"
+
+  web-svelte:
+    build: .
+    environment:
+      PORT: 8000
+      SVELTE: true
+    ports:
+      - "8000:8000"
+
+  web-solid:
+    build: .
+    environment:
+      PORT: 8000
+      SOLID: true
+    ports:
+      - "8000:8000"

@@ -1,4 +1,5 @@
 
+import com.tamj0rd2.webapp.Frontend
 import com.tamj0rd2.webapp.Server
 import org.eclipse.jetty.client.HttpClient
 import org.junit.jupiter.api.parallel.Execution
@@ -40,7 +41,7 @@ private object Config {
         }
 }
 
-class BrowserTestConfiguration(useSvelte: Boolean = false) : TestConfiguration {
+class BrowserTestConfiguration(frontend: Frontend) : TestConfiguration {
     private val port by lazy {
         ServerSocket(0).run {
             close()
@@ -53,11 +54,11 @@ class BrowserTestConfiguration(useSvelte: Boolean = false) : TestConfiguration {
     private val server by lazy {
         Server.make(
             port,
-            hotReload = false,
+            devServer = false,
             automateGameMasterCommands = automateGameMasterCommands,
             automaticGameMasterDelayOverride = automaticGameMasterDelay,
             acknowledgementTimeoutMs = 2000,
-            useSvelte = useSvelte,
+            frontend = frontend
         )
     }
     private val baseUrl by lazy { "http://localhost:$port" }
@@ -105,4 +106,4 @@ class BrowserTestConfiguration(useSvelte: Boolean = false) : TestConfiguration {
 
 @SkipUnhappyPathTests
 @Execution(ExecutionMode.SAME_THREAD)
-class BrowserAppTest : AppTestContract(BrowserTestConfiguration())
+class BrowserAppTest : AppTestContract(BrowserTestConfiguration(frontend = Frontend.WebComponents))

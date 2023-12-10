@@ -19,7 +19,7 @@ tasks.register("clean") {
 }
 
 tasks.register<NpmTask>("buildApp") {
-    dependsOn(":common:generateTypes")
+    dependsOn("includeGeneratedTypes")
     dependsOn("npmInstall")
     args = listOf("run", "build")
 
@@ -29,11 +29,27 @@ tasks.register<NpmTask>("buildApp") {
 
     outputs.dir(layout.buildDirectory.dir("dist")).withPropertyName("outputDir")
     outputs.cacheIf { true }
+}
+
+tasks.register<NpmTask>("devServer") {
+    dependsOn("includeGeneratedTypes")
+    dependsOn("npmInstall")
+    args = listOf("run", "dev")
+}
+
+tasks.register("includeGeneratedTypes") {
+    dependsOn(":common:generateTypes")
+
+    val sourceOfGeneratedTypes = project(":common")
+        .layout.buildDirectory
+        .file("generatedFiles/generated_types.ts")
+    inputs.files(sourceOfGeneratedTypes)
+
+    val destination = project.projectDir.resolve("generated_types.ts")
+    outputs.files(destination)
+    outputs.cacheIf { true }
 
     doFirst {
-        project(":common").layout.buildDirectory
-            .file("generatedFiles/generated_types.ts")
-            .get().asFile
-            .copyTo(project.projectDir.resolve("generated_types.ts"), true)
+        sourceOfGeneratedTypes.get().asFile.copyTo(destination, true)
     }
 }

@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SolidDevMode" type="CompoundRunConfigurationType">
+    <toRun name="SolidDevServer" type="GradleRunConfiguration" />
+    <toRun name="SolidDevServer" type="JetRunConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

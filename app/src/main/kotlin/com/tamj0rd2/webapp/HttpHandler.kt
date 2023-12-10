@@ -1,13 +1,16 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.domain.Game
+import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.webapp.CustomJsonSerializer.auto
+import com.tamj0rd2.webapp.Frontend.*
+import org.http4k.client.JettyClient
 import org.http4k.core.Body
 import org.http4k.core.ContentType
 import org.http4k.core.Filter
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
+import org.http4k.core.NoOp
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
@@ -28,17 +31,24 @@ import org.slf4j.LoggerFactory
 
 private data class Play(val host: String, val ackTimeoutMs: Long) : ViewModel
 private data class PlaySvelte(val host: String, val ackTimeoutMs: Long) : ViewModel
+private data class PlaySolid(val host: String, val ackTimeoutMs: Long, val devServer: Boolean) : ViewModel
+
+enum class Frontend {
+    WebComponents,
+    Svelte,
+    Solid,
+}
 
 internal fun httpHandler(
     game: Game,
     host: String,
-    hotReload: Boolean,
+    devServer: Boolean,
     automateGameMasterCommands: Boolean,
     ackTimeoutMs: Long,
-    useSvelte: Boolean,
+    frontend: Frontend,
 ): HttpHandler {
     val logger = LoggerFactory.getLogger("httpHandler")
-    val (renderer, resourceLoader) = buildResourceLoaders(hotReload)
+    val (renderer, resourceLoader) = buildResourceLoaders(devServer)
     val gameMasterCommandLens = Body.auto<GameMasterCommand>().toLens()
 
     val vmHtmlLens = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
@@ -61,6 +71,22 @@ internal fun httpHandler(
             )
     }
 
+    val router = routes(
+        static(resourceLoader, "map" to ContentType.APPLICATION_JSON),
+        "/" bind Method.GET to {
+            Response(Status.MOVED_PERMANENTLY).with(Header.LOCATION of Uri.of("/play"))
+        },
+        "/play" bind Method.GET to {
+            val vm = when (frontend) {
+                WebComponents -> Play(host, ackTimeoutMs)
+                Svelte -> PlaySvelte(host, ackTimeoutMs)
+                Solid -> PlaySolid(host, ackTimeoutMs, devServer)
+            }
+            Response(Status.OK).with(negotiator.outbound(it) of vm)
+        },
+        "/do-game-master-command" bind Method.POST to ::gameMasterCommandHandler
+    )
+
     val loggingFilter = Filter { next ->
         { request ->
             next(request).also { response ->
@@ -71,19 +97,24 @@ internal fun httpHandler(
         }
     }
 
-    return loggingFilter.then(
-        routes(
-            static(resourceLoader, "map" to ContentType.APPLICATION_JSON),
-            "/" bind Method.GET to {
-                Response(Status.MOVED_PERMANENTLY).with(Header.LOCATION of Uri.of("/play"))
-            },
-            "/play" bind Method.GET to {
-                val vm = if (useSvelte) PlaySvelte(host, ackTimeoutMs) else Play(host, ackTimeoutMs)
-                Response(Status.OK).with(negotiator.outbound(it) of vm)
-            },
-            "/do-game-master-command" bind Method.POST to ::gameMasterCommandHandler
-        )
-    )
+    return loggingFilter
+        .then(if (devServer && frontend == Solid) viteProxy() else Filter.NoOp)
+        .then(router)
+}
+
+private fun viteProxy(): Filter {
+    val viteHttpClient = JettyClient()
+    return Filter { next ->
+        { req ->
+            val response = next(req)
+            if (response.status == Status.NOT_FOUND && req.method == Method.GET) {
+                val proxiedRequest = Request(Method.GET, Uri.of("http://localhost:5173" + req.uri.path))
+                viteHttpClient(proxiedRequest)
+            } else {
+                response
+            }
+        }
+    }
 }
 
 private fun buildResourceLoaders(hotReload: Boolean) = when {

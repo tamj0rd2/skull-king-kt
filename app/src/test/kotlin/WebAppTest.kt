@@ -24,11 +24,11 @@ class WebAppTestConfiguration : TestConfiguration {
     private val server by lazy {
         Server.make(
             port,
-            hotReload = false,
+            devServer = false,
             automateGameMasterCommands = automateGameMasterCommands,
             automaticGameMasterDelayOverride = automaticGameMasterDelay,
             acknowledgementTimeoutMs = acknowledgementTimeoutMs,
-            gracefulShutdownTimeout = Duration.ZERO
+            gracefulShutdownTimeout = Duration.ZERO,
         )
     }
     private val host by lazy { "localhost:$port" }

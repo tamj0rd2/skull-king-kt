@@ -1,6 +1,7 @@
 package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Game
+import com.tamj0rd2.webapp.Frontend.*
 import org.http4k.server.Http4kServer
 import org.http4k.server.Jetty
 import org.http4k.server.PolyHandler
@@ -14,21 +15,21 @@ object Server {
     fun make(
         port: Int,
         host: String = "localhost",
-        hotReload: Boolean = false,
+        devServer: Boolean = false,
         automateGameMasterCommands: Boolean = false,
         automaticGameMasterDelayOverride: Duration? = null,
         acknowledgementTimeoutMs: Long = 300,
         gracefulShutdownTimeout: Duration = 1.seconds,
-        useSvelte: Boolean = false,
+        frontend: Frontend = WebComponents,
     ): Http4kServer {
         val game = Game()
         val http = httpHandler(
             game = game,
             host = host,
-            hotReload = hotReload,
+            devServer = devServer,
             automateGameMasterCommands = automateGameMasterCommands,
             ackTimeoutMs = acknowledgementTimeoutMs,
-            useSvelte = useSvelte,
+            frontend = frontend,
         )
 
         val ws = wsHandler(
@@ -45,13 +46,24 @@ object Server {
 fun main() {
     val port = System.getenv("PORT")?.toInt() ?: 8080
     val host = System.getenv("HOST") ?: "localhost"
-    val useSvelte = System.getenv("SVELTE") == "true"
+    val useDevServer = System.getenv("DEV") == "true"
+
+    val frontend = when {
+        System.getenv("SVELTE") == "true" -> Svelte
+        System.getenv("SOLID") == "true" -> Solid
+        else -> WebComponents
+    }
+
+    if (useDevServer && frontend == Solid) {
+        println("If you're not seeing any content or have console errors, ensure you're running the Solid dev server")
+    }
+
     Server.make(
         port = port,
         host = host,
-        hotReload = true,
+        devServer = useDevServer,
         automateGameMasterCommands = true,
         acknowledgementTimeoutMs = 3000,
-        useSvelte = useSvelte,
+        frontend = frontend,
     ).start().apply { println("Server started on port $host:$port") }
 }

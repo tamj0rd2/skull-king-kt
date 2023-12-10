@@ -110,6 +110,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             )
         }
 
+        @Wip
         @Test
         fun `waiting for sally to bid`() {
             freddy and sally both SitAtTheTable

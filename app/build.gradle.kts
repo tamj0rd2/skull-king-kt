@@ -26,6 +26,7 @@ dependencies {
     implementation("org.http4k:http4k-format-core")
     implementation("org.http4k:http4k-format-kotlinx-serialization")
     implementation("org.http4k:http4k-server-jetty")
+    implementation("org.http4k:http4k-client-jetty")
     implementation("org.http4k:http4k-template-handlebars")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("dev.adamko.kxstsgen:kxs-ts-gen-core:0.2.1")
@@ -35,7 +36,6 @@ dependencies {
     testImplementation("org.seleniumhq.selenium:selenium-devtools-$chromeVersion:$seleniumVersion")
     testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion")
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
-    testImplementation("org.http4k:http4k-client-jetty")
     testImplementation("org.http4k:http4k-client-websocket")
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.7.2")
     testImplementation("org.jsoup:jsoup:1.16.2")
@@ -57,6 +57,7 @@ tasks.withType<KotlinCompile> {
     val frontendProjects = mapOf(
         ":frontend" to "frontend",
         ":frontend-svelte" to "frontend-svelte",
+        ":frontend-solid" to "frontend-solid",
     )
         .onEach { dependsOn("${it.key}:buildApp") }
         // a map of build directory to the folder name I want to appear in app/src/resources
