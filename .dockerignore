@@ -1,1 +1,9 @@
 **/node_modules
+**/build
+**/.gradle
+
+.chrome
+.chromedriver
+.gradle
+.idea
+build

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Playing Skull King</title>
+    <link rel="stylesheet" href="/frontend-svelte/entry.css"/>
+</head>
+<style>
+    body {
+        font-family: "Droid Sans", sans-serif;
+    }
+</style>
+<body>
+<script>
+    let wsProtocol = "ws";
+    if (location.protocol === "https:") wsProtocol += "s"
+
+    window.INITIAL_STATE = {
+        endpoint: `${wsProtocol}://{{host}}:${location.port}/play`,
+        ackTimeoutMs: {{ackTimeoutMs}}
+    };
+</script>
+<script defer type="module" src="/frontend-svelte/entry.js"></script>
+</body>
+</html>

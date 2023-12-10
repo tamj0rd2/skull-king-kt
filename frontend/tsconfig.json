@@ -1,0 +1,9 @@
+{
+  "extends": "@tsconfig/recommended/tsconfig.json",
+  "compilerOptions": {
+    "target": "es2017",
+    "allowJs": true,
+    "noEmit": true
+  },
+  "include": ["generated_types.ts", "src/**/*.ts"],
+}

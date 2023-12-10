@@ -1,7 +1,0 @@
-{
-  // as recommended by Rick Harris himself
-  // https://stackoverflow.com/questions/62761623/how-do-you-import-a-svelte-component-in-a-typescript-file
-  "extends": "@tsconfig/svelte/tsconfig.json",
-  "include": ["*.ts"],
-  "exclude": ["node_modules/**", "dist/**"]
-}
