@@ -7,11 +7,6 @@
     <link rel="icon" type="image/svg+xml" href="/frontend-solid/vite.svg" />
     <link rel="stylesheet" href="/frontend-solid/index.css"/>
 </head>
-<style>
-    body {
-        font-family: "Droid Sans", sans-serif;
-    }
-</style>
 <body>
 <div id="root"></div>
 <script>
@@ -23,7 +18,6 @@
         ackTimeoutMs: {{ackTimeoutMs}}
     };
 </script>
-<!--<script defer type="module" src="./entry.js"></script>-->
 {{#if devServer}}
     <script defer type="module" src="http://localhost:5173/frontend-solid/@vite/client"></script>
     <script defer type="module" src="http://localhost:5173/frontend-solid/src/index.tsx"></script>

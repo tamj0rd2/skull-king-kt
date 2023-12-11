@@ -4,14 +4,11 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Playing Skull King</title>
-    <link rel="stylesheet" href="/frontend-svelte/entry.css"/>
+    <link rel="icon" type="image/svg+xml" href="/frontend-svelte/vite.svg" />
+    <link rel="stylesheet" href="/frontend-svelte/index.css"/>
 </head>
-<style>
-    body {
-        font-family: "Droid Sans", sans-serif;
-    }
-</style>
 <body>
+<div id="root"></div>
 <script>
     let wsProtocol = "ws";
     if (location.protocol === "https:") wsProtocol += "s"
@@ -21,6 +18,11 @@
         ackTimeoutMs: {{ackTimeoutMs}}
     };
 </script>
-<script defer type="module" src="/frontend-svelte/entry.js"></script>
+{{#if devServer}}
+    <script defer type="module" src="http://localhost:5174/frontend-svelte/@vite/client"></script>
+    <script defer type="module" src="http://localhost:5174/frontend-svelte/src/main.ts"></script>
+{{else}}
+    <script defer type="module" src="/frontend-svelte/index.js"></script>
+{{/if}}
 </body>
 </html>

@@ -23,18 +23,22 @@ tasks.register<NpmTask>("buildApp") {
     dependsOn("npmInstall")
     args = listOf("run", "build")
 
-    inputs.files("package.json", "package-lock.json", "tsconfig.json", "generated_types.ts")
+    inputs.files(
+        "package.json",
+        "package-lock.json",
+        "tsconfig.json",
+        "tsconfig.node.json",
+        "generated_types.ts",
+        "vite.config.ts",
+        "index.html",
+        "svelte.config.js",
+    )
     inputs.dir("src")
+    inputs.dir("public")
     inputs.dir(fileTree("node_modules").exclude(".cache"))
 
     outputs.dir(layout.buildDirectory.dir("dist")).withPropertyName("outputDir")
     outputs.cacheIf { true }
-}
-
-tasks.register<NpmTask>("devServer") {
-    dependsOn("includeGeneratedTypes")
-    dependsOn("npmInstall")
-    args = listOf("run", "dev")
 }
 
 tasks.register("includeGeneratedTypes") {
@@ -52,4 +56,10 @@ tasks.register("includeGeneratedTypes") {
     doFirst {
         sourceOfGeneratedTypes.get().asFile.copyTo(destination, true)
     }
+}
+
+tasks.register<NpmTask>("runDevServer") {
+    dependsOn("includeGeneratedTypes")
+    dependsOn("npmInstall")
+    args = listOf("run", "dev")
 }

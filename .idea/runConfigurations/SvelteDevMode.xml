@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SvelteDevMode" type="CompoundRunConfigurationType">
+    <toRun name="SvelteVite" type="GradleRunConfiguration" />
+    <toRun name="SvelteServerDev" type="JetRunConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

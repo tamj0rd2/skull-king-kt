@@ -30,13 +30,13 @@ import org.http4k.template.viewModel
 import org.slf4j.LoggerFactory
 
 private data class Play(val host: String, val ackTimeoutMs: Long) : ViewModel
-private data class PlaySvelte(val host: String, val ackTimeoutMs: Long) : ViewModel
+private data class PlaySvelte(val host: String, val ackTimeoutMs: Long, val devServer: Boolean) : ViewModel
 private data class PlaySolid(val host: String, val ackTimeoutMs: Long, val devServer: Boolean) : ViewModel
 
-enum class Frontend {
-    WebComponents,
-    Svelte,
-    Solid,
+enum class Frontend(val usesViteInDevMode: Boolean) {
+    WebComponents(usesViteInDevMode = false),
+    Svelte(usesViteInDevMode = true),
+    Solid(usesViteInDevMode = true),
 }
 
 internal fun httpHandler(
@@ -79,7 +79,7 @@ internal fun httpHandler(
         "/play" bind Method.GET to {
             val vm = when (frontend) {
                 WebComponents -> Play(host, ackTimeoutMs)
-                Svelte -> PlaySvelte(host, ackTimeoutMs)
+                Svelte -> PlaySvelte(host, ackTimeoutMs, devServer)
                 Solid -> PlaySolid(host, ackTimeoutMs, devServer)
             }
             Response(Status.OK).with(negotiator.outbound(it) of vm)
@@ -98,17 +98,23 @@ internal fun httpHandler(
     }
 
     return loggingFilter
-        .then(if (devServer && frontend == Solid) viteProxy() else Filter.NoOp)
+        .then(if (devServer && frontend.usesViteInDevMode) frontend.viteProxy() else Filter.NoOp)
         .then(router)
 }
 
-private fun viteProxy(): Filter {
+private fun Frontend.viteProxy(): Filter {
     val viteHttpClient = JettyClient()
+    val vitePort = when(this) {
+        WebComponents -> error("web components frontend does not use vite")
+        Svelte -> 5174
+        Solid -> 5173
+    }
+
     return Filter { next ->
         { req ->
             val response = next(req)
             if (response.status == Status.NOT_FOUND && req.method == Method.GET) {
-                val proxiedRequest = Request(Method.GET, Uri.of("http://localhost:5173" + req.uri.path))
+                val proxiedRequest = Request(Method.GET, Uri.of("http://localhost:$vitePort" + req.uri.path))
                 viteHttpClient(proxiedRequest)
             } else {
                 response
