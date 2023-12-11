@@ -19,7 +19,7 @@ import java.net.ServerSocket
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-private object Config {
+internal object Config {
     // this needs to manually be kept in line with the version in gradle.build.kts
     const val CHROME_VERSION = 114
     const val HEADLESS = true

@@ -1,24 +1,15 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="SolidDevServer" type="GradleRunConfiguration" factoryName="Gradle">
-    <ExternalSystemSettings>
-      <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$/frontend-solid" />
-      <option name="externalSystemIdString" value="GRADLE" />
-      <option name="scriptParameters" value="" />
-      <option name="taskDescriptions">
-        <list />
-      </option>
-      <option name="taskNames">
-        <list>
-          <option value="runDevServer" />
-        </list>
-      </option>
-      <option name="vmOptions" />
-    </ExternalSystemSettings>
-    <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
-    <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-    <DebugAllEnabled>false</DebugAllEnabled>
-    <RunAsTest>false</RunAsTest>
-    <method v="2" />
+  <configuration default="false" name="SolidDevServer" type="JetRunConfigurationType">
+    <envs>
+      <env name="SOLID" value="true" />
+      <env name="DEV" value="true" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="com.tamj0rd2.webapp.ServerKt" />
+    <module name="skull-king-kt.app.main" />
+    <shortenClasspath name="NONE" />
+    <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
   </configuration>
 </component>

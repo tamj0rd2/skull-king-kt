@@ -10,8 +10,11 @@ import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
+import io.kotest.assertions.nondeterministic.eventually
+import io.kotest.assertions.nondeterministic.eventuallyConfig
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.openqa.selenium.By
 import org.openqa.selenium.NoSuchElementException
@@ -19,7 +22,8 @@ import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
 import testsupport.ApplicationDriver
-import java.time.Instant.now
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 private const val debug = true
 
@@ -43,14 +47,19 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             is PlayerCommand.PlayCard -> playCard(command.cardName)
         }
 
-        waitUntil({ noCommandsAreInProgress }, "the command is still in progress")
+        eventually {
+            withClue("another command is still in progress") {
+                noCommandsAreInProgress shouldBe true
+            }
+        }
     }
 
     private fun joinGame(playerId: PlayerId) = debugException {
         this.playerId = playerId
         driver.findElement(By.name("playerId")).sendKeys(playerId.value)
         driver.findElement(By.id("joinGame")).submit()
-        waitUntil({
+
+        eventually {
             driver.findElementOrNull(By.id("errorMessage"))?.let { el ->
                 if (!el.isDisplayed) return@let
 
@@ -59,8 +68,8 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                     ?: error("failed to join the game due to unknown reasons")
             }
 
-            driver.findElement(By.tagName("h1")).text == "Game Page - $playerId"
-        }, "the player's id hasn't shown up in the header")
+            driver.findElement(By.tagName("h1")).text shouldBe "Game Page - $playerId"
+        }
     }
 
     private fun bid(bid: Int) = debugException {
@@ -208,7 +217,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
     private fun <T> debugException(block: () -> T): T {
         try {
             return block()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             if (debug) printContent()
             throw e
         }
@@ -221,7 +230,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     private fun printContent() {
         val root = driver.findElementOrNull(By.id("root")) ?: driver.findElement(By.tagName("body"))
-        val html = root.getAttribute("outerHTML")
+        val html = root.getAttribute("innerHTML")
         println(
             """
             |===========$playerId's view===========
@@ -238,10 +247,12 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
     }
 }
 
-private fun waitUntil(predicate: () -> Boolean, errorMessage: String = "predicate not met within timeout") {
-    val mustEndBy = now().plusSeconds(2)
-    do {
-        if (predicate()) return
-    } while (mustEndBy > now())
-    error(errorMessage)
+
+private fun <T> eventually(fn: () -> T) = runBlocking {
+    eventually(eventuallyConfig, fn)
+}
+
+private val eventuallyConfig = eventuallyConfig {
+    duration = 2.seconds
+    initialDelay = 200.milliseconds
 }

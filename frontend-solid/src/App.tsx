@@ -1,33 +1,26 @@
-import { createSignal } from 'solid-js'
-import solidLogo from './assets/solid.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import {Component, createSignal, Show} from "solid-js";
+import {PlayerId} from "../generated_types.ts";
 
-function App() {
-  const [count, setCount] = createSignal(0)
+const [playerId, setPlayerId] = createSignal<PlayerId>()
+const [hasJoined, setHasJoined] = createSignal(false)
 
+const App: Component = () => {
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} class="logo" alt="Vite logo" />
-        </a>
-        <a href="https://solidjs.com" target="_blank">
-          <img src={solidLogo} class="logo solid" alt="Solid logo" />
-        </a>
-      </div>
-      <h1>Vite + Solid</h1>
-      <div class="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count()}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p class="read-the-docs">
-        Click on the Vite and Solid logos to learn more
-      </p>
+      <Show when={hasJoined()} fallback={<h1>Game Page</h1>}>
+        <h1>Game Page - {playerId()}</h1>
+      </Show>
+      <form id="joinGame" onSubmit={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setHasJoined(true)
+      }}>
+        <label>Player ID:
+          <input type="text" name="playerId" onInput={(e) => setPlayerId(e.target.value)}></input>
+        </label>
+        <input type="submit">Join game</input>
+      </form>
     </>
   )
 }

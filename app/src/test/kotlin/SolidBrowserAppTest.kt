@@ -5,7 +5,6 @@ import testsupport.annotations.SkipUnhappyPathTests
 import testsupport.annotations.SkipWipTests
 import kotlin.test.Ignore
 
-@Ignore
 @SkipWipTests
 @SkipUnhappyPathTests
 @Execution(ExecutionMode.SAME_THREAD)
