@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.ByteArrayOutputStream
 
 plugins {
-    kotlin("jvm") version "1.9.20"
+    kotlin("jvm")
     kotlin("plugin.serialization") version "1.9.0"
 }
 
