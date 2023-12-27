@@ -21,15 +21,18 @@ internal class PerPlayerWsHandler(
     private val game: Game,
     acknowledgementTimeoutMs: Long
 ) {
-    private var playerId: PlayerId = PlayerId.unidentified
-    private lateinit var logger: Logger
+    private val loggingContext = "wsHandler"
+    private var playerId = PlayerId.unidentified
+        set(value) {
+            field = value
+            logger = field.logger(loggingContext)
+        }
+    private var logger = playerId.logger(loggingContext)
     private var isConnected = true
     private val answerTracker = AnswerTracker(acknowledgementTimeoutMs)
     private val messagesToClient = LockedValue<List<Notification>>() // TODO: wtf is this? I can't remember...
 
     init {
-        identifyAs(PlayerId.unidentified)
-
         ws.onError { e ->
             val errorMessage = e.message ?: e::class.simpleName ?: "unknown error"
             logger.error(errorMessage, e)
@@ -54,11 +57,6 @@ internal class PerPlayerWsHandler(
         keepConnectionAlive()
     }
 
-    private fun identifyAs(id: PlayerId) {
-        playerId = id
-        logger = LoggerFactory.getLogger("$playerId:wsHandler")
-    }
-
     private fun keepConnectionAlive()  {
         val timer = Timer()
         timer.schedule(timerTask {
@@ -73,7 +71,7 @@ internal class PerPlayerWsHandler(
 
     private fun handleMessageToServer(message: ToServer) {
         if (message.command is PlayerCommand.JoinGame) {
-            identifyAs(message.command.actor)
+            playerId = message.command.actor
 
             game.subscribeToGameEvents { events, triggeredBy ->
                 val messages = events

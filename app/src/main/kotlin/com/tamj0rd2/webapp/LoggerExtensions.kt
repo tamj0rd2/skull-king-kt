@@ -1,7 +1,11 @@
 package com.tamj0rd2.webapp
 
+import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.messaging.Message
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+fun PlayerId.logger(context: String) = LoggerFactory.getLogger("$this:$context")
 
 fun Logger.receivedMessage(message: Message) =
     when (message) {

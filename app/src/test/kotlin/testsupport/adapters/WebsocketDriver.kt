@@ -13,6 +13,7 @@ import com.tamj0rd2.messaging.Message
 import com.tamj0rd2.messaging.Notification
 import com.tamj0rd2.webapp.messageLens
 import com.tamj0rd2.webapp.awaitingAck
+import com.tamj0rd2.webapp.logger
 import com.tamj0rd2.webapp.processedMessage
 import com.tamj0rd2.webapp.receivedMessage
 import com.tamj0rd2.webapp.sending
@@ -118,7 +119,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
 
     private fun identifyAs(playerId: PlayerId) {
         this.playerId = playerId
-        this.logger = LoggerFactory.getLogger("$playerId:wsClient")
+        this.logger = playerId.logger("wsClient")
     }
 
     private fun handleMessage(message: Notification) {
