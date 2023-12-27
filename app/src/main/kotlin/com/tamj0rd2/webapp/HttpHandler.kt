@@ -39,39 +39,36 @@ enum class Frontend(val usesViteInDevMode: Boolean) {
     Solid(usesViteInDevMode = true),
 }
 
-internal fun httpHandler(
-    game: Game,
+internal class HttpHandler(
+    private val game: Game,
     host: String,
     devServer: Boolean,
-    automateGameMasterCommands: Boolean,
+    private val automateGameMasterCommands: Boolean,
     ackTimeoutMs: Long,
     frontend: Frontend,
 ): HttpHandler {
-    val logger = LoggerFactory.getLogger("httpHandler")
-    val (renderer, resourceLoader) = buildResourceLoaders(devServer)
-    val gameMasterCommandLens = Body.auto<GameMasterCommand>().toLens()
+    private val logger = LoggerFactory.getLogger("httpHandler")
+    private val renderer = if (devServer) HandlebarsTemplates().HotReload("./src/main/resources") else HandlebarsTemplates().CachingClasspath()
+    private val resourceLoader = ResourceLoader.Classpath("public")
 
-    val vmHtmlLens = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
-    val vmJsonLens = Body.auto<ViewModel>().toLens()
-    val negotiator = ContentNegotiation.auto(vmHtmlLens, vmJsonLens)
+    private val gameMasterCommandLens = Body.auto<GameMasterCommand>().toLens()
+    private val vmHtmlLens = Body.viewModel(renderer, ContentType.TEXT_HTML).toLens()
+    private val vmJsonLens = Body.auto<ViewModel>().toLens()
+    private val negotiator = ContentNegotiation.auto(vmHtmlLens, vmJsonLens)
 
-    fun gameMasterCommandHandler(req: Request): Response {
-        if (automateGameMasterCommands) return Response(Status.FORBIDDEN)
+    override fun invoke(request: Request): Response = handler.invoke(request)
 
-        val command = gameMasterCommandLens(req)
-        logger.info("received command: $command")
-
-        return runCatching { game.perform(command) }
-            .fold(
-                onSuccess = { Response(Status.OK) },
-                onFailure = { e ->
-                    logger.error("error while executing command: ${req.bodyString()}", e)
-                    return Response(Status.INTERNAL_SERVER_ERROR).body(e.message ?: "unknown error")
-                }
-            )
+    private val loggingFilter = Filter { next ->
+        { request ->
+            next(request).also { response ->
+                if (response.status.successful || response.status.redirection)
+                    logger.trace("Responded with {} for {} {}", response.status, request.method, request.uri)
+                else logger.warn("Responded with {} for {} {}", response.status, request.method, request.uri)
+            }
+        }
     }
 
-    val router = routes(
+    private val router = routes(
         static(resourceLoader, "map" to ContentType.APPLICATION_JSON),
         "/" bind Method.GET to {
             Response(Status.MOVED_PERMANENTLY).with(Header.LOCATION of Uri.of("/play"))
@@ -87,17 +84,23 @@ internal fun httpHandler(
         "/do-game-master-command" bind Method.POST to ::gameMasterCommandHandler
     )
 
-    val loggingFilter = Filter { next ->
-        { request ->
-            next(request).also { response ->
-                if (response.status.successful || response.status.redirection)
-                    logger.trace("Responded with {} for {} {}", response.status, request.method, request.uri)
-                else logger.warn("Responded with {} for {} {}", response.status, request.method, request.uri)
-            }
-        }
+    private fun gameMasterCommandHandler(req: Request): Response {
+        if (automateGameMasterCommands) return Response(Status.FORBIDDEN)
+
+        val command = gameMasterCommandLens(req)
+        logger.info("received command: $command")
+
+        return runCatching { game.perform(command) }
+            .fold(
+                onSuccess = { Response(Status.OK) },
+                onFailure = { e ->
+                    logger.error("error while executing command: ${req.bodyString()}", e)
+                    return Response(Status.INTERNAL_SERVER_ERROR).body(e.message ?: "unknown error")
+                }
+            )
     }
 
-    return loggingFilter
+    private val handler = loggingFilter
         .then(if (devServer && frontend.usesViteInDevMode) frontend.viteProxy() else Filter.NoOp)
         .then(router)
 }
@@ -121,9 +124,4 @@ private fun Frontend.viteProxy(): Filter {
             }
         }
     }
-}
-
-private fun buildResourceLoaders(hotReload: Boolean) = when {
-    hotReload -> HandlebarsTemplates().HotReload("./src/main/resources") to ResourceLoader.Classpath("public")
-    else -> HandlebarsTemplates().CachingClasspath() to ResourceLoader.Classpath("public")
 }

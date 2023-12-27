@@ -23,7 +23,7 @@ object Server {
         frontend: Frontend = WebComponents,
     ): Http4kServer {
         val game = Game()
-        val http = httpHandler(
+        val httpHandler = HttpHandler(
             game = game,
             host = host,
             devServer = devServer,
@@ -32,14 +32,14 @@ object Server {
             frontend = frontend,
         )
 
-        val ws = wsHandler(
+        val wsHandler = wsHandler(
             game = game,
             automateGameMasterCommands = automateGameMasterCommands,
             automaticGameMasterDelayOverride = automaticGameMasterDelayOverride,
             acknowledgementTimeoutMs = acknowledgementTimeoutMs
         )
 
-        return PolyHandler(http, ws).asServer(Jetty(port, StopMode.Graceful(gracefulShutdownTimeout.toJavaDuration())))
+        return PolyHandler(httpHandler, wsHandler).asServer(Jetty(port, StopMode.Graceful(gracefulShutdownTimeout.toJavaDuration())))
     }
 }
 
