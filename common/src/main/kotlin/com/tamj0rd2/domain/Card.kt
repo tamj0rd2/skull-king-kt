@@ -6,7 +6,6 @@ import java.util.*
 
 @Serializable
 sealed class Card(val name: CardName) {
-
     fun playedBy(playerId: PlayerId): PlayedCard = PlayedCard(playerId, this)
 
     companion object {
@@ -17,20 +16,20 @@ sealed class Card(val name: CardName) {
     }
 
     @Serializable
-    data class NumberedCard(val suit: Suit, val number: Int) : Card("$suit-$number") {
+    data class NumberedCard(val suit: Suit, val number: Int) : Card(CardName("$suit-$number")) {
         init {
             require(number in 1..13) { "number must be between 1 and 13" }
         }
 
         override fun toString(): String {
-            return name.lowercase(Locale.getDefault())
+            return name.value.lowercase(Locale.getDefault())
         }
     }
 
     @Serializable
-    data class SpecialCard(val suit: SpecialSuit) : Card(suit.name) {
+    data class SpecialCard(val suit: SpecialSuit) : Card(CardName(suit.name)) {
         override fun toString(): String {
-            return name.lowercase(Locale.getDefault())
+            return name.value.lowercase(Locale.getDefault())
         }
 
         companion object {
@@ -42,18 +41,23 @@ sealed class Card(val name: CardName) {
     }
 }
 
-// TODO: make this a tiny type
-typealias CardName = String
+@JvmInline
+@Serializable
+value class CardName(val value: String) {
+    override fun toString(): String {
+        return value
+    }
+}
 
 @Serializable
-enum class Suit() {
+enum class Suit {
     Red,
     Yellow,
     Blue,
     Black;
 
     companion object {
-        private val mapper = values().associateBy { it.name }
+        private val mapper = entries.associateBy { it.name }
 
         fun from(suit: String): Suit {
             return mapper[suit] ?: error("unknown suit: $suit")
@@ -70,7 +74,7 @@ val Int.black get() = Card.NumberedCard(Black, this)
 data class CardWithPlayability(val card: Card, val isPlayable: Boolean)
 
 @Serializable
-enum class SpecialSuit() {
+enum class SpecialSuit {
     Escape,
     Pirate,
     Mermaid,
@@ -79,7 +83,7 @@ enum class SpecialSuit() {
     //ScaryMary;
 
     companion object {
-        private val mapper = values().associateBy { it.name }
+        private val mapper = entries.associateBy { it.name }
 
         fun from(suit: String): SpecialSuit {
             return mapper[suit] ?: error("unknown special suit: $suit")

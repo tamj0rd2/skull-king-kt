@@ -123,7 +123,6 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             }
         }
 
-        // TODO: There's some annoying issue where you have to build twice for the changes to be picked up
         @Wip
         @Test
         fun `playing a card and waiting for the next player to do the same`() {

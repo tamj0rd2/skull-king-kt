@@ -53,7 +53,6 @@ tasks.test {
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "21"
 
-    // TODO: add frontend-solid here
     val frontendProjects = mapOf(
         ":frontend" to "frontend",
         ":frontend-svelte" to "frontend-svelte",

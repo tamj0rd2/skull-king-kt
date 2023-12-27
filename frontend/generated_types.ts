@@ -10,17 +10,19 @@ export namespace Card {
   
   export interface NumberedCard {
     type: Card.Type.NumberedCard
-    name: string
+    name: CardName
     suit: Suit
     number: number
   }
   
   export interface SpecialCard {
     type: Card.Type.SpecialCard
-    name: string
+    name: CardName
     suit: SpecialSuit
   }
 }
+
+export type CardName = string
 
 export enum Suit {
   Red = "Red",
@@ -67,7 +69,7 @@ export namespace PlayerCommand {
   export interface PlayCard {
     type: PlayerCommand.Type.PlayCard
     actor: PlayerId
-    cardName: string
+    cardName: CardName
   }
 }
 
