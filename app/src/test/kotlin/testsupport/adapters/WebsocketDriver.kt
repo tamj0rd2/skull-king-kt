@@ -8,7 +8,7 @@ import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundPhase
-import com.tamj0rd2.webapp.Acknowledgements
+import com.tamj0rd2.webapp.AnswerTracker
 import com.tamj0rd2.messaging.Message
 import com.tamj0rd2.messaging.Notification
 import com.tamj0rd2.webapp.messageLens
@@ -30,7 +30,7 @@ import kotlin.time.toJavaDuration
 class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
     ApplicationDriver {
     private val wsBaseUrl = "ws://$host"
-    private val acknowledgements = Acknowledgements(ackTimeoutMs)
+    private val answerTracker = AnswerTracker(ackTimeoutMs)
 
     private var playerId = PlayerId.unidentified
     private lateinit var logger: Logger
@@ -70,12 +70,12 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
             when (message) {
                 is Message.AckFromServer -> {
                     message.notifications.forEach(::handleMessage)
-                    acknowledgements.ack(message.id)
+                    answerTracker.markAsAccepted(message.id)
                     logger.processedMessage(message)
                 }
 
                 is Message.Nack -> {
-                    acknowledgements.nack(message.id, message.reason)
+                    answerTracker.markAsRejected(message.id, message.reason)
                 }
 
                 is Message.ToClient -> {
@@ -102,7 +102,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
 
     override fun perform(command: PlayerCommand) {
         val message = Message.ToServer(command)
-        val nackReason = acknowledgements.waitFor(message.id) {
+        val nackReason = answerTracker.waitForAnswer(message.id) {
             logger.sending(message)
             ws.send(messageLens(message))
             logger.awaitingAck(message)

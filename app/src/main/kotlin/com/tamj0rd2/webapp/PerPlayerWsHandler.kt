@@ -24,7 +24,7 @@ internal class PerPlayerWsHandler(
     private var playerId: PlayerId = PlayerId.unidentified
     private lateinit var logger: Logger
     private var isConnected = true
-    private val acknowledgements = Acknowledgements(acknowledgementTimeoutMs)
+    private val answerTracker = AnswerTracker(acknowledgementTimeoutMs)
     private val messagesToClient = LockedValue<List<Notification>>() // TODO: wtf is this? I can't remember...
 
     init {
@@ -67,7 +67,7 @@ internal class PerPlayerWsHandler(
     }
 
     private fun handleAckFromClient(message: AckFromClient) {
-        acknowledgements.ack(message.id)
+        answerTracker.markAsAccepted(message.id)
         logger.processedMessage(message)
     }
 
@@ -86,7 +86,7 @@ internal class PerPlayerWsHandler(
                 }
 
                 val otwMessage = ToClient(messages)
-                val nackReason = acknowledgements.waitFor(otwMessage.id) {
+                val nackReason = answerTracker.waitForAnswer(otwMessage.id) {
                     logger.sending(otwMessage)
                     ws.send(messageLens(otwMessage))
                     logger.awaitingAck(otwMessage)
