@@ -23,6 +23,11 @@ object Server {
         frontend: Frontend = WebComponents,
     ): Http4kServer {
         val game = Game()
+
+        if (automateGameMasterCommands) {
+            AutomatedGameMaster(game, automaticGameMasterDelayOverride).start()
+        }
+
         val httpHandler = HttpHandler(
             game = game,
             host = host,
@@ -32,10 +37,8 @@ object Server {
             frontend = frontend,
         )
 
-        val wsHandler = wsHandler(
+        val wsHandler = WsHandler(
             game = game,
-            automateGameMasterCommands = automateGameMasterCommands,
-            automaticGameMasterDelayOverride = automaticGameMasterDelayOverride,
             acknowledgementTimeoutMs = acknowledgementTimeoutMs
         )
 
