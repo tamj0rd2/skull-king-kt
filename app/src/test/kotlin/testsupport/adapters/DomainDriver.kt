@@ -30,7 +30,7 @@ class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver
     override val trickWinner: PlayerId? get() = game.trickWinner
 
     override val playersInRoom get() = game.players
-    override val hand get() = game.getCardsInHand(playerId)
+    override val hand get() = game.getCardsInHand(playerId) ?: error("$playerId has no hand at all")
     override val trick: List<PlayedCard> get() = game.currentTrick
     override val gameState: GameState get() = game.state
     override val roundPhase: RoundPhase? get() = game.phase
