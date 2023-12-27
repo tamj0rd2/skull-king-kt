@@ -9,8 +9,6 @@ import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.messaging.Notification
 import com.tamj0rd2.messaging.Message.*
 import org.http4k.websocket.Websocket
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.concurrent.timerTask
 
@@ -42,7 +40,7 @@ internal class PerPlayerWsHandler(
             val message = messageLens(it)
             logger.receivedMessage(message)
             when (message) {
-                is AckFromClient -> handleAckFromClient(message)
+                is AcceptanceFromClient -> handleAcceptanceFromClient(message)
                 is ToServer -> handleMessageToServer(message)
                 else -> error("invalid message from client to server: $message")
             }
@@ -64,7 +62,7 @@ internal class PerPlayerWsHandler(
         }, 0, serverIdleTimeout / 2)
     }
 
-    private fun handleAckFromClient(message: AckFromClient) {
+    private fun handleAcceptanceFromClient(message: AcceptanceFromClient) {
         answerTracker.markAsAccepted(message.id)
         logger.processedMessage(message)
     }
@@ -97,13 +95,13 @@ internal class PerPlayerWsHandler(
             val response = runCatching { game.perform(message.command) }.fold(
                 onSuccess = {
                     logger.processedMessage(message)
-                    message.acknowledge(lockedValue.orEmpty())
+                    message.accept(lockedValue.orEmpty())
                 },
                 onFailure = {
                     logger.error("processing message failed - $message", it)
                     when(it) {
-                        is GameErrorCodeException -> message.nack(it.errorCode)
-                        else -> message.nack(it.message ?: it::class.simpleName ?: "unknown error")
+                        is GameErrorCodeException -> message.reject(it.errorCode)
+                        else -> message.reject(it.message ?: it::class.simpleName ?: "unknown error")
                     }
                 }
             )

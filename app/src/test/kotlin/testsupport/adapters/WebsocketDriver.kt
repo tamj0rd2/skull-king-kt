@@ -22,7 +22,6 @@ import org.http4k.client.WebsocketClient
 import org.http4k.core.Uri
 import org.http4k.websocket.Websocket
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import testsupport.ApplicationDriver
 import java.time.Instant.now
 import kotlin.time.Duration.Companion.seconds
@@ -69,13 +68,13 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
             logger.receivedMessage(message)
 
             when (message) {
-                is Message.AckFromServer -> {
+                is Message.AcceptanceFromServer -> {
                     message.notifications.forEach(::handleMessage)
                     answerTracker.markAsAccepted(message.id)
                     logger.processedMessage(message)
                 }
 
-                is Message.Nack -> {
+                is Message.Rejection -> {
                     answerTracker.markAsRejected(message.id, message.reason)
                 }
 
@@ -84,7 +83,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
                     logger.processedMessage(message)
 
 
-                    message.acknowledge().let { response ->
+                    message.accept().let { response ->
                         logger.sending(response)
                         ws.send(messageLens(response))
                         logger.sentMessage(response)

@@ -22,37 +22,37 @@ value class MessageId(val value: String) {
 sealed class Message {
     abstract val id: MessageId
 
-    fun nack(reason: GameErrorCode): Message = nack(reason.name)
-    fun nack(reason: String): Message =
+    fun reject(reason: GameErrorCode): Message = reject(reason.name)
+    fun reject(reason: String): Message =
         when (this) {
-            is AckFromClient,
-            is AckFromServer -> error("ack cannot be nacked")
+            is AcceptanceFromClient,
+            is AcceptanceFromServer -> error("acceptance cannot be rejected")
 
-            is Nack -> error("nack cannot be nacked")
-            is KeepAlive -> error("keepAlive cannot be nacked")
+            is Rejection -> error("rejection cannot be rejected")
+            is KeepAlive -> error("keepAlive cannot be rejected")
             is ToServer,
-            is ToClient -> Nack(id, reason)
+            is ToClient -> Rejection(id, reason)
         }
 
     @Serializable
     data class KeepAlive(@Required override val id: MessageId = MessageId.next()) : Message()
 
     @Serializable
-    data class AckFromServer(override val id: MessageId, val notifications: List<Notification>) : Message() {
+    data class AcceptanceFromServer(override val id: MessageId, val notifications: List<Notification>) : Message() {
         override fun toString(): String {
             return "$id - ${notifications.joinToString(", ")}"
         }
     }
 
     @Serializable
-    data class AckFromClient(override val id: MessageId) : Message() {
+    data class AcceptanceFromClient(override val id: MessageId) : Message() {
         override fun toString(): String {
             return "$id"
         }
     }
 
     @Serializable
-    data class Nack(override val id: MessageId, val reason: String) : Message() {
+    data class Rejection(override val id: MessageId, val reason: String) : Message() {
         constructor(id: MessageId, errorCode: GameErrorCode) : this(id, errorCode.name)
     }
 
@@ -61,7 +61,7 @@ sealed class Message {
         @Required
         override val id: MessageId = MessageId.next()
 
-        fun acknowledge() = AckFromClient(id)
+        fun accept() = AcceptanceFromClient(id)
 
         override fun toString(): String {
             return "$id - ${notifications.joinToString(", ")}"
@@ -73,7 +73,7 @@ sealed class Message {
         @Required
         override val id: MessageId = MessageId.next()
 
-        fun acknowledge(messages: List<Notification>) = AckFromServer(id, messages)
+        fun accept(messages: List<Notification>) = AcceptanceFromServer(id, messages)
 
         override fun toString(): String {
             return "$id - $command"

@@ -189,30 +189,30 @@ export namespace Notification {
 }
 
 export type Message =
-  | Message.AckFromClient
-  | Message.AckFromServer
+  | Message.AcceptanceFromClient
+  | Message.AcceptanceFromServer
   | Message.KeepAlive
-  | Message.Nack
+  | Message.Rejection
   | Message.ToClient
   | Message.ToServer
 
 export namespace Message {
   export enum Type {
-    AckFromClient = "com.tamj0rd2.messaging.Message.AckFromClient",
-    AckFromServer = "com.tamj0rd2.messaging.Message.AckFromServer",
+    AcceptanceFromClient = "com.tamj0rd2.messaging.Message.AcceptanceFromClient",
+    AcceptanceFromServer = "com.tamj0rd2.messaging.Message.AcceptanceFromServer",
     KeepAlive = "com.tamj0rd2.messaging.Message.KeepAlive",
-    Nack = "com.tamj0rd2.messaging.Message.Nack",
+    Rejection = "com.tamj0rd2.messaging.Message.Rejection",
     ToClient = "com.tamj0rd2.messaging.Message.ToClient",
     ToServer = "com.tamj0rd2.messaging.Message.ToServer",
   }
   
-  export interface AckFromClient {
-    type: Message.Type.AckFromClient
+  export interface AcceptanceFromClient {
+    type: Message.Type.AcceptanceFromClient
     id: TamId
   }
   
-  export interface AckFromServer {
-    type: Message.Type.AckFromServer
+  export interface AcceptanceFromServer {
+    type: Message.Type.AcceptanceFromServer
     id: TamId
     notifications: Notification[]
   }
@@ -222,8 +222,8 @@ export namespace Message {
     id: TamId
   }
   
-  export interface Nack {
-    type: Message.Type.Nack
+  export interface Rejection {
+    type: Message.Type.Rejection
     id: TamId
     reason: string
   }

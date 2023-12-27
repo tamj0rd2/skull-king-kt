@@ -22,8 +22,8 @@ socket.addEventListener("message", (event) => {
             case Message.Type.ToClient:
                 break
             // acks and nacks are handled as part of `sendCommand`
-            case Message.Type.AckFromServer:
-            case Message.Type.Nack:
+            case Message.Type.AcceptanceFromServer:
+            case Message.Type.Rejection:
             case Message.Type.KeepAlive:
                 return
             default:
@@ -78,8 +78,8 @@ export function sendCommand(command: PlayerCommand): Promise<void> {
 
             this.removeEventListener("message", handler)
 
-            if (message.type === Message.Type.Nack) return reject(new NackError(message.reason))
-            if (message.type !== Message.Type.AckFromServer) return reject(new Error(`invalid message type ${message.type}`))
+            if (message.type === Message.Type.Rejection) return reject(new NackError(message.reason))
+            if (message.type !== Message.Type.AcceptanceFromServer) return reject(new Error(`invalid message type ${message.type}`))
 
             message.notifications!!.forEach((notification) => {
                 listenerRegistry.forEach((listeners) => {
@@ -97,7 +97,7 @@ export function sendCommand(command: PlayerCommand): Promise<void> {
 }
 
 export function acknowledgeMessage(messageToAck: Message) {
-    send({ type: Message.Type.AckFromClient, id: messageToAck.id})
+    send({ type: Message.Type.AcceptanceFromClient, id: messageToAck.id})
 }
 
 function send(message: Message) {

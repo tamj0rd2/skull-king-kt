@@ -36,8 +36,8 @@ function createMessageStore(): MessageStore {
                     case Message.Type.ToClient:
                         break
                     // acks and nacks are handled as part of `sendCommand`
-                    case Message.Type.AckFromServer:
-                    case Message.Type.Nack:
+                    case Message.Type.AcceptanceFromServer:
+                    case Message.Type.Rejection:
                     // keep alive messages don't need handling
                     case Message.Type.KeepAlive:
                         return
@@ -53,7 +53,7 @@ function createMessageStore(): MessageStore {
                 // TODO: how can I make it so that I can process the message before sending the ack? Is it even a problem?
                 // if it is, one dumb solution could be to delay the below line of code for 500ms so that some time is given to update the UI.
                 // but I should find out if there's a better way to do it. Magic numbers bad.
-                sendMessage({ type: Message.Type.AckFromClient, id: message.id })
+                sendMessage({ type: Message.Type.AcceptanceFromClient, id: message.id })
             } catch(e) {
                 socket.close(4000, (e as Error).message)
                 throw e
@@ -90,11 +90,11 @@ function createMessageStore(): MessageStore {
                 this.removeEventListener("message", handler)
 
                 switch (message.type) {
-                    case Message.Type.AckFromServer:
+                    case Message.Type.AcceptanceFromServer:
                         logInfo(`received ${event.data}`, message)
                         update((notifications) => [...notifications, ...(message.notifications ?? [])])
                         break
-                    case Message.Type.Nack:
+                    case Message.Type.Rejection:
                         throw new NackError(message.reason)
                     default:
                         throw new Error(`invalid message type ${message.type}`)
