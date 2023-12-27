@@ -11,6 +11,32 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
+fun main() {
+    val port = System.getenv("PORT")?.toInt() ?: 8080
+    val host = System.getenv("HOST") ?: "localhost"
+    val useDevServer = System.getenv("DEV") == "true"
+
+    val frontend = when {
+        System.getenv("SVELTE") == "true" -> Svelte
+        System.getenv("SOLID") == "true" -> Solid
+        else -> WebComponents
+    }
+
+    if (useDevServer && frontend.usesViteInDevMode) {
+        println("If you're not seeing any content or have console errors, ensure you're running the ${frontend.name} dev server")
+    }
+
+    Server.make(
+        port = port,
+        host = host,
+        devServer = useDevServer,
+        automateGameMasterCommands = true,
+        acknowledgementTimeoutMs = 3000,
+        frontend = frontend,
+    ).start().apply { println("Server started on port $host:$port") }
+}
+
+
 object Server {
     fun make(
         port: Int,
@@ -42,31 +68,11 @@ object Server {
             acknowledgementTimeoutMs = acknowledgementTimeoutMs
         )
 
-        return PolyHandler(httpHandler, wsHandler).asServer(Jetty(port, StopMode.Graceful(gracefulShutdownTimeout.toJavaDuration())))
+        return PolyHandler(httpHandler, wsHandler).asServer(
+            config = Jetty(
+                port = port,
+                stopMode = StopMode.Graceful(gracefulShutdownTimeout.toJavaDuration())
+            )
+        )
     }
-}
-
-fun main() {
-    val port = System.getenv("PORT")?.toInt() ?: 8080
-    val host = System.getenv("HOST") ?: "localhost"
-    val useDevServer = System.getenv("DEV") == "true"
-
-    val frontend = when {
-        System.getenv("SVELTE") == "true" -> Svelte
-        System.getenv("SOLID") == "true" -> Solid
-        else -> WebComponents
-    }
-
-    if (useDevServer && frontend == Solid) {
-        println("If you're not seeing any content or have console errors, ensure you're running the Solid dev server")
-    }
-
-    Server.make(
-        port = port,
-        host = host,
-        devServer = useDevServer,
-        automateGameMasterCommands = true,
-        acknowledgementTimeoutMs = 3000,
-        frontend = frontend,
-    ).start().apply { println("Server started on port $host:$port") }
 }
