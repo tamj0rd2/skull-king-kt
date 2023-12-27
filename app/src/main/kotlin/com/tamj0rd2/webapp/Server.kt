@@ -7,6 +7,8 @@ import org.http4k.server.Jetty
 import org.http4k.server.PolyHandler
 import org.http4k.server.ServerConfig.StopMode
 import org.http4k.server.asServer
+import org.http4k.websocket.WsHandler
+import org.http4k.websocket.WsResponse
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -63,10 +65,17 @@ object Server {
             frontend = frontend,
         )
 
-        val wsHandler = WsHandler(
-            game = game,
-            acknowledgementTimeoutMs = acknowledgementTimeoutMs
-        )
+        val wsHandler: WsHandler = {
+            WsResponse(
+                consumer = { ws ->
+                    PerPlayerWsHandler(
+                        ws = ws,
+                        game = game,
+                        acknowledgementTimeoutMs = acknowledgementTimeoutMs
+                    )
+                }
+            )
+        }
 
         return PolyHandler(httpHandler, wsHandler).asServer(
             config = Jetty(
