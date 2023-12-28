@@ -1,6 +1,7 @@
 import {get, type Readable, readonly, writable} from 'svelte/store'
 import {PlayerCommand, Notification, Message, type PlayerId} from "../generated_types";
 import { v4 as uuidV4 } from "uuid"
+import "./styles.css"
 
 declare global {
     const INITIAL_STATE: {
