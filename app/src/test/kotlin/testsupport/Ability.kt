@@ -19,8 +19,8 @@ interface ApplicationDriver {
     val winsOfTheRound: Map<PlayerId, Int>
     val trickWinner: PlayerId?
     val currentPlayer: PlayerId?
-    val trickNumber: TrickNumber?
-    val roundNumber: RoundNumber?
+    val trickNumber: TrickNumber
+    val roundNumber: RoundNumber
     val trick: List<PlayedCard>
     val roundPhase: RoundPhase?
     val gameState: GameState?

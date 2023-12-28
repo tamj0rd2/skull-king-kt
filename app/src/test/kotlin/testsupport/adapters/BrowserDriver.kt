@@ -133,14 +133,20 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             driver.findElement(By.id("trickWinner")).getAttributeOrNull("data-playerId")?.let(::PlayerId)
         }
 
-    override val trickNumber: TrickNumber?
+    override val trickNumber: TrickNumber
         get() = debugException {
-            driver.findElement(By.id("trickNumber")).getAttributeOrNull("data-trickNumber")?.let(TrickNumber::parse)
+            driver.findElement(By.id("trickNumber"))
+                .getAttributeOrNull("data-trickNumber")
+                ?.let(TrickNumber::parse)
+                ?: TrickNumber.None
         }
 
-    override val roundNumber: RoundNumber?
+    override val roundNumber: RoundNumber
         get() = debugException {
-            driver.findElement(By.id("roundNumber")).getAttributeOrNull("data-roundNumber")?.let(RoundNumber::parse)
+            driver.findElement(By.id("roundNumber"))
+                .getAttributeOrNull("data-roundNumber")
+                ?.let(RoundNumber::parse)
+                ?: RoundNumber.None
         }
 
     override val playersInRoom: List<PlayerId>

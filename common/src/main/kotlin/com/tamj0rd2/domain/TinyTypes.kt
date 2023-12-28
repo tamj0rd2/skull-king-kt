@@ -27,7 +27,9 @@ value class Bid private constructor(override val value: Int): Value<Int> {
 @Serializable
 value class RoundNumber private constructor(override val value: Int): Value<Int> {
     // TODO: this is 0 for backward compatability. But it should be 1
-    companion object : IntValueFactory<RoundNumber>(::RoundNumber, 0.minValue.and(10.maxValue))
+    companion object : IntValueFactory<RoundNumber>(::RoundNumber, 0.minValue.and(10.maxValue)) {
+        val None = RoundNumber(0)
+    }
 
     operator fun plus(increment: Int): RoundNumber {
         return RoundNumber(value + increment)
@@ -42,7 +44,9 @@ value class RoundNumber private constructor(override val value: Int): Value<Int>
 @Serializable
 value class TrickNumber private constructor(override val value: Int): Value<Int> {
     // TODO: this is 0 for backward compatability. But it should be 1
-    companion object : IntValueFactory<TrickNumber>(::TrickNumber, 0.minValue.and(10.maxValue))
+    companion object : IntValueFactory<TrickNumber>(::TrickNumber, 0.minValue.and(10.maxValue)) {
+        val None = TrickNumber(0)
+    }
 
     operator fun plus(increment: Int): TrickNumber {
         return TrickNumber(value + increment)

@@ -503,13 +503,17 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
 
         @Test
         fun `when all players have played their card, the next trick or round automatically begins`() {
-            data class RoundState(val round: Int?, val phase: RoundPhase?, val trick: Int? = null)
+            data class RoundState(
+                val round: Int = RoundNumber.None.value,
+                val phase: RoundPhase?,
+                val trick: Int = TrickNumber.None.value
+            )
 
             val TheRoundState = Question("about the round state") { actor ->
                 RoundState(
-                    round = actor.asksAbout(TheRoundNumber)?.value,
+                    round = actor.asksAbout(TheRoundNumber).value,
                     phase = actor.asksAbout(TheRoundPhase),
-                    trick = actor.asksAbout(TheTrickNumber)?.value,
+                    trick = actor.asksAbout(TheTrickNumber).value,
                 )
             }
 
@@ -586,7 +590,7 @@ internal object TestHelpers: Ensurer by ensurer() {
             TrickCompleted -> {
                 val trickNumber = thePlayers.first().asksAbout(TheTrickNumber)
                 val roundNumber = thePlayers.first().asksAbout(TheRoundNumber)
-                if (trickNumber?.value == roundNumber?.value) theGameMaster(SaysTheRoundCanStart)
+                if (trickNumber.value == roundNumber.value) theGameMaster(SaysTheRoundCanStart)
                 thePlayers each ensure(TheRoundPhase, Is(Bidding))
                 thePlayers each Bid(1)
                 theGameMaster(SaysTheTrickCanStart)

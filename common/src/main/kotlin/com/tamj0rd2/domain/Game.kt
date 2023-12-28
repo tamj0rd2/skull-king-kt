@@ -18,10 +18,10 @@ class Game {
     var trickWinner: PlayerId? = null
         private set
 
-    var trickNumber: TrickNumber? = null
+    var trickNumber: TrickNumber = TrickNumber.None
         private set
 
-    var roundNumber: RoundNumber? = null
+    var roundNumber: RoundNumber = RoundNumber.None
         private set
 
     var phase: RoundPhase? = null
@@ -78,7 +78,7 @@ class Game {
             state != GameState.InProgress -> GameNotInProgress
             phase != Bidding -> BiddingIsNotInProgress
             // TODO: this could do with some love
-            bid.value < 0 || bid.value > requireNotNull(roundNumber).value -> BidLessThan0OrGreaterThanRoundNumber
+            bid.value < 0 || bid.value > roundNumber.value -> BidLessThan0OrGreaterThanRoundNumber
             _bids.hasPlayerAlreadyBid(playerId) -> AlreadyPlacedABid
             else -> null
         }?.throwException()
@@ -130,25 +130,23 @@ class Game {
     }
 
     private fun startNextRound() = gameMasterCommand {
-        val newRoundNumber = roundNumber?.plus(1) ?: RoundNumber.of(1)
-        roundNumber = newRoundNumber
+        roundNumber += 1
         trickNumber = TrickNumber.of(0)
 
         _bids.initFor(players)
         phase = Bidding
-        roundTurnOrder = (1..newRoundNumber.value).flatMap { players }.toMutableList()
+        roundTurnOrder = (1..roundNumber.value).flatMap { players }.toMutableList()
         players.forEach { _winsOfTheRound[it] = 0 }
 
         dealCards()
-        recordEvent(GameEvent.RoundStarted(newRoundNumber))
+        recordEvent(GameEvent.RoundStarted(roundNumber))
     }
 
     private fun startNextTrick() = gameMasterCommand {
-        val newTrickNumber = trickNumber?.plus(1) ?: TrickNumber.of(1)
-        trickNumber = newTrickNumber
+        trickNumber += 1
         trick = Trick(players.size)
         phase = TrickTaking
-        recordEvent(GameEvent.TrickStarted(newTrickNumber))
+        recordEvent(GameEvent.TrickStarted(trickNumber))
     }
 
     fun getCardsInHand(playerId: PlayerId): List<CardWithPlayability>? {
@@ -157,7 +155,6 @@ class Game {
     }
 
     private fun dealCards() {
-        val roundNumber = requireNotNull(roundNumber) { "roundNumber is null" }
         val deck = Deck.new()
         hands.replaceAll { playerId, _ ->
             riggedHands?.get(playerId)?.toMutableList() ?: deck.takeCards(roundNumber.value).toMutableList()
@@ -182,7 +179,7 @@ class Game {
         eventsBuffer.add(event)
     }
 
-    private val isLastRound get() = roundNumber?.value == 10
+    private val isLastRound get() = roundNumber.value == 10
 }
 
 private fun <E> List<E>.excluding(element: E): List<E> {

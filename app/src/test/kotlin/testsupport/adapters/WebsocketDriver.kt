@@ -41,8 +41,8 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
     override var winsOfTheRound: Map<PlayerId, Int> = emptyMap()
     override var trickWinner: PlayerId? = null
     override var currentPlayer: PlayerId? = null
-    override var trickNumber: TrickNumber? = null
-    override var roundNumber: RoundNumber? = null
+    override var trickNumber: TrickNumber = TrickNumber.None
+    override var roundNumber: RoundNumber = RoundNumber.None
     override val trick = mutableListOf<PlayedCard>()
     override var roundPhase: RoundPhase? = null
     override var gameState: GameState? = null
@@ -164,7 +164,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
             is Notification.RoundStarted -> {
                 roundNumber = message.roundNumber
                 roundPhase = RoundPhase.Bidding
-                trickNumber = null
+                trickNumber = TrickNumber.None
                 hand = message.cardsDealt.toMutableList()
                 bids = playersInRoom.associateWith { DisplayBid.None }.toMutableMap()
             }
