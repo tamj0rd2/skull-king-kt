@@ -159,7 +159,10 @@ private fun GameEvent.asNotifications(state: PlayerGameState): List<Notification
             if (state.isMyTurn) add(Notification.YourTurn(state.cardsInMyHand))
         }
 
-        is GameEvent.CardsDealt -> TODO("add cards dealt event")
+        is GameEvent.CardsDealt -> {
+            // TODO: use the cards dealt event and then remove the other places where the same information is sent
+            emptyList()
+        }
         is GameEvent.GameCompleted -> listOf(Notification.GameCompleted)
         is GameEvent.GameStarted -> listOf(Notification.GameStarted(players))
         is GameEvent.PlayerJoined -> buildList {

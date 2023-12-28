@@ -159,6 +159,7 @@ class Game {
         hands.replaceAll { playerId, _ ->
             riggedHands?.get(playerId)?.toMutableList() ?: deck.takeCards(roundNumber.value).toMutableList()
         }
+        recordEvent(GameEvent.CardsDealt(hands))
     }
 
     private val eventListeners = mutableListOf<GameEventListener>()
