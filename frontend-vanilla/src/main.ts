@@ -1,3 +1,4 @@
+import "./style.css"
 import {listenToNotifications, NackError, sendCommand, setPlayerId} from "./Socket";
 import {showErrorMessage} from "./ErrorHandling";
 import {Notification, PlayerCommand, PlayerId} from "../generated_types";

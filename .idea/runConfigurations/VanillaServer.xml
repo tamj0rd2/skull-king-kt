@@ -1,5 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="ServerKt" type="JetRunConfigurationType" nameIsGenerated="true">
+  <configuration default="false" name="VanillaServer" type="JetRunConfigurationType">
+    <envs>
+      <env name="VANILLA" value="true" />
+    </envs>
     <option name="MAIN_CLASS_NAME" value="com.tamj0rd2.webapp.ServerKt" />
     <module name="skull-king-kt.app.main" />
     <shortenClasspath name="NONE" />

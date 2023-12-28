@@ -54,7 +54,7 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "21"
 
     val frontendProjects = mapOf(
-        ":frontend" to "frontend",
+        ":frontend-vanilla" to "frontend-vanilla",
         ":frontend-svelte" to "frontend-svelte",
         ":frontend-solid" to "frontend-solid",
     )

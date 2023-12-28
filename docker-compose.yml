@@ -6,6 +6,14 @@ services:
     ports:
       - "8000:8000"
 
+  web-vanilla:
+    build: .
+    environment:
+      PORT: 8000
+      VANILLA: true
+    ports:
+      - "8000:8000"
+
   web-svelte:
     build: .
     environment:

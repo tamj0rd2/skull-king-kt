@@ -29,12 +29,12 @@ import org.http4k.template.ViewModel
 import org.http4k.template.viewModel
 import org.slf4j.LoggerFactory
 
-private data class Play(val host: String, val ackTimeoutMs: Long) : ViewModel
 private data class PlaySvelte(val host: String, val ackTimeoutMs: Long, val devServer: Boolean) : ViewModel
 private data class PlaySolid(val host: String, val ackTimeoutMs: Long, val devServer: Boolean) : ViewModel
+private data class PlayVanilla(val host: String, val ackTimeoutMs: Long, val devServer: Boolean) : ViewModel
 
 enum class Frontend(val usesViteInDevMode: Boolean) {
-    WebComponents(usesViteInDevMode = false),
+    Vanilla(usesViteInDevMode = true),
     Svelte(usesViteInDevMode = true),
     Solid(usesViteInDevMode = true),
 }
@@ -75,9 +75,9 @@ internal class HttpHandler(
         },
         "/play" bind Method.GET to {
             val vm = when (frontend) {
-                WebComponents -> Play(host, ackTimeoutMs)
                 Svelte -> PlaySvelte(host, ackTimeoutMs, devServer)
                 Solid -> PlaySolid(host, ackTimeoutMs, devServer)
+                Vanilla -> PlayVanilla(host, ackTimeoutMs, devServer)
             }
             Response(Status.OK).with(negotiator.outbound(it) of vm)
         },
@@ -108,9 +108,9 @@ internal class HttpHandler(
 private fun Frontend.viteProxy(): Filter {
     val viteHttpClient = JettyClient()
     val vitePort = when(this) {
-        WebComponents -> error("web components frontend does not use vite")
         Svelte -> 5174
         Solid -> 5173
+        Vanilla -> 5172
     }
 
     return Filter { next ->

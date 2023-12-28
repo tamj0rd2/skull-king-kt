@@ -9,9 +9,16 @@ tasks.register<NpmTask>("build") {
     dependsOn("npmInstall")
     args = listOf("run", "build")
 
-    inputs.files("package.json", "package-lock.json", "tsconfig.json", "generated_types.ts")
-    inputs.dir("assets")
+    inputs.files(
+        "package.json",
+        "package-lock.json",
+        "tsconfig.json",
+        "generated_types.ts",
+        "vite.config.ts",
+        "index.html",
+    )
     inputs.dir("src")
+    inputs.dir("public")
     inputs.dir(fileTree("node_modules").exclude(".cache"))
 
     outputs.dir(layout.buildDirectory.dir("dist")).withPropertyName("outputDir")

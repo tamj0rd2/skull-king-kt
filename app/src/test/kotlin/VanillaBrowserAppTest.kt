@@ -21,10 +21,10 @@ import kotlin.time.Duration.Companion.seconds
 
 internal object Config {
     // this needs to manually be kept in line with the version in gradle.build.kts
-    const val CHROME_VERSION = 114
+    private const val CHROME_VERSION = 114
     const val HEADLESS = true
 
-    val loggingPreferences = LoggingPreferences().apply {
+    private val loggingPreferences = LoggingPreferences().apply {
         enable(LogType.PERFORMANCE, java.util.logging.Level.ALL)
         enable(LogType.BROWSER, java.util.logging.Level.ALL)
         enable(LogType.CLIENT, java.util.logging.Level.ALL)
@@ -106,4 +106,4 @@ class BrowserTestConfiguration(frontend: Frontend) : TestConfiguration {
 
 @SkipUnhappyPathTests
 @Execution(ExecutionMode.SAME_THREAD)
-class BrowserAppTest : AppTestContract(BrowserTestConfiguration(frontend = Frontend.WebComponents))
+class BrowserAppTest : AppTestContract(BrowserTestConfiguration(frontend = Frontend.Vanilla))

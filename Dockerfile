@@ -6,6 +6,7 @@ COPY ./gradlew ./gradle.properties ./settings.gradle.kts ./
 COPY ./buildSrc ./buildSrc
 COPY ./common ./common
 COPY ./frontend ./frontend
+COPY ./frontend-vanilla ./frontend-vanilla
 COPY ./frontend-svelte ./frontend-svelte
 COPY ./frontend-solid ./frontend-solid
 COPY ./app ./app

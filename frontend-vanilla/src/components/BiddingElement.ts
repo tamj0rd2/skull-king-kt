@@ -3,7 +3,6 @@ import {
     getPlayerId,
     listenToNotifications,
     sendCommand,
-    socket
 } from "../Socket";
 import {Notification, PlayerCommand} from "../../generated_types";
 
@@ -37,7 +36,7 @@ export class BiddingElement extends HTMLElement {
         const bidInput = this.querySelector(`input[name="bid"]`) as HTMLInputElement;
         const biddingError = this.querySelector("#biddingError") as HTMLParagraphElement;
 
-        bidInput.oninput = (e) => {
+        bidInput.oninput = () => {
             const bid = bidInput.value.replace(/[^0-9]/g, '')
             bidInput.value = bid.toString()
             // @ts-ignore

@@ -1,4 +1,5 @@
 import {Message, Notification, PlayerCommand, PlayerId} from "../generated_types";
+import { v4 as uuidV4 } from "uuid"
 
 declare global {
     const INITIAL_STATE: {
@@ -64,7 +65,7 @@ export function sendCommand(command: PlayerCommand): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         spinner.classList.remove("u-hidden")
 
-        const messageId = crypto.randomUUID()
+        const messageId = uuidV4()
         const signal = AbortSignal.timeout(INITIAL_STATE.ackTimeoutMs)
 
         socket.addEventListener("message", function handler(event) {
@@ -121,7 +122,7 @@ export type NotificationListeners = { [key in Notification.Type]?: (notification
 export type DisconnectGameEventListener = () => void
 
 export function listenToNotifications(notificationListeners: NotificationListeners): DisconnectGameEventListener {
-    const listenerId = crypto.randomUUID()
+    const listenerId = uuidV4()
     registerNotificationListeners(listenerId, notificationListeners)
     return () => removeNotificationListeners(listenerId)
 }
@@ -130,7 +131,6 @@ export enum ErrorCode {
     PlayerWithSameNameAlreadyInGame = "PlayerWithSameNameAlreadyInGame",
     BidLessThan0OrGreaterThanRoundNumber = "BidLessThan0OrGreaterThanRoundNumber",
 }
-const knownErrorCodes = Object.keys(ErrorCode)
 
 export class NackError extends Error {
     public readonly reason: string

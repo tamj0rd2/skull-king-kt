@@ -1,7 +1,11 @@
 <html>
 <head>
-    <link href="/frontend/style.css" rel="stylesheet" type="text/css"/>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Playing Skull King</title>
+    <!-- TODO: How can I get these to be picked up? I think it needs to be prefixed with /public to work, but dunno how to make the server respect it-->
+    <link rel="icon" type="image/svg+xml" href="/frontend-vanilla/vite.svg"/>
+    <link rel="stylesheet" href="/frontend-vanilla/index.css"/>
 </head>
 <body>
 <form id="joinGame">
@@ -29,8 +33,12 @@
     <sk-trick></sk-trick>
     <sk-wins></sk-wins>
 </div>
-<div id="spinner" class="lds-ring u-hidden"><div></div><div></div><div></div><div></div></div>
-<script src="/frontend/game.js" defer></script>
+<div id="spinner" class="lds-ring u-hidden">
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+</div>
 <script>
     let wsProtocol = "ws";
     if (location.protocol === "https:") wsProtocol += "s"
@@ -40,5 +48,11 @@
         ackTimeoutMs: {{ackTimeoutMs}}
     };
 </script>
+{{#if devServer}}
+    <script defer type="module" src="http://localhost:5172/frontend-vanilla/@vite/client"></script>
+    <script defer type="module" src="http://localhost:5172/frontend-vanilla/src/main.ts"></script>
+{{else}}
+    <script defer type="module" src="/frontend-vanilla/index.js"></script>
+{{/if}}
 </body>
 </html>
