@@ -17,10 +17,10 @@ dependencies {
     val seleniumVersion = "4.12.0"
     val chromeVersion = "v114"
 
-    api(project(":common"))
+    implementation(project(":common"))
 
     implementation(platform("org.http4k:http4k-bom:5.8.5.1"))
-    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("ch.qos.logback:logback-classic:1.4.12")
     implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
     implementation("org.http4k:http4k-core")
     implementation("org.http4k:http4k-format-core")

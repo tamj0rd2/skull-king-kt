@@ -23,7 +23,7 @@ object Plays {
 }
 
 fun Bids(bid: Int) = Activity("bid $bid") { actor ->
-    actor.use<ParticipateInGames>().perform(PlayerCommand.PlaceBid(actor.playerId, Bid(bid)))
+    actor.use<ParticipateInGames>().perform(PlayerCommand.PlaceBid(actor.playerId, Bid.of(bid)))
 }
 fun Bid(bid: Int) = Bids(bid)
 fun Bidding(bid: Int) = Bids(bid)

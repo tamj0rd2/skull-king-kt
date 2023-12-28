@@ -14,10 +14,10 @@ repositories {
 }
 
 dependencies {
-    implementation(platform("org.http4k:http4k-bom:5.8.5.1"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("dev.adamko.kxstsgen:kxs-ts-gen-core:0.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    api(platform("dev.forkhandles:forkhandles-bom:2.10.2.0"))
+    api("dev.forkhandles:values4k")
 
     testImplementation(kotlin("test"))
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.7.2")

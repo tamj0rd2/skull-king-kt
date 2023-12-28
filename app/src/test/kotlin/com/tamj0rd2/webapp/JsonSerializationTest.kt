@@ -24,7 +24,7 @@ class JsonSerializationTest {
 
     @Test
     fun `can serialize Bids`() {
-        test(Bid(1), "1")
+        test(Bid.of(1), "1")
     }
 
     @Test
@@ -32,8 +32,8 @@ class JsonSerializationTest {
         test<Notification>(
             Notification.BiddingCompleted(
                 mapOf(
-                    PlayerId("somePlayer") to Bid(1),
-                    PlayerId("someOtherPlayer") to Bid(2)
+                    PlayerId("somePlayer") to Bid.of(1),
+                    PlayerId("someOtherPlayer") to Bid.of(2)
                 )
             ),
             """{"type":"com.tamj0rd2.messaging.Notification.BiddingCompleted","bids":{"somePlayer":1,"someOtherPlayer":2}}"""

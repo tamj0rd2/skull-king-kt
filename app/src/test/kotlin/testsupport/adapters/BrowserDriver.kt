@@ -186,7 +186,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                         .apply { if (size < 2) return@associate PlayerId(this[0]) to DisplayBid.None }
                     val playerId = PlayerId(name)
                     if (bid == "has bid") return@associate playerId to DisplayBid.Hidden
-                    playerId to DisplayBid.Placed(Bid(bid.toInt()))
+                    playerId to DisplayBid.Placed(Bid.parse(bid))
                 }
         }
 
