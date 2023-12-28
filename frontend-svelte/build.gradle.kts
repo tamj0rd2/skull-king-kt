@@ -4,7 +4,7 @@ plugins {
     id("plugins.frontend")
 }
 
-tasks.register<NpmTask>("buildApp") {
+tasks.register<NpmTask>("build") {
     dependsOn("includeGeneratedTypes")
     dependsOn("npmInstall")
     args = listOf("run", "build")

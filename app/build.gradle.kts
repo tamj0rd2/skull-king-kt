@@ -58,7 +58,7 @@ tasks.withType<KotlinCompile> {
         ":frontend-svelte" to "frontend-svelte",
         ":frontend-solid" to "frontend-solid",
     )
-        .onEach { dependsOn("${it.key}:buildApp") }
+        .onEach { dependsOn("${it.key}:build") }
         // a map of build directory to the folder name I want to appear in app/src/resources
         .map { project(it.key).layout.buildDirectory.dir("dist") to it.value }
         // registers the build directory as an input
