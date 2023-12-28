@@ -7,7 +7,9 @@ import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.RoundNumber
 import com.tamj0rd2.domain.RoundPhase
+import com.tamj0rd2.domain.TrickNumber
 
 interface Ability
 
@@ -17,8 +19,8 @@ interface ApplicationDriver {
     val winsOfTheRound: Map<PlayerId, Int>
     val trickWinner: PlayerId?
     val currentPlayer: PlayerId?
-    val trickNumber: Int?
-    val roundNumber: Int?
+    val trickNumber: TrickNumber?
+    val roundNumber: RoundNumber?
     val trick: List<PlayedCard>
     val roundPhase: RoundPhase?
     val gameState: GameState?

@@ -10,7 +10,9 @@ import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.RoundNumber
 import com.tamj0rd2.domain.RoundPhase
+import com.tamj0rd2.domain.TrickNumber
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.nondeterministic.eventuallyConfig
 import io.kotest.assertions.withClue
@@ -131,14 +133,14 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             driver.findElement(By.id("trickWinner")).getAttributeOrNull("data-playerId")?.let(::PlayerId)
         }
 
-    override val trickNumber: Int?
+    override val trickNumber: TrickNumber?
         get() = debugException {
-            driver.findElement(By.id("trickNumber")).getAttributeOrNull("data-trickNumber")?.toInt()
+            driver.findElement(By.id("trickNumber")).getAttributeOrNull("data-trickNumber")?.let(TrickNumber::parse)
         }
 
-    override val roundNumber: Int?
+    override val roundNumber: RoundNumber?
         get() = debugException {
-            driver.findElement(By.id("roundNumber")).getAttributeOrNull("data-roundNumber")?.toInt()
+            driver.findElement(By.id("roundNumber")).getAttributeOrNull("data-roundNumber")?.let(RoundNumber::parse)
         }
 
     override val playersInRoom: List<PlayerId>

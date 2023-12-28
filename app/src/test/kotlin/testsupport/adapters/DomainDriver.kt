@@ -7,7 +7,9 @@ import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.RoundNumber
 import com.tamj0rd2.domain.RoundPhase
+import com.tamj0rd2.domain.TrickNumber
 import testsupport.ApplicationDriver
 import testsupport.GameMasterDriver
 
@@ -35,7 +37,7 @@ class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver
     override val gameState: GameState get() = game.state
     override val roundPhase: RoundPhase? get() = game.phase
     override val bids: Map<PlayerId, DisplayBid> get() = game.bids
-    override val trickNumber: Int get() = game.trickNumber
-    override val roundNumber: Int get() = game.roundNumber
+    override val trickNumber: TrickNumber? get() = game.trickNumber.takeIf { it.value > 0 } // TODO: move validation to tiny type
+    override val roundNumber: RoundNumber? get() = game.roundNumber.takeIf { it.value > 0 } // TODO: move validation to tiny type
     override val currentPlayer: PlayerId? get() = game.currentPlayersTurn
 }

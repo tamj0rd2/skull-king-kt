@@ -9,8 +9,10 @@ import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.GameState.InProgress
 import com.tamj0rd2.domain.PlayedCard
+import com.tamj0rd2.domain.RoundNumber
 import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.RoundPhase.*
+import com.tamj0rd2.domain.TrickNumber
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.domain.red
 import org.junit.jupiter.api.Nested
@@ -184,7 +186,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             skipToTrickTaking(theGameMaster = gary, thePlayers = listOf(freddy, sally))
 
             freddy and sally both ensure {
-                that(TheRoundNumber, Is(2))
+                that(TheRoundNumber, Is(RoundNumber.of(2)))
                 that(TheRoundPhase, Is(TrickTaking))
                 that(TheCurrentPlayer, Is(freddy.playerId))
             }
@@ -218,7 +220,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             val thePlayers = listOf(freddy, sally)
             val theGameMaster = gary
 
-            playUpTo(endOfRound = 1, theGameMaster = theGameMaster, thePlayers = thePlayers)
+            playUpTo(endOfRound = RoundNumber.of(1), theGameMaster = theGameMaster, thePlayers = thePlayers)
 
             theGameMaster(
                 RigsTheDeck.SoThat(freddy).willEndUpWith(1.blue, 2.blue),
@@ -244,7 +246,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             val thePlayers = listOf(freddy, sally)
             val theGameMaster = gary
 
-            playUpTo(endOfRound = 1, theGameMaster = theGameMaster, thePlayers = thePlayers)
+            playUpTo(endOfRound = RoundNumber.of(1), theGameMaster = theGameMaster, thePlayers = thePlayers)
 
             theGameMaster(
                 RigsTheDeck.SoThat(freddy).willEndUpWith(1.blue, 2.blue),
@@ -261,7 +263,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
         fun `cannot play a card when it is not their turn`() {
             val thirzah = Actor("Thirzah Third").whoCan(c.participateInGames())
             val thePlayers = listOf(freddy, sally, thirzah)
-            playUpToStartOf(round = 2, trick = 1, theGameMaster = gary, thePlayers = thePlayers)
+            playUpToStartOf(RoundNumber.of(2), trick = TrickNumber.of(1), theGameMaster = gary, thePlayers = thePlayers)
 
             thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
             sally(Playing.theirFirstPlayableCard wouldFailBecause GameErrorCode.NotYourTurn)
@@ -330,7 +332,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             // round 1
             gary(SaysTheGameCanStart)
             freddy and sally both ensure {
-                that(TheRoundNumber, Is(1))
+                that(TheRoundNumber, Is(RoundNumber.of(1)))
                 that(TheirHand, sizeIs(1))
                 that(TheRoundPhase, Is(Bidding))
             }
@@ -346,7 +348,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             gary(SaysTheTrickCanStart)
             freddy and sally both ensure {
                 that(TheRoundPhase, Is(TrickTaking))
-                that(TheTrickNumber, Is(1))
+                that(TheTrickNumber, Is(TrickNumber.of(1)))
                 that(TheCurrentPlayer, Is(freddy.playerId))
             }
 
@@ -361,7 +363,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             // round 2
             gary(SaysTheRoundCanStart)
             freddy and sally both ensure {
-                that(TheRoundNumber, Is(2))
+                that(TheRoundNumber, Is(RoundNumber.of(2)))
                 that(TheirHand, sizeIs(2))
                 that(TheRoundPhase, Is(Bidding))
             }
@@ -377,7 +379,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             gary(SaysTheTrickCanStart)
             freddy and sally both ensure {
                 that(TheRoundPhase, Is(TrickTaking))
-                that(TheTrickNumber, Is(1))
+                that(TheTrickNumber, Is(TrickNumber.of(1)))
                 that(TheCurrentPlayer, Is(freddy.playerId))
             }
             freddy and sally both Play.theirFirstPlayableCard
@@ -390,7 +392,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             // round 2 trick 2
             gary(SaysTheTrickCanStart)
             freddy and sally both ensure {
-                that(TheTrickNumber, Is(2))
+                that(TheTrickNumber, Is(TrickNumber.of(2)))
                 that(TheCurrentPlayer, Is(freddy.playerId))
             }
 
@@ -406,7 +408,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
                 // round X
                 gary(SaysTheRoundCanStart)
                 freddy and sally both ensure {
-                    that(TheRoundNumber, Is(roundNumber))
+                    that(TheRoundNumber, Is(RoundNumber.of(roundNumber)))
                     that(TheirHand, sizeIs(roundNumber))
                 }
 
@@ -422,7 +424,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
                     gary(SaysTheTrickCanStart)
                     freddy and sally both ensure {
                         that(TheRoundPhase, Is(TrickTaking))
-                        that(TheTrickNumber, Is(trickNumber))
+                        that(TheTrickNumber, Is(TrickNumber.of(trickNumber)))
                         that(TheirHand, sizeIs(roundNumber - trickNumber + 1))
                         that(TheCurrentPlayer, Is(freddy.playerId))
                     }
@@ -437,8 +439,8 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             }
 
             freddy and sally both ensure {
-                that(TheRoundNumber, Is(10))
-                that(TheTrickNumber, Is(10))
+                that(TheRoundNumber, Is(RoundNumber.of(10)))
+                that(TheTrickNumber, Is(TrickNumber.of(10)))
                 that(TheirHand, isEmpty())
                 that(TheGameState, Is(GameState.Complete))
             }
@@ -463,7 +465,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             freddy and sally both ensure(ThePlayersAtTheTable, are(freddy, sally))
             freddy and sally both ensure(within = withinDelay) {
                 that(TheGameState, Is(InProgress))
-                that(TheRoundNumber, Is(1))
+                that(TheRoundNumber, Is(RoundNumber.of(1)))
                 that(TheirHand, sizeIs(1))
                 that(TheRoundPhase, Is(Bidding))
             }
@@ -480,7 +482,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             freddy and sally and thirzah each ensure(ThePlayersAtTheTable, are(freddy, sally, thirzah))
             freddy and sally and thirzah each ensure(within = withinDelay) {
                 that(TheGameState, Is(InProgress))
-                that(TheRoundNumber, Is(1))
+                that(TheRoundNumber, Is(RoundNumber.of(1)))
                 that(TheirHand, sizeIs(1))
                 that(TheRoundPhase, Is(Bidding))
             }
@@ -494,7 +496,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             freddy and sally both Bid(1)
             freddy and sally both ensure(within = withinDelay) {
                 that(TheRoundPhase, Is(TrickTaking))
-                that(TheTrickNumber, Is(1))
+                that(TheTrickNumber, Is(TrickNumber.of(1)))
                 that(TheCurrentPlayer, Is(freddy.playerId))
             }
         }
@@ -505,9 +507,9 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
 
             val TheRoundState = Question("about the round state") { actor ->
                 RoundState(
-                    round = actor.asksAbout(TheRoundNumber),
+                    round = actor.asksAbout(TheRoundNumber)?.value,
                     phase = actor.asksAbout(TheRoundPhase),
-                    trick = actor.asksAbout(TheTrickNumber)
+                    trick = actor.asksAbout(TheTrickNumber)?.value,
                 )
             }
 
@@ -547,9 +549,9 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
 private infix fun Actor.won(count: Int) = Pair(this, count)
 
 internal object TestHelpers: Ensurer by ensurer() {
-    fun playUpToStartOf(round: Int, trick: Int, theGameMaster: Actor, thePlayers: List<Actor>) {
-        require(round != 1) { "playing to round 1 not implemented" }
-        require(trick == 1) { "trick greater than 1 not implemented" }
+    fun playUpToStartOf(round: RoundNumber, trick: TrickNumber, theGameMaster: Actor, thePlayers: List<Actor>) {
+        require(round.value != 1) { "playing to round 1 not implemented" }
+        require(trick.value == 1) { "trick greater than 1 not implemented" }
 
         playUpTo(round - 1, theGameMaster, thePlayers)
         theGameMaster(SaysTheRoundCanStart)
@@ -584,7 +586,7 @@ internal object TestHelpers: Ensurer by ensurer() {
             TrickCompleted -> {
                 val trickNumber = thePlayers.first().asksAbout(TheTrickNumber)
                 val roundNumber = thePlayers.first().asksAbout(TheRoundNumber)
-                if (trickNumber == roundNumber) theGameMaster(SaysTheRoundCanStart)
+                if (trickNumber?.value == roundNumber?.value) theGameMaster(SaysTheRoundCanStart)
                 thePlayers each ensure(TheRoundPhase, Is(Bidding))
                 thePlayers each Bid(1)
                 theGameMaster(SaysTheTrickCanStart)
@@ -595,39 +597,39 @@ internal object TestHelpers: Ensurer by ensurer() {
 
         thePlayers each ensure {
             that(TheRoundPhase, Is(TrickTaking))
-            that(TheTrickNumber, Is(1))
+            that(TheTrickNumber, Is(TrickNumber.of(1)))
         }
     }
 
-    fun playUpTo(endOfRound: Int, theGameMaster: Actor, thePlayers: List<Actor>) {
+    fun playUpTo(endOfRound: RoundNumber, theGameMaster: Actor, thePlayers: List<Actor>) {
         thePlayers each SitAtTheTable
         theGameMaster(SaysTheGameCanStart)
 
-        (1..endOfRound).forEach { roundNumber ->
+        (1..endOfRound.value).forEach { roundNumber ->
             if (roundNumber != 1) {
                 theGameMaster(SaysTheRoundCanStart)
             }
 
             thePlayers each ensure {
-                that(TheRoundNumber, Is(roundNumber))
+                that(TheRoundNumber, Is(RoundNumber.of(roundNumber)))
                 that(TheRoundPhase, Is(Bidding))
             }
             thePlayers each Bid(1)
-            playUpToAndIncluding(trick = roundNumber, theGameMaster = theGameMaster, thePlayers = thePlayers)
+            playUpToAndIncluding(trick = TrickNumber.of(roundNumber), theGameMaster = theGameMaster, thePlayers = thePlayers)
         }
     }
 
-    fun playUpToAndIncluding(trick: Int, theGameMaster: Actor, thePlayers: List<Actor>) {
+    fun playUpToAndIncluding(trick: TrickNumber, theGameMaster: Actor, thePlayers: List<Actor>) {
         require(
             thePlayers.first().asksAbout(TheRoundPhase) == BiddingCompleted
         ) { "must start from bidding completion" }
         if (trick < 1) return
 
-        (1..trick).forEach { trickNumber ->
+        (1..trick.value).forEach { trickNumber ->
             theGameMaster(SaysTheTrickCanStart)
             thePlayers each ensure {
                 that(TheRoundPhase, Is(TrickTaking))
-                that(TheTrickNumber, Is(trickNumber))
+                that(TheTrickNumber, Is(TrickNumber.of(trickNumber)))
             }
 
             thePlayers each Play.theirFirstPlayableCard

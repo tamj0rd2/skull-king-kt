@@ -7,7 +7,9 @@ import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.RoundNumber
 import com.tamj0rd2.domain.RoundPhase
+import com.tamj0rd2.domain.TrickNumber
 import com.tamj0rd2.webapp.AnswerTracker
 import com.tamj0rd2.messaging.Message
 import com.tamj0rd2.messaging.Notification
@@ -39,8 +41,8 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
     override var winsOfTheRound: Map<PlayerId, Int> = emptyMap()
     override var trickWinner: PlayerId? = null
     override var currentPlayer: PlayerId? = null
-    override var trickNumber: Int? = null
-    override var roundNumber: Int? = null
+    override var trickNumber: TrickNumber? = null
+    override var roundNumber: RoundNumber? = null
     override val trick = mutableListOf<PlayedCard>()
     override var roundPhase: RoundPhase? = null
     override var gameState: GameState? = null

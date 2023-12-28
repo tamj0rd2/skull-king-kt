@@ -161,7 +161,7 @@ export namespace Notification {
   export interface RoundStarted {
     type: Notification.Type.RoundStarted
     cardsDealt: CardWithPlayability[]
-    roundNumber: number
+    roundNumber: RoundNumber
   }
   
   export interface TrickCompleted {
@@ -171,7 +171,7 @@ export namespace Notification {
   
   export interface TrickStarted {
     type: Notification.Type.TrickStarted
-    trickNumber: number
+    trickNumber: TrickNumber
     firstPlayer: PlayerId
   }
   
@@ -187,6 +187,10 @@ export namespace Notification {
     cards: CardWithPlayability[]
   }
 }
+
+export type RoundNumber = number
+
+export type TrickNumber = number
 
 export type Message =
   | Message.AcceptanceFromClient

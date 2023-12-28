@@ -4,6 +4,8 @@ import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.RoundNumber
+import com.tamj0rd2.domain.TrickNumber
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -40,8 +42,8 @@ sealed class Notification {
     data class GameStarted(val players: List<PlayerId>) : Notification()
 
     @Serializable
-    data class RoundStarted(val cardsDealt: List<CardWithPlayability>, val roundNumber: Int) : Notification()
+    data class RoundStarted(val cardsDealt: List<CardWithPlayability>, val roundNumber: RoundNumber) : Notification()
 
     @Serializable
-    data class TrickStarted(val trickNumber: Int, val firstPlayer: PlayerId) : Notification()
+    data class TrickStarted(val trickNumber: TrickNumber, val firstPlayer: PlayerId) : Notification()
 }
