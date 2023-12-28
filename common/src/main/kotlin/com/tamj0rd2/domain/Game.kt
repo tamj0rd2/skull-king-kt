@@ -18,10 +18,10 @@ class Game {
     var trickWinner: PlayerId? = null
         private set
 
-    var trickNumber: TrickNumber = TrickNumber.of(0)
+    var trickNumber: TrickNumber? = null
         private set
 
-    var roundNumber: RoundNumber = RoundNumber.of(0)
+    var roundNumber: RoundNumber? = null
         private set
 
     var phase: RoundPhase? = null
@@ -29,7 +29,6 @@ class Game {
 
     var state: GameState = GameState.WaitingForMorePlayers
         private set
-
 
     private val _winsOfTheRound = mutableMapOf<PlayerId, Int>()
     private val _players = mutableListOf<PlayerId>()
@@ -79,7 +78,7 @@ class Game {
             state != GameState.InProgress -> GameNotInProgress
             phase != Bidding -> BiddingIsNotInProgress
             // TODO: this could do with some love
-            bid.value < 0 || bid.value > roundNumber.value -> BidLessThan0OrGreaterThanRoundNumber
+            bid.value < 0 || bid.value > requireNotNull(roundNumber).value -> BidLessThan0OrGreaterThanRoundNumber
             _bids.hasPlayerAlreadyBid(playerId) -> AlreadyPlacedABid
             else -> null
         }?.throwException()
@@ -131,23 +130,25 @@ class Game {
     }
 
     private fun startNextRound() = gameMasterCommand {
-        roundNumber += 1
+        val newRoundNumber = roundNumber?.plus(1) ?: RoundNumber.of(1)
+        roundNumber = newRoundNumber
         trickNumber = TrickNumber.of(0)
 
         _bids.initFor(players)
         phase = Bidding
-        roundTurnOrder = (1..roundNumber.value).flatMap { players }.toMutableList()
+        roundTurnOrder = (1..newRoundNumber.value).flatMap { players }.toMutableList()
         players.forEach { _winsOfTheRound[it] = 0 }
 
         dealCards()
-        recordEvent(GameEvent.RoundStarted(roundNumber))
+        recordEvent(GameEvent.RoundStarted(newRoundNumber))
     }
 
     private fun startNextTrick() = gameMasterCommand {
-        trickNumber += 1
+        val newTrickNumber = trickNumber?.plus(1) ?: TrickNumber.of(1)
+        trickNumber = newTrickNumber
         trick = Trick(players.size)
         phase = TrickTaking
-        recordEvent(GameEvent.TrickStarted(trickNumber))
+        recordEvent(GameEvent.TrickStarted(newTrickNumber))
     }
 
     fun getCardsInHand(playerId: PlayerId): List<CardWithPlayability>? {
@@ -156,6 +157,7 @@ class Game {
     }
 
     private fun dealCards() {
+        val roundNumber = requireNotNull(roundNumber) { "roundNumber is null" }
         val deck = Deck.new()
         hands.replaceAll { playerId, _ ->
             riggedHands?.get(playerId)?.toMutableList() ?: deck.takeCards(roundNumber.value).toMutableList()
@@ -180,7 +182,7 @@ class Game {
         eventsBuffer.add(event)
     }
 
-    private val isLastRound get() = roundNumber.value == 10
+    private val isLastRound get() = roundNumber?.value == 10
 }
 
 private fun <E> List<E>.excluding(element: E): List<E> {

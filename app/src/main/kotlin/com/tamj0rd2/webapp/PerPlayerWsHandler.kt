@@ -131,7 +131,7 @@ private data class PlayerGameState(
         isMyTurn = game.currentPlayersTurn == playerId,
         amWaitingForMorePlayers = game.state == GameState.WaitingForMorePlayers,
         allPlayers = game.players,
-        isLastTrick = game.trickNumber.value == game.roundNumber.value,
+        isLastTrick = if (game.roundNumber == null || game.trickNumber == null) false else game.trickNumber!!.value == game.roundNumber!!.value,
         winsOfTheRound = game.winsOfTheRound,
         cards = game.getCardsInHand(playerId),
     )

@@ -37,7 +37,7 @@ class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver
     override val gameState: GameState get() = game.state
     override val roundPhase: RoundPhase? get() = game.phase
     override val bids: Map<PlayerId, DisplayBid> get() = game.bids
-    override val trickNumber: TrickNumber? get() = game.trickNumber.takeIf { it.value > 0 } // TODO: move validation to tiny type
-    override val roundNumber: RoundNumber? get() = game.roundNumber.takeIf { it.value > 0 } // TODO: move validation to tiny type
+    override val trickNumber: TrickNumber? get() = game.trickNumber
+    override val roundNumber: RoundNumber? get() = game.roundNumber
     override val currentPlayer: PlayerId? get() = game.currentPlayersTurn
 }

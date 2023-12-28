@@ -49,7 +49,7 @@ class AutomatedGameMaster(private val game: Game, private val delayOverride: Dur
                             require(lastEvent == event) { "last event was not trick completed, it was $lastEvent" }
 
                             // TODO: need to write a test for what happens after round 10 trick 10
-                            if (game.roundNumber.value == game.trickNumber.value) {
+                            if (game.roundNumber?.value == game.trickNumber?.value) {
                                 logger.info("Starting the next round")
                                 game.perform(GameMasterCommand.StartNextRound)
                             } else {
