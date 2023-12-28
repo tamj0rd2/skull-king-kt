@@ -156,7 +156,7 @@ private fun GameEvent.asNotifications(state: PlayerGameState): List<Notification
                 )
             )
 
-            if (state.isMyTurn) add(Notification.YourTurn(state.cardsInMyHand ?: error("${state.myPlayerId} has no hand at all")))
+            if (state.isMyTurn) add(Notification.YourTurn(state.cardsInMyHand))
         }
 
         is GameEvent.CardsDealt -> TODO("add cards dealt event")
