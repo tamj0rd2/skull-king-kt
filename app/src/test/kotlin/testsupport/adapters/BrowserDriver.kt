@@ -1,5 +1,6 @@
 package testsupport.adapters
 
+import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.CardWithPlayability
@@ -185,7 +186,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                         .apply { if (size < 2) return@associate PlayerId(this[0]) to DisplayBid.None }
                     val playerId = PlayerId(name)
                     if (bid == "has bid") return@associate playerId to DisplayBid.Hidden
-                    playerId to DisplayBid.Placed(bid.toInt())
+                    playerId to DisplayBid.Placed(Bid(bid.toInt()))
                 }
         }
 

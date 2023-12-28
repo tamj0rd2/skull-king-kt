@@ -643,6 +643,6 @@ internal fun Card.playedBy(actor: Actor): PlayedCard = this.playedBy(actor.playe
 internal infix fun Actor.and(other: Actor) = this to other
 internal infix fun Pair<Actor, Actor>.and(other: Actor) = listOf(first, second, other)
 
-infix fun Actor.bid(bid: Int): Pair<Actor, DisplayBid> = Pair(this, Placed(bid))
+infix fun Actor.bid(bid: Int): Pair<Actor, DisplayBid> = Pair(this, Placed(com.tamj0rd2.domain.Bid(bid)))
 fun Actor.bidIsHidden(): Pair<Actor, DisplayBid> = Pair(this, Hidden)
 fun Actor.hasNotBid(): Pair<Actor, DisplayBid> = Pair(this, None)

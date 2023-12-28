@@ -45,8 +45,6 @@ class Game {
         this.eventListeners += listener
     }
 
-    fun isInState(state: GameState) = this.state == state
-
     fun perform(command: GameMasterCommand) = when(command) {
         is GameMasterCommand.RigDeck -> rigDeck(command.playerId, command.cards)
         is GameMasterCommand.StartGame -> start()
@@ -56,7 +54,7 @@ class Game {
 
     fun perform(command: PlayerCommand) = when(command) {
         is PlayerCommand.JoinGame -> addPlayer(command.actor)
-        is PlayerCommand.PlaceBid -> bid(command.actor, command.bid.value)
+        is PlayerCommand.PlaceBid -> bid(command.actor, command.bid)
         is PlayerCommand.PlayCard -> playCard(command.actor, command.cardName)
     }
 
@@ -76,17 +74,18 @@ class Game {
         recordEvent(GameEvent.GameStarted(players))
     }
 
-    private fun bid(playerId: PlayerId, bid: Int) = playerCommand(playerId) {
+    private fun bid(playerId: PlayerId, bid: Bid) = playerCommand(playerId) {
         when {
             state != GameState.InProgress -> GameNotInProgress
             phase != Bidding -> BiddingIsNotInProgress
-            bid < 0 || bid > roundNumber -> BidLessThan0OrGreaterThanRoundNumber
+            // TODO: this could do with some love
+            bid.value < 0 || bid.value > roundNumber -> BidLessThan0OrGreaterThanRoundNumber
             _bids.hasPlayerAlreadyBid(playerId) -> AlreadyPlacedABid
             else -> null
         }?.throwException()
 
         _bids.place(playerId, bid)
-        recordEvent(GameEvent.BidPlaced(playerId, Bid(bid)))
+        recordEvent(GameEvent.BidPlaced(playerId, bid))
 
         if (_bids.areComplete) {
             this.phase = BiddingCompleted
@@ -236,7 +235,7 @@ private class Bids {
         else -> bids.mapValues { if (it.value is DisplayBid.Placed) DisplayBid.Hidden else it.value }
     }
 
-    fun place(playerId: PlayerId, bid: Int) {
+    fun place(playerId: PlayerId, bid: Bid) {
         bids[playerId] = DisplayBid.Placed(bid)
     }
 
@@ -250,7 +249,7 @@ private class Bids {
             when (val bid = it.value) {
                 is DisplayBid.None -> error("not all players have bid")
                 is DisplayBid.Hidden -> error("this should be impossible. this is just for display")
-                is DisplayBid.Placed -> Bid(bid.bid)
+                is DisplayBid.Placed -> bid.bid
             }
         }
     }
@@ -266,5 +265,5 @@ sealed class DisplayBid {
     object None : DisplayBid()
     object Hidden : DisplayBid()
 
-    data class Placed(val bid: Int) : DisplayBid()
+    data class Placed(val bid: Bid) : DisplayBid()
 }
