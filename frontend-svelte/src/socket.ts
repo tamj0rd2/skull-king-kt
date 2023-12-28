@@ -1,5 +1,6 @@
 import {get, type Readable, readonly, writable} from 'svelte/store'
 import {PlayerCommand, Notification, Message, type PlayerId} from "../generated_types";
+import { v4 as uuidV4 } from "uuid"
 
 declare global {
     const INITIAL_STATE: {
@@ -74,7 +75,7 @@ function createMessageStore(): MessageStore {
             if (command.type === PlayerCommand.Type.JoinGame) playerIdRw.set(command.actor)
 
             waitingForServerResponseRW.set(true)
-            let messageId = crypto.randomUUID()
+            const messageId = uuidV4()
 
             const signal = AbortSignal.timeout(INITIAL_STATE.ackTimeoutMs)
 
