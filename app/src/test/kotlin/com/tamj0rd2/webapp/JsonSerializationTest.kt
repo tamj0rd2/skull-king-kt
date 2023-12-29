@@ -3,6 +3,7 @@ package com.tamj0rd2.webapp
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.domain.PlayerCommand
+import com.tamj0rd2.domain.PlayerGameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.messaging.Message
@@ -10,6 +11,7 @@ import com.tamj0rd2.messaging.Notification
 import com.tamj0rd2.webapp.CustomJsonSerializer.asA
 import com.tamj0rd2.webapp.CustomJsonSerializer.asCompactJsonString
 import com.tamj0rd2.webapp.CustomJsonSerializer.asJsonObject
+import io.kotest.assertions.json.shouldEqualJson
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.encodeToString
@@ -36,7 +38,15 @@ class JsonSerializationTest {
                     PlayerId("someOtherPlayer") to Bid.of(2)
                 )
             ),
-            """{"type":"com.tamj0rd2.messaging.Notification.BiddingCompleted","bids":{"somePlayer":1,"someOtherPlayer":2}}"""
+            // language=JSON
+            """
+            {
+                "type": "com.tamj0rd2.messaging.Notification.BiddingCompleted",
+                "bids": {
+                    "somePlayer": 1,
+                    "someOtherPlayer": 2
+                }
+            }""".trimIndent()
         )
     }
 
@@ -44,7 +54,21 @@ class JsonSerializationTest {
     fun `can serialize and deserialize GameMasterCommands`() {
         test<GameMasterCommand>(
             GameMasterCommand.RigDeck(PlayerId("somePlayer"), listOf(11.blue)),
-            """{"type":"com.tamj0rd2.domain.GameMasterCommand.RigDeck","playerId":"somePlayer","cards":[{"type":"com.tamj0rd2.domain.Card.NumberedCard","name":"Blue-11","suit":"Blue","number":11}]}"""
+            // language=JSON
+            """
+                {
+                    "type": "com.tamj0rd2.domain.GameMasterCommand.RigDeck",
+                    "playerId": "somePlayer",
+                    "cards": [
+                        {
+                            "type": "com.tamj0rd2.domain.Card.NumberedCard",
+                            "name": "Blue-11",
+                            "suit": "Blue",
+                            "number": 11
+                        }
+                    ]
+                }
+            """.trimIndent()
         )
     }
 
@@ -52,7 +76,13 @@ class JsonSerializationTest {
     fun `can serialize and deserialize PlayerCommands`() {
         test<PlayerCommand>(
             PlayerCommand.JoinGame(PlayerId("somePlayer")),
-            """{"type":"com.tamj0rd2.domain.PlayerCommand.JoinGame","actor":"somePlayer"}"""
+            // language=JSON
+            """
+                {
+                    "type": "com.tamj0rd2.domain.PlayerCommand.JoinGame",
+                    "actor": "somePlayer"
+                }
+            """.trimIndent()
         )
     }
 
@@ -61,22 +91,60 @@ class JsonSerializationTest {
         val obj = Message.ToServer(PlayerCommand.JoinGame(PlayerId("freddy_first")))
         test<Message>(
             obj,
-            """{"type":"com.tamj0rd2.messaging.Message.ToServer","command":{"type":"com.tamj0rd2.domain.PlayerCommand.JoinGame","actor":"freddy_first"},"id":"${obj.id}"}"""
+            // language=JSON
+            """
+                {
+                    "type": "com.tamj0rd2.messaging.Message.ToServer",
+                    "command": {
+                        "type": "com.tamj0rd2.domain.PlayerCommand.JoinGame",
+                        "actor": "freddy_first"
+                    },
+                    "id": "${obj.id}"
+                }
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `can serialize and deserialize player state`() {
+        val playerState = PlayerGameState.ofPlayer(PlayerId("somePlayer"), emptyList())
+        test<PlayerGameState>(
+            playerState,
+            // language=JSON
+            """
+            {
+                "playerId": "somePlayer",
+                "gameState": null,
+                "playersInRoom": [],
+                "roundNumber": 0,
+                "trickNumber": 0,
+                "roundPhase": null,
+                "hand": [],
+                "bids": {},
+                "trick": [],
+                "trickWinner": null,
+                "winsOfTheRound": {},
+                "turnOrder": [],
+                "currentPlayer": null,
+                "currentSuit": null
+            }
+        """.trimIndent()
         )
     }
 
     private inline fun <reified T : Any> test(obj: T, expectedJson: String) {
         val normalKotlinX = Json {
             ignoreUnknownKeys = true
+            encodeDefaults = true
         }
 
         val normalKotlinxJson = normalKotlinX.encodeToString(obj)
         println("normal kotlinx: $normalKotlinxJson")
-        normalKotlinxJson shouldBe expectedJson
+        normalKotlinxJson shouldEqualJson expectedJson
 
         val customKotlinxJson = obj.asJsonObject().asCompactJsonString()
         println("custom serialization: $customKotlinxJson")
-        customKotlinxJson shouldBe expectedJson
+        customKotlinxJson shouldEqualJson expectedJson
 
         withClue("serialized using normal kotlinx") {
             withClue("normal kotlinx deserialization failed") {

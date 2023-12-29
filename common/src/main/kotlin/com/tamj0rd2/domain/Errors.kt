@@ -5,7 +5,7 @@ sealed class CommandError {
 
     data class FailedToPlayCard(
         val playerId: PlayerId,
-        val card: Card,
+        val cardName: CardName,
         override val reason: GameErrorCode,
         val trick: List<PlayedCard>,
         val hand: List<Card>,
@@ -21,6 +21,7 @@ enum class GameErrorCode {
     NotYourTurn,
     AlreadyPlacedABid,
     BidLessThan0OrGreaterThanRoundNumber,
+    CardNotInHand,
     ;
 
     fun throwException(): Nothing = throw asException()

@@ -9,53 +9,53 @@ open class Question<T>(private val description: String, private val answer: (Act
 }
 
 val ThePlayersAtTheTable = Question.about("the players at the table") { actor ->
-    actor.use<ParticipateInGames>().playersInRoom
+    actor.gameState.playersInRoom
 }
 
 // NOTE: these could all be rolled up into a single question about the game state...
 val TheRoundNumber = Question.about("the round number") { actor ->
-    actor.use<ParticipateInGames>().roundNumber
+    actor.gameState.roundNumber
 }
 
 val TheTrickNumber = Question.about("the trick number") { actor ->
-    actor.use<ParticipateInGames>().trickNumber
+    actor.gameState.trickNumber
 }
 
 val TheGameState = Question.about("the game state") { actor ->
-    actor.use<ParticipateInGames>().gameState
+    actor.gameState.gameState
 }
 
 val TheRoundPhase = Question.about("the round phase") { actor ->
-    actor.use<ParticipateInGames>().roundPhase
+    actor.gameState.roundPhase
 }
 
 val TheCurrentPlayer = Question.about("the current player") { actor ->
-    actor.use<ParticipateInGames>().currentPlayer
+    actor.gameState.currentPlayer
 }
 
 val TheWinnerOfTheTrick = Question.about("the winner of the trick") { actor ->
-    actor.use<ParticipateInGames>().trickWinner
+    actor.gameState.trickWinner
 }
 
 val TheirHand = Question.about("their hand") { actor ->
-    actor.use<ParticipateInGames>().hand
+    actor.gameState.hand
 }
 val HisHand = TheirHand
 val HerHand = TheirHand
 
 val TheirFirstCard = Question.about("the first card in their hand") { actor ->
-    val hand = actor.use<ParticipateInGames>().hand
+    val hand = actor.gameState.hand
     hand.first().card
 }
 
 val TheySeeBids = Question.about("the bids that have been placed") { actor ->
-    actor.use<ParticipateInGames>().bids
+    actor.gameState.bids
 }
 
 val TheySeeWinsOfTheRound = Question.about("the actual wins during the round") { actor ->
-    actor.use<ParticipateInGames>().winsOfTheRound
+    actor.gameState.winsOfTheRound
 }
 
 val TheCurrentTrick = Question.about("the current trick") { actor ->
-    actor.use<ParticipateInGames>().trick
+    actor.gameState.trick
 }

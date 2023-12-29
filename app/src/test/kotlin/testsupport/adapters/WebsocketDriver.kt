@@ -9,6 +9,7 @@ import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
+import com.tamj0rd2.domain.PlayerGameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundNumber
 import com.tamj0rd2.domain.RoundPhase
@@ -41,17 +42,36 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
     private lateinit var logger: Logger
     private var ws: Websocket
 
-    override var winsOfTheRound: Map<PlayerId, Int> = emptyMap()
-    override var trickWinner: PlayerId? = null
-    override var currentPlayer: PlayerId? = null
-    override var trickNumber: TrickNumber = TrickNumber.None
-    override var roundNumber: RoundNumber = RoundNumber.None
-    override val trick = mutableListOf<PlayedCard>()
-    override var roundPhase: RoundPhase? = null
-    override var gameState: GameState? = null
-    override var playersInRoom = mutableListOf<PlayerId>()
-    override var hand = mutableListOf<CardWithPlayability>()
-    override var bids = mutableMapOf<PlayerId, DisplayBid>()
+    override val state: PlayerGameState get() =
+        PlayerGameState(
+            playerId = playerId,
+            winsOfTheRound = winsOfTheRound,
+            trickWinner = trickWinner,
+            currentPlayer = currentPlayer,
+            trickNumber = trickNumber,
+            roundNumber = roundNumber,
+            trick = trick,
+            roundPhase = roundPhase,
+            gameState = gameState,
+            playersInRoom = playersInRoom,
+            hand = hand,
+            bids = bids,
+            // TODO: figure out how to get this from the server
+            turnOrder = emptyList()
+        )
+
+    // TODO: figure out how to get rid of these variables later...
+    private var winsOfTheRound: Map<PlayerId, Int> = emptyMap()
+    private var trickWinner: PlayerId? = null
+    private var currentPlayer: PlayerId? = null
+    private var trickNumber: TrickNumber = TrickNumber.None
+    private var roundNumber: RoundNumber = RoundNumber.None
+    private val trick = mutableListOf<PlayedCard>()
+    private var roundPhase: RoundPhase? = null
+    private var gameState: GameState? = null
+    private var playersInRoom = mutableListOf<PlayerId>()
+    private var hand = mutableListOf<CardWithPlayability>()
+    private var bids = mutableMapOf<PlayerId, DisplayBid>()
 
     init {
         identifyAs(PlayerId.unidentified)

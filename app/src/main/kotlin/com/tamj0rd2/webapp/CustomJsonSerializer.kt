@@ -15,6 +15,7 @@ import org.http4k.websocket.WsMessage
 
 object CustomJsonSerializer : ConfigurableKotlinxSerialization({
     ignoreUnknownKeys = true
+    encodeDefaults = true
     asConfigurable().withStandardMappings().done()
 }) {
     override fun asJsonObject(input: Any): JsonElement = when(input) {

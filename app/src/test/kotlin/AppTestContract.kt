@@ -3,11 +3,10 @@ import TestHelpers.playUpToStartOf
 import TestHelpers.skipToTrickTaking
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.Card.SpecialCard.Companion.mermaid
+import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.DisplayBid.*
 import com.tamj0rd2.domain.GameErrorCode.*
-import com.tamj0rd2.domain.GameErrorCode
-import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.GameState.InProgress
 import com.tamj0rd2.domain.PlayedCard
@@ -18,9 +17,14 @@ import com.tamj0rd2.domain.TrickNumber
 import com.tamj0rd2.domain.black
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.domain.red
-import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.inspectors.forAll
+import io.kotest.inspectors.forAtLeastOne
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Nested
 import testsupport.Actor
+import testsupport.Assertion
 import testsupport.Bid
 import testsupport.Bidding
 import testsupport.Bids
@@ -56,7 +60,6 @@ import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
 import testsupport.annotations.AutomatedGameMasterTests
 import testsupport.annotations.UnhappyPath
-import testsupport.annotations.Wip
 import testsupport.are
 import testsupport.both
 import testsupport.each
@@ -156,7 +159,6 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
             }
         }
 
-        @Wip
         @Test
         fun `winning a trick`() {
             freddy and sally both SitAtTheTable
@@ -212,12 +214,20 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
             gary(SaysTheGameCanStart)
 
             freddy(Bids(1))
-            freddy and sally both ensure(TheRoundPhase, Is(Bidding))
-            freddy and sally both Play.theirFirstPlayableCard.expectingFailure(TrickNotInProgress)
+            freddy and sally both ensure {
+                that(TheRoundPhase, Is(Bidding))
+                that(TheirHand, OnlyContainsCardsThatAreNonPlayable)
+            }
 
             sally(Bids(1))
-            freddy and sally both ensure(TheRoundPhase, Is(BiddingCompleted))
-            freddy and sally both Play.theirFirstPlayableCard.expectingFailure(TrickNotInProgress)
+            freddy and sally both ensure {
+                that(TheRoundPhase, Is(BiddingCompleted))
+                that(TheirHand, OnlyContainsCardsThatAreNonPlayable)
+            }
+
+            gary(SaysTheTrickCanStart)
+            freddy(ensures(HisHand, OnlyContainsCardsThatArePlayable))
+            sally(ensures(HerHand, OnlyContainsCardsThatAreNonPlayable))
         }
 
         @UnhappyPath
@@ -272,18 +282,21 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
             playUpToStartOf(RoundNumber.of(2), trick = TrickNumber.of(1), theGameMaster = gary, thePlayers = thePlayers)
 
             thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
-            sally(Playing.theirFirstPlayableCard wouldFailBecause NotYourTurn)
+            freddy(ensures(HisHand, OnlyContainsCardsThatArePlayable))
+            sally and thirzah both ensure(TheirHand, OnlyContainsCardsThatAreNonPlayable)
 
-            thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
             freddy(Plays.theirFirstPlayableCard)
-
             thePlayers each ensure(TheCurrentPlayer, Is(sally.playerId))
-            thirzah(Playing.theirFirstPlayableCard wouldFailBecause NotYourTurn)
+            sally(ensures(HerHand, ContainsAtLeastOnePlayableCard))
+            freddy and thirzah both ensure(TheirHand, OnlyContainsCardsThatAreNonPlayable)
 
-            // recovery
-            thePlayers each ensure(TheCurrentPlayer, Is(sally.playerId))
             sally(Plays.theirFirstPlayableCard)
+            thePlayers each ensure(TheCurrentPlayer, Is(thirzah.playerId))
+            thirzah(ensures(HerHand, ContainsAtLeastOnePlayableCard))
+            freddy and sally both ensure(TheirHand, OnlyContainsCardsThatAreNonPlayable)
+
             thirzah(Plays.theirFirstPlayableCard)
+            thePlayers each ensure(TheirHand, OnlyContainsCardsThatAreNonPlayable)
         }
 
         @UnhappyPath
@@ -316,7 +329,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
             freddy(Plays(10.red))
 
             sally(ensures(HerHand, Is(listOf(8.black.notPlayable(), 12.red.playable()))))
-            sally(Playing(8.black) wouldFailBecause GameErrorCode.PlayingCardWouldBreakSuitRules)
+            sally(Playing(8.black) wouldFailBecause PlayingCardWouldBreakSuitRules)
         }
 
         @UnhappyPath
@@ -485,7 +498,6 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
     @Nested
     @Suppress("unused")
     @AutomatedGameMasterTests
-    @Wip
     inner class GivenAutomatedGameMasterCommandsAreEnabled {
         init {
             testConfiguration.automateGameMasterCommands()
@@ -541,7 +553,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
             data class RoundState(
                 val round: Int = RoundNumber.None.value,
                 val phase: RoundPhase?,
-                val trick: Int = TrickNumber.None.value
+                val trick: Int = TrickNumber.None.value,
             )
 
             val TheRoundState = Question("about the round state") { actor ->
@@ -691,3 +703,18 @@ internal infix fun Pair<Actor, Actor>.and(other: Actor) = listOf(first, second, 
 infix fun Actor.bid(bid: Int): Pair<Actor, DisplayBid> = Pair(this, Placed(com.tamj0rd2.domain.Bid.of(bid)))
 fun Actor.bidIsHidden(): Pair<Actor, DisplayBid> = Pair(this, Hidden)
 fun Actor.hasNotBid(): Pair<Actor, DisplayBid> = Pair(this, None)
+
+val OnlyContainsCardsThatArePlayable = Assertion<List<CardWithPlayability>>("all cards should be playable") {
+    val cards = this.shouldNotBeNull().shouldNotBeEmpty()
+    cards.forAll { it.isPlayable shouldBe true }
+}
+
+val OnlyContainsCardsThatAreNonPlayable = Assertion<List<CardWithPlayability>>("all cards should be non-playable") {
+    val cards = this.shouldNotBeNull().shouldNotBeEmpty()
+    cards.forAll { it.isPlayable shouldBe false }
+}
+
+val ContainsAtLeastOnePlayableCard = Assertion<List<CardWithPlayability>>("at least one card should be playable") {
+    val cards = this.shouldNotBeNull().shouldNotBeEmpty()
+    cards.forAtLeastOne { it.isPlayable shouldBe true }
+}

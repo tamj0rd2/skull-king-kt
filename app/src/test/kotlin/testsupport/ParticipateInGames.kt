@@ -4,7 +4,10 @@ import com.github.michaelbull.result.getOrThrow
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.PlayerCommand
+import com.tamj0rd2.domain.PlayerGameState
 import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.webapp.CustomJsonSerializer.asJsonObject
+import com.tamj0rd2.webapp.CustomJsonSerializer.asPrettyJsonString
 
 class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
 
@@ -17,16 +20,21 @@ private fun Actor.performPlayerCommand(command: PlayerCommand) =
         it.reason.asException()
     }
 
+val Actor.gameState get() = use<ParticipateInGames>().state
+
+internal fun PlayerGameState.debug() = asJsonObject().asPrettyJsonString()
+
 object Plays {
     operator fun invoke(card: Card) = Activity("play ${card.name}") {actor ->
         actor.performPlayerCommand(PlayerCommand.PlayCard(actor.playerId, card.name))
     }
 
     val theirFirstPlayableCard = Activity("play their first playable card") { actor ->
-        val ability = actor.use<ParticipateInGames>()
-        val hand = ability.hand
-        val card = hand.firstOrNull { it.isPlayable }?.card ?: error("no playable cards in hand")
-        ability.perform(PlayerCommand.PlayCard(actor.playerId, card.name))
+        val state = actor.gameState
+        val hand = state.hand
+        val card = hand.firstOrNull { it.isPlayable }?.card
+            ?: error("${actor.playerId} has no playable cards in their hand\n\n${state.debug()}")
+        actor.performPlayerCommand(PlayerCommand.PlayCard(actor.playerId, card.name))
     }
 }
 

@@ -3,6 +3,7 @@ package testsupport
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.PlayerId
+import io.kotest.assertions.asClue
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
@@ -23,11 +24,13 @@ infix fun Activity.wouldFailBecause(errorCode: GameErrorCode) = EnsureActivity {
 }
 
 fun interface Assertion<T> {
-    fun T?.assert()
+    fun T.assert()
 }
 
+fun <T> Assertion(description: String, fn: T.() -> Unit) = Assertion<T> { withClue("Assertion: $description") { fn() } }
+
 fun <T> Is(expected: T) = Assertion<T> { this shouldBe expected }
-fun <T> sizeIs(expected: Int) = Assertion<List<T>> { withClue("checking size") { this?.size shouldBe expected } }
+fun <T> sizeIs(expected: Int) = Assertion<List<T>> { withClue("checking size") { this.size shouldBe expected } }
 fun <T> onlyContains(vararg expected: T) = Assertion<List<T>> { this shouldBe expected.toList() }
 fun <T> isEmpty() = Assertion<List<T>> { this shouldBe emptyList() }
 fun are(vararg expected: Actor) = Assertion<List<PlayerId>> { this shouldBe expected.map { it.playerId }.toList() }
@@ -101,13 +104,11 @@ fun ensurer(): Ensurer {
                         // this is some voodoo magic right here
                         // I think the way it works is that `with` makes all the extensions available, therefore we're
                         // now able to apply the assert extension to the answer. madness.
-                        with(assertion) { answer.assert() }
+                        with(assertion) { "All data: $answer".asClue { answer.assert() } }
                     }
                     break
                 } catch (e: AssertionError) {
                     if (Instant.now() > mustEndBy) {
-                        logger.error("${actor.playerId} - Assertion failed for $question")
-
                         val ignoredClasses = listOf("testsupport.", "org.junit.", "jdk.internal.reflect")
                         e.stackTrace = e.stackTrace
                             .filterNot { ignoredClasses.any { ignored -> it.className.startsWith(ignored) } }

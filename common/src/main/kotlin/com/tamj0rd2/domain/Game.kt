@@ -111,12 +111,21 @@ class Game {
         val suitBeforePlayingCard = trick.suit
         val hand = hands[playerId] ?: error("player $playerId somehow doesn't have a hand")
         val card = hand.find { it.name == cardName }
-        requireNotNull(card) { "card $cardName not in $playerId's hand" }
+
+        if (card == null) {
+            return@playerCommand Err(CommandError.FailedToPlayCard(
+                playerId = playerId,
+                cardName = cardName,
+                reason = CardNotInHand,
+                trick = currentTrick,
+                hand = hand
+            ))
+        }
 
         if (!trick.isCardPlayable(card, hand.excluding(card))) {
             return@playerCommand Err(CommandError.FailedToPlayCard(
                 playerId = playerId,
-                card = card,
+                cardName = cardName,
                 reason = PlayingCardWouldBreakSuitRules,
                 trick = currentTrick,
                 hand = hand
@@ -288,6 +297,7 @@ private class Bids {
     }
 }
 
+@Serializable
 sealed class DisplayBid {
     override fun toString(): String = when (this) {
         is None -> "None"
@@ -295,8 +305,12 @@ sealed class DisplayBid {
         is Placed -> bid.toString()
     }
 
+    @Serializable
     object None : DisplayBid()
+
+    @Serializable
     object Hidden : DisplayBid()
 
+    @Serializable
     data class Placed(val bid: Bid) : DisplayBid()
 }

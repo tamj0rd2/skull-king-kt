@@ -12,6 +12,7 @@ import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerCommand
+import com.tamj0rd2.domain.PlayerGameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.RoundNumber
 import com.tamj0rd2.domain.RoundPhase
@@ -41,6 +42,24 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             driver.title shouldBe "Playing Skull King"
         }
     }
+
+    override val state: PlayerGameState get() =
+        PlayerGameState(
+            playerId = playerId,
+            winsOfTheRound = winsOfTheRound,
+            trickWinner = trickWinner,
+            currentPlayer = currentPlayer,
+            trickNumber = trickNumber,
+            roundNumber = roundNumber,
+            trick = trick,
+            roundPhase = roundPhase,
+            gameState = gameState,
+            playersInRoom = playersInRoom,
+            hand = hand,
+            bids = bids,
+            // TODO: what should I do here? I suppose the answer is - represent it on the frontend
+            turnOrder = emptyList(),
+        )
 
     override fun perform(command: PlayerCommand): Result<Unit, CommandError> {
         withClue("another command is still in progress") {
@@ -122,7 +141,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    override val winsOfTheRound: Map<PlayerId, Int>
+    val winsOfTheRound: Map<PlayerId, Int>
         get() = debugException {
             driver.findElement(By.id("wins"))
                 .findElements(By.tagName("li"))
@@ -133,12 +152,12 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 }
         }
 
-    override val trickWinner: PlayerId?
+    val trickWinner: PlayerId?
         get() = debugException {
             driver.findElement(By.id("trickWinner")).getAttributeOrNull("data-playerId")?.let(::PlayerId)
         }
 
-    override val trickNumber: TrickNumber
+    val trickNumber: TrickNumber
         get() = debugException {
             driver.findElement(By.id("trickNumber"))
                 .getAttributeOrNull("data-trickNumber")
@@ -146,7 +165,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 ?: TrickNumber.None
         }
 
-    override val roundNumber: RoundNumber
+    val roundNumber: RoundNumber
         get() = debugException {
             driver.findElement(By.id("roundNumber"))
                 .getAttributeOrNull("data-roundNumber")
@@ -154,42 +173,42 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 ?: RoundNumber.None
         }
 
-    override val playersInRoom: List<PlayerId>
+    val playersInRoom: List<PlayerId>
         get() = debugException {
             driver.findElement(By.id("players"))
                 .findElements(By.tagName("li"))
                 .mapNotNull { PlayerId(it.text) }
         }
 
-    override val hand: List<CardWithPlayability>
+    val hand: List<CardWithPlayability>
         get() = debugException {
             driver.findElement(By.id("hand"))
                 .findElements(By.tagName("li"))
                 .map { it.toCardWithPlayability() }
         }
 
-    override val trick: List<PlayedCard>
+    val trick: List<PlayedCard>
         get() = debugException {
             driver.findElement(By.id("trick"))
                 .findElements(By.tagName("li"))
                 .map { it.toCard().playedBy(PlayerId(it.getAttribute("player"))) }
         }
 
-    override val gameState: GameState?
+    val gameState: GameState?
         get() = debugException {
             driver.findElementOrNull(By.id("gameState"))
                 ?.getAttributeOrNull("data-state")
                 ?.let(GameState::from)
         }
 
-    override val roundPhase: RoundPhase?
+    val roundPhase: RoundPhase?
         get() = debugException {
             driver.findElementOrNull(By.id("roundPhase"))
                 ?.getAttributeOrNull("data-phase")
                 ?.let(RoundPhase::from)
         }
 
-    override val bids: Map<PlayerId, DisplayBid>
+    val bids: Map<PlayerId, DisplayBid>
         get() = debugException {
             driver.findElement(By.id("bids"))
                 .findElements(By.tagName("li"))
@@ -203,7 +222,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 }
         }
 
-    override val currentPlayer: PlayerId?
+    val currentPlayer: PlayerId?
         get() = debugException {
             driver.findElementAttributeOrNull(By.id("currentPlayer"), "data-playerId")?.let(::PlayerId)
         }

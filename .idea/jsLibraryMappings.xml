@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavaScriptLibraryMappings">
+    <excludedPredefinedLibrary name="skull-king-kt/frontend/.gradle/nodejs/node-v18.2.0-darwin-arm64/lib/node_modules" />
+    <excludedPredefinedLibrary name="skull-king-kt/frontend/node_modules" />
+  </component>
+</project>
