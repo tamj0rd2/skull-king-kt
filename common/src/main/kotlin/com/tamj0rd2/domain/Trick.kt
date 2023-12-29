@@ -19,25 +19,26 @@ class Trick(private val size: Int) {
     private val hasMermaid get() = specialsPlayed.contains(Mermaid)
     private val hasPirate get() = specialsPlayed.contains(Pirate)
 
-    internal val winner: PlayerId get() {
-        require(isComplete) { "trick is not complete" }
+    internal val winner: PlayerId
+        get() {
+            require(isComplete) { "trick is not complete" }
 
-        var winnerSoFar: PlayedCard = _playedCards.first()
+            var winnerSoFar: PlayedCard = _playedCards.first()
 
-        for (playedCard in _playedCards.drop(1)) {
-            if (playedCard.card.beats(winnerSoFar.card, context)) {
-                winnerSoFar = playedCard
-                continue
+            for (playedCard in _playedCards.drop(1)) {
+                if (playedCard.card.beats(winnerSoFar.card, context)) {
+                    winnerSoFar = playedCard
+                    continue
+                }
+
+                if (hasMermaid && hasSkullKing) {
+                    winnerSoFar = _playedCards.first { it.card == SpecialCard.mermaid }
+                    break
+                }
             }
 
-            if (hasMermaid && hasSkullKing) {
-                winnerSoFar = _playedCards.first { it.card == SpecialCard.mermaid }
-                break
-            }
+            return winnerSoFar.playerId
         }
-
-        return winnerSoFar.playerId
-    }
 
     internal fun add(playedCard: PlayedCard) {
         _playedCards.add(playedCard)
@@ -51,24 +52,31 @@ class Trick(private val size: Int) {
         }
     }
 
-    internal fun isCardPlayable(card: Card, restOfHand: List<Card>): Boolean {
-        if (restOfHand.isEmpty() || suit == null) return true
+    internal fun isCardPlayable(card: Card, restOfHand: List<Card>): Boolean =
+        isCardPlayable(card, restOfHand, suit)
 
-        when(card) {
-            is NumberedCard -> {
-                if (card.suit == suit) return true
-                return restOfHand.none { it is NumberedCard && it.suit == suit }
+    private val context
+        get(): TrickContext = TrickContext(
+            suit = suit,
+            hasSkullKing = hasSkullKing,
+            hasMermaid = hasMermaid,
+            hasPirate = hasPirate
+        )
+
+    companion object {
+        fun isCardPlayable(card: Card, restOfHand: List<Card>, suitOfTrick: Suit?): Boolean {
+            if (restOfHand.isEmpty() || suitOfTrick == null) return true
+
+            when (card) {
+                is NumberedCard -> {
+                    if (card.suit == suitOfTrick) return true
+                    return restOfHand.none { it is NumberedCard && it.suit == suitOfTrick }
+                }
+
+                is SpecialCard -> return true
             }
-            is SpecialCard -> return true
         }
     }
-
-    private val context get (): TrickContext = TrickContext(
-        suit = suit,
-        hasSkullKing = hasSkullKing,
-        hasMermaid = hasMermaid,
-        hasPirate = hasPirate
-    )
 }
 
 private data class TrickContext(
@@ -81,14 +89,14 @@ private data class TrickContext(
 }
 
 private fun Card.beats(other: Card, context: TrickContext): Boolean {
-    return when(this) {
+    return when (this) {
         is NumberedCard -> beats(other, context)
         is SpecialCard -> beats(other, context)
     }
 }
 
 private fun NumberedCard.beats(other: Card, context: TrickContext): Boolean {
-    when(other) {
+    when (other) {
         is NumberedCard -> {
             val areEitherBlack = suit == Black || other.suit == Black
 
@@ -100,7 +108,8 @@ private fun NumberedCard.beats(other: Card, context: TrickContext): Boolean {
             if (context.suitIs(suit)) return number > other.number
             return false
         }
-        is SpecialCard -> return when(other.suit) {
+
+        is SpecialCard -> return when (other.suit) {
             Escape -> true
             Pirate,
             Mermaid,
@@ -110,12 +119,12 @@ private fun NumberedCard.beats(other: Card, context: TrickContext): Boolean {
 }
 
 private fun SpecialCard.beats(other: Card, context: TrickContext): Boolean {
-    return when(other) {
+    return when (other) {
         is NumberedCard -> suit != Escape
         is SpecialCard -> {
             if (suit == other.suit) return false
 
-            when(suit) {
+            when (suit) {
                 Escape -> false
                 Pirate -> !context.hasSkullKing
                 Mermaid -> context.hasSkullKing || !context.hasPirate

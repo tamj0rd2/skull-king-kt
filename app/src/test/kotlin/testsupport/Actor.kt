@@ -13,8 +13,6 @@ class Actor(val name: String) {
         activities.forEach { it.invoke(this) }
     }
 
-    fun attemptsTo(vararg activities: Activity) = invoke(*activities)
-
     override fun toString(): String {
         return name
     }

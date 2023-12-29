@@ -1,10 +1,11 @@
-
 import TestHelpers.playUpTo
 import TestHelpers.playUpToStartOf
 import TestHelpers.skipToTrickTaking
 import com.tamj0rd2.domain.Card
+import com.tamj0rd2.domain.Card.SpecialCard.Companion.mermaid
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.DisplayBid.*
+import com.tamj0rd2.domain.GameErrorCode.*
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.GameState
@@ -54,7 +55,7 @@ import testsupport.TheirHand
 import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
 import testsupport.annotations.AutomatedGameMasterTests
-import testsupport.annotations.UnhappyPathTest
+import testsupport.annotations.UnhappyPath
 import testsupport.annotations.Wip
 import testsupport.are
 import testsupport.both
@@ -88,21 +89,22 @@ interface TestConfiguration : AbilityFactory {
 // TODO: turn order
 // TODO: scoring
 
-abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by ensurer() {
-    private val freddy by lazy { Actor("Freddy First").whoCan(c.participateInGames()) }
-    private val sally by lazy { Actor("Sally Second").whoCan(c.participateInGames()) }
+abstract class AppTestContract(private val testConfiguration: TestConfiguration) : Ensurer by ensurer(),
+    AbilityFactory by testConfiguration {
+    private val freddy by lazy { Actor("Freddy First").whoCan(participateInGames()) }
+    private val sally by lazy { Actor("Sally Second").whoCan(participateInGames()) }
 
     @BeforeTest
-    fun setup() = c.setup()
+    fun setup() = testConfiguration.setup()
 
     @AfterTest
-    fun teardown() = c.teardown()
+    fun teardown() = testConfiguration.teardown()
 
     @Nested
     @Suppress("unused")
     inner class GivenThereIsAManualGameMaster {
 
-        private val gary by lazy { Actor("Gary GameMaster").whoCan(c.manageGames()) }
+        private val gary by lazy { Actor("Gary GameMaster").whoCan(manageGames()) }
 
         @Test
         fun `sitting at an empty table and waiting for more players to join`() {
@@ -203,21 +205,23 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             }
         }
 
-        @UnhappyPathTest
+        @UnhappyPath
+        @Test
         fun `cannot play a card when the trick is not in progress`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)
 
             freddy(Bids(1))
             freddy and sally both ensure(TheRoundPhase, Is(Bidding))
-            freddy and sally both Play.theirFirstPlayableCard.expectingFailure(GameErrorCode.TrickNotInProgress)
+            freddy and sally both Play.theirFirstPlayableCard.expectingFailure(TrickNotInProgress)
 
             sally(Bids(1))
             freddy and sally both ensure(TheRoundPhase, Is(BiddingCompleted))
-            freddy and sally both Play.theirFirstPlayableCard.expectingFailure(GameErrorCode.TrickNotInProgress)
+            freddy and sally both Play.theirFirstPlayableCard.expectingFailure(TrickNotInProgress)
         }
 
-        @UnhappyPathTest
+        @UnhappyPath
+        @Test
         fun `cannot play a card that would break suit rules`() {
             val thePlayers = listOf(freddy, sally)
             val theGameMaster = gary
@@ -231,7 +235,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             skipToTrickTaking(theGameMaster = theGameMaster, thePlayers = thePlayers)
 
             freddy(Plays(1.blue))
-            sally(Playing(4.red) wouldFailBecause GameErrorCode.PlayingCardWouldBreakSuitRules)
+            sally(Playing(4.red) wouldFailBecause PlayingCardWouldBreakSuitRules)
 
             // recovery
             sally(ensures(HerHand, sizeIs(2)))
@@ -242,7 +246,6 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             sally(Plays(4.red))
         }
 
-        @Wip
         @Test
         fun `can play special cards when you have a card for the correct suit - sanity check`() {
             val thePlayers = listOf(freddy, sally)
@@ -261,20 +264,21 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             thePlayers each ensure(TheRoundPhase, Is(TrickCompleted))
         }
 
-        @UnhappyPathTest
+        @UnhappyPath
+        @Test
         fun `cannot play a card when it is not their turn`() {
-            val thirzah = Actor("Thirzah Third").whoCan(c.participateInGames())
+            val thirzah = Actor("Thirzah Third").whoCan(participateInGames())
             val thePlayers = listOf(freddy, sally, thirzah)
             playUpToStartOf(RoundNumber.of(2), trick = TrickNumber.of(1), theGameMaster = gary, thePlayers = thePlayers)
 
             thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
-            sally(Playing.theirFirstPlayableCard wouldFailBecause GameErrorCode.NotYourTurn)
+            sally(Playing.theirFirstPlayableCard wouldFailBecause NotYourTurn)
 
             thePlayers each ensure(TheCurrentPlayer, Is(freddy.playerId))
             freddy(Plays.theirFirstPlayableCard)
 
             thePlayers each ensure(TheCurrentPlayer, Is(sally.playerId))
-            thirzah(Playing.theirFirstPlayableCard wouldFailBecause GameErrorCode.NotYourTurn)
+            thirzah(Playing.theirFirstPlayableCard wouldFailBecause NotYourTurn)
 
             // recovery
             thePlayers each ensure(TheCurrentPlayer, Is(sally.playerId))
@@ -282,15 +286,16 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             thirzah(Plays.theirFirstPlayableCard)
         }
 
-        @UnhappyPathTest
+        @UnhappyPath
+        @Test
         fun `cannot bid before the game has started`() {
             freddy and sally both SitAtTheTable
-            freddy(Bidding(1) wouldFailBecause GameErrorCode.GameNotInProgress)
+            freddy(Bidding(1) wouldFailBecause GameNotInProgress)
             freddy and sally both ensure(TheGameState, Is(GameState.WaitingToStart))
         }
 
+        @UnhappyPath
         @Test
-        @Wip
         fun `sanity check - suit rules`() {
             // I want to make sure that the `firstPlayableCard` that is suggested, is actually playable
             val thePlayers = listOf(freddy, sally)
@@ -300,14 +305,8 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
                 thePlayers = thePlayers
             )
 
-            /*
-             * Cards already played: [Red-10 played by freddy_first]
-             * Card attempting to be played by sally_second: Black-8
-             * hands: {freddy_first=[mermaid], sally_second=[black-8, red-12]}
-             */
-
             gary(
-                RigsTheDeck.SoThat(freddy).willEndUpWith(10.red, Card.SpecialCard.mermaid),
+                RigsTheDeck.SoThat(freddy).willEndUpWith(10.red, mermaid),
                 RigsTheDeck.SoThat(sally).willEndUpWith(8.black, 12.red),
                 SaysTheRoundCanStart
             )
@@ -315,10 +314,13 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             thePlayers each Bid(2)
             gary(SaysTheTrickCanStart)
             freddy(Plays(10.red))
+
+            sally(ensures(HerHand, Is(listOf(8.black.notPlayable(), 12.red.playable()))))
             sally(Playing(8.black) wouldFailBecause GameErrorCode.PlayingCardWouldBreakSuitRules)
         }
 
-        @UnhappyPathTest
+        @UnhappyPath
+        @Test
         fun `cannot bid outside of the bidding phase`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)
@@ -326,32 +328,34 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             freddy and sally both ensure(TheRoundPhase, Is(BiddingCompleted))
             gary(SaysTheTrickCanStart)
             freddy and sally both ensure(TheRoundPhase, Is(TrickTaking))
-            freddy(Bidding(1) wouldFailBecause GameErrorCode.BiddingIsNotInProgress)
+            freddy(Bidding(1) wouldFailBecause BiddingIsNotInProgress)
         }
 
-        @UnhappyPathTest
+        @UnhappyPath
+        @Test
         fun `cannot bid twice`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)
             freddy(Bids(1))
-            freddy(Bidding(1) wouldFailBecause GameErrorCode.AlreadyPlacedABid)
+            freddy(Bidding(1) wouldFailBecause AlreadyPlacedABid)
         }
 
-        @UnhappyPathTest
+        @UnhappyPath
+        @Test
         fun `cannot bid more than the current round number`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)
-            freddy(Bidding(2) wouldFailBecause GameErrorCode.BidLessThan0OrGreaterThanRoundNumber)
+            freddy(Bidding(2) wouldFailBecause BidLessThan0OrGreaterThanRoundNumber)
         }
 
-        @UnhappyPathTest
+        @UnhappyPath
+        @Test
         fun `a player can't join twice`() {
             freddy(SitsAtTheTable)
-            val freddyOnASecondDevice = Actor(freddy.name).whoCan(c.participateInGames())
-            freddyOnASecondDevice(SittingAtTheTable wouldFailBecause GameErrorCode.PlayerWithSameNameAlreadyInGame)
+            val freddyOnASecondDevice = Actor(freddy.name).whoCan(participateInGames())
+            freddyOnASecondDevice(SittingAtTheTable wouldFailBecause PlayerWithSameNameAlreadyInGame)
         }
 
-        @Wip
         @Test
         fun `playing a game from start to finish`() {
             freddy and sally both SitAtTheTable
@@ -484,10 +488,10 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
     @Wip
     inner class GivenAutomatedGameMasterCommandsAreEnabled {
         init {
-            c.automateGameMasterCommands()
+            testConfiguration.automateGameMasterCommands()
         }
 
-        private val gmDelay = c.automaticGameMasterDelay
+        private val gmDelay = testConfiguration.automaticGameMasterDelay
         private val withinDelay = gmDelay * 2
 
         @Test
@@ -504,7 +508,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
 
         @Test
         fun `the auto-start of the game still allows for other people to join`() {
-            val thirzah = Actor("Thirzah Third").whoCan(c.participateInGames())
+            val thirzah = Actor("Thirzah Third").whoCan(participateInGames())
 
             freddy and sally both SitAtTheTable
             Thread.sleep((gmDelay / 4).inWholeMilliseconds)
@@ -583,7 +587,7 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
 
 private infix fun Actor.won(count: Int) = Pair(this, count)
 
-internal object TestHelpers: Ensurer by ensurer() {
+internal object TestHelpers : Ensurer by ensurer() {
     fun playUpToStartOf(round: RoundNumber, trick: TrickNumber, theGameMaster: Actor, thePlayers: List<Actor>) {
         require(round.value != 1) { "playing to round 1 not implemented" }
         require(trick.value == 1) { "trick greater than 1 not implemented" }
@@ -650,7 +654,11 @@ internal object TestHelpers: Ensurer by ensurer() {
                 that(TheRoundPhase, Is(Bidding))
             }
             thePlayers each Bid(1)
-            playUpToAndIncluding(trick = TrickNumber.of(roundNumber), theGameMaster = theGameMaster, thePlayers = thePlayers)
+            playUpToAndIncluding(
+                trick = TrickNumber.of(roundNumber),
+                theGameMaster = theGameMaster,
+                thePlayers = thePlayers
+            )
         }
     }
 

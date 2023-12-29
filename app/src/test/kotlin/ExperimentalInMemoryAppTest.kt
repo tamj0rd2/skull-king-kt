@@ -27,7 +27,6 @@ import testsupport.logger
 import kotlin.time.Duration
 
 @SkipWipTests
-@SkipUnhappyPathTests
 @Execution(ExecutionMode.SAME_THREAD)
 @DoesNotSupportAutomatedGameMaster
 class ExperimentalInMemoryAppTest : AppTestContract(ExperimentalInMemoryTestConfiguration())

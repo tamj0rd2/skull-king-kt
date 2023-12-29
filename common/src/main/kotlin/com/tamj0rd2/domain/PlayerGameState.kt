@@ -4,6 +4,7 @@ import arrow.optics.copy
 import arrow.optics.optics
 import com.tamj0rd2.domain.GameState.WaitingForMorePlayers
 import com.tamj0rd2.domain.GameState.WaitingToStart
+import com.tamj0rd2.domain.Trick.Companion.isCardPlayable
 
 @optics
 data class PlayerGameState(
@@ -22,12 +23,18 @@ data class PlayerGameState(
     val turnOrder: List<PlayerId>,
 ) {
     fun handle(event: GameEvent): PlayerGameState = when (event) {
+        // Note: I do keep thinking that it's pointless to have these copy functions via optics. BUT
+        // they are nice for conditionally updating values. Like in the example of CardPlayed. You can
+        // do it with a regular copy too, but this just seems a bit nicer to me. Despite having to start
+        // with the class name each time...
+
         is GameEvent.BidPlaced -> copy {
             PlayerGameState.bids set bids + (event.playerId to DisplayBid.Hidden)
         }
 
         is GameEvent.BiddingCompleted -> copy {
             PlayerGameState.roundPhase set RoundPhase.BiddingCompleted
+            PlayerGameState.bids set event.bids.mapValues { DisplayBid.Placed(it.value) }
         }
 
         is GameEvent.CardPlayed -> copy {
@@ -36,14 +43,14 @@ data class PlayerGameState(
                 PlayerGameState.hand set hand.toMutableList().apply { remove(cardToRemoveFromHand) }
             }
 
-            val updatedTrick = trick + event.card.playedBy(event.playerId)
-            PlayerGameState.trick set updatedTrick
-            PlayerGameState.nullableCurrentPlayer set turnOrder.getOrNull(updatedTrick.size)
+            val trick = trick + event.card.playedBy(event.playerId)
+            PlayerGameState.trick set trick
+            PlayerGameState.nullableCurrentPlayer set turnOrder.getOrNull(trick.size)
         }
 
         is GameEvent.CardsDealt -> copy {
-            val cards = event.cards[playerId] ?: error("$playerId wasn't dealt any cards")
-            PlayerGameState.hand set cards.map(Card::playable)
+            val hand = event.cards[playerId] ?: error("$playerId wasn't dealt any cards")
+            PlayerGameState.hand set hand.map(Card::playable)
         }
 
         is GameEvent.GameCompleted -> TODO()
@@ -52,7 +59,8 @@ data class PlayerGameState(
         }
 
         is GameEvent.PlayerJoined -> copy {
-            PlayerGameState.playersInRoom transform { players -> players + event.playerId }
+            val playersInRoom = playersInRoom + event.playerId
+            PlayerGameState.playersInRoom set playersInRoom
             PlayerGameState.gameState set (if (playersInRoom.size >= minimumNumOfPlayersToStartGame) WaitingToStart else WaitingForMorePlayers)
         }
 
@@ -64,7 +72,10 @@ data class PlayerGameState(
             PlayerGameState.winsOfTheRound set playersInRoom.associateWith { 0 }
         }
 
-        is GameEvent.TrickCompleted -> TODO()
+        is GameEvent.TrickCompleted -> copy {
+            PlayerGameState.roundPhase set RoundPhase.TrickCompleted
+        }
+
         is GameEvent.TrickStarted -> copy {
             PlayerGameState.trickNumber set trickNumber + 1
             PlayerGameState.trick set emptyList()
@@ -73,14 +84,21 @@ data class PlayerGameState(
             PlayerGameState.turnOrder set event.turnOrder
         }
 
-        is GameEvent.SuitEstablished -> TODO()
+        is GameEvent.SuitEstablished -> copy {
+            val handWithoutPlayability = hand.map(CardWithPlayability::card)
+            val hand = hand.map {
+                val isPlayable = isCardPlayable(it.card, handWithoutPlayability, event.suit)
+                it.card.playable(isPlayable)
+            }
+            PlayerGameState.hand set hand
+        }
     }
 
     fun handle(events: List<GameEvent>): PlayerGameState =
         events.fold(this) { state, event -> state.handle(event) }
 
     companion object {
-        const val minimumNumOfPlayersToStartGame = 2
+        private const val minimumNumOfPlayersToStartGame = 2
 
         fun ofPlayer(player: PlayerId, allEventsSoFar: List<GameEvent>): PlayerGameState {
             val initial = PlayerGameState(

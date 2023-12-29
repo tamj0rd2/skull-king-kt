@@ -6,10 +6,9 @@ import org.junit.jupiter.api.extension.ExtendWith
 @Target(AnnotationTarget.CLASS)
 annotation class SkipUnhappyPathTests
 
-@Test
 @Target(AnnotationTarget.FUNCTION)
 @ExtendWith(UnhappyPathExtension::class)
-annotation class UnhappyPathTest
+annotation class UnhappyPath
 
 class UnhappyPathExtension :
-    SkipCondition<SkipUnhappyPathTests, UnhappyPathTest>(SkipUnhappyPathTests::class, UnhappyPathTest::class)
+    SkipCondition<SkipUnhappyPathTests, UnhappyPath>(SkipUnhappyPathTests::class, UnhappyPath::class)
