@@ -23,3 +23,8 @@
     ./setup-chrome.sh
   ```
 - Update the chrome version in the WebTests file
+
+### Arrow optics
+
+Certain folders need to be marked as generated source routes for the IDE to know
+about them. https://kotlinlang.org/docs/ksp-quickstart.html#make-ide-aware-of-generated-code

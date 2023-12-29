@@ -171,10 +171,13 @@ class Game {
         block()
         val events = eventsBuffer.toList()
         eventsBuffer.clear()
+        _allEventsSoFar.addAll(events)
         eventListeners.forEach { listener -> listener.handle(events, triggeredBy) }
     }
 
     private val eventsBuffer = mutableListOf<GameEvent>()
+    val allEventsSoFar get(): List<GameEvent> = _allEventsSoFar
+    private val _allEventsSoFar = mutableListOf<GameEvent>()
 
     private fun recordEvent(event: GameEvent) {
         eventsBuffer.add(event)

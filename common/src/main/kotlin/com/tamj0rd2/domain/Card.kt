@@ -8,6 +8,8 @@ import java.util.*
 sealed class Card(val name: CardName) {
     fun playedBy(playerId: PlayerId): PlayedCard = PlayedCard(playerId, this)
 
+    fun playable(): CardWithPlayability = CardWithPlayability(card = this, isPlayable = true)
+
     companion object {
         fun from(suit: String, number: Int?): Card {
             if (number != null) return NumberedCard(Suit.from(suit), number)

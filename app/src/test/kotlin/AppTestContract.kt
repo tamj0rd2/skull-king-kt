@@ -112,7 +112,6 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             )
         }
 
-        @Wip
         @Test
         fun `waiting for sally to bid`() {
             freddy and sally both SitAtTheTable
@@ -121,11 +120,11 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             freddy(Bids(1))
             freddy and sally both ensure {
                 that(TheRoundPhase, Is(Bidding))
+                // TODO: this seems odd. The player can't see their own bid unless everyone has bid...
                 that(TheySeeBids, where(freddy.bidIsHidden(), sally.hasNotBid()))
             }
         }
 
-        @Wip
         @Test
         fun `playing a card and waiting for the next player to do the same`() {
             freddy and sally both SitAtTheTable

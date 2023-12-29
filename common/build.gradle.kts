@@ -4,6 +4,11 @@ import java.io.ByteArrayOutputStream
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization") version "1.9.0"
+
+    // https://kotlinlang.org/docs/ksp-quickstart.html#use-your-own-processor-in-a-project
+    // https://kotlinlang.org/docs/ksp-quickstart.html#make-ide-aware-of-generated-code
+    // https://arrow-kt.io/learn/quickstart/#additional-setup-for-plug-ins - slightly outdated
+    id("com.google.devtools.ksp") version "1.9.21-1.0.15"
 }
 
 group = "com.tamj0rd2"
@@ -18,6 +23,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     api(platform("dev.forkhandles:forkhandles-bom:2.10.2.0"))
     api("dev.forkhandles:values4k")
+    implementation("io.arrow-kt:arrow-optics:1.1.3-alpha.44")
+    ksp("io.arrow-kt:arrow-optics-ksp-plugin:1.1.3-alpha.44")
 
     testImplementation(kotlin("test"))
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.7.2")
@@ -29,6 +36,7 @@ tasks.withType<Test> {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "21"
+    kotlinOptions.freeCompilerArgs = listOf("-Xcontext-receivers")
 }
 
 tasks.register<JavaExec>("generateTypes") {
