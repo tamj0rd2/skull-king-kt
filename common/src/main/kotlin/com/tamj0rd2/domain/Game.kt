@@ -146,7 +146,7 @@ class Game {
         trickNumber += 1
         trick = Trick(players.size)
         phase = TrickTaking
-        recordEvent(GameEvent.TrickStarted(trickNumber))
+        recordEvent(GameEvent.TrickStarted(trickNumber, roundTurnOrder.take(players.size) ))
     }
 
     fun getCardsInHand(playerId: PlayerId): List<CardWithPlayability>? {
