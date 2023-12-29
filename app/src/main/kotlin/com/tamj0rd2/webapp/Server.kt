@@ -20,11 +20,8 @@ fun main() {
 
     val frontend = when {
         System.getenv("SVELTE") == "true" -> Svelte
-        System.getenv("SOLID") == "true" -> Solid
-        System.getenv("VANILLA") == "true" -> Vanilla
         else -> {
-            println("frontend unspecified. falling back to ${Vanilla.name}")
-            Vanilla
+            Svelte.apply { println("frontend unspecified. falling back to ${this.name}") }
         }
     }
 
@@ -52,7 +49,7 @@ object Server {
         automaticGameMasterDelayOverride: Duration? = null,
         acknowledgementTimeoutMs: Long = 300,
         gracefulShutdownTimeout: Duration = 1.seconds,
-        frontend: Frontend = Vanilla,
+        frontend: Frontend = Svelte,
     ): Http4kServer {
         val game = Game()
 

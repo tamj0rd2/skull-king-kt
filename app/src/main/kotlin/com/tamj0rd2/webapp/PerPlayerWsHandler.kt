@@ -1,7 +1,6 @@
 package com.tamj0rd2.webapp
 
 import com.github.michaelbull.result.getOrThrow
-import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.GameEvent
@@ -10,8 +9,6 @@ import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.PlayerGameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.messaging.Message.*
-import com.tamj0rd2.messaging.Notification
-import org.http4k.routing.static
 import org.http4k.websocket.Websocket
 import java.util.*
 import kotlin.concurrent.timerTask
@@ -33,7 +30,6 @@ internal class PerPlayerWsHandler(
     private var logger = playerId.logger(loggingContext)
     private var isConnected = true
     private val answerTracker = AnswerTracker(acknowledgementTimeoutMs)
-    private val messagesToClient = LockedValue<List<Notification>>() // TODO: wtf is this? I can't remember...
 
     init {
         ws.onError { e ->
@@ -80,16 +76,11 @@ internal class PerPlayerWsHandler(
             game.subscribeToGameEvents { events, triggeredBy ->
                 state = state.handle(events)
 
-                val messages = events
-                    .flatMap { it.notifications(game, playerId) }
-                    .ifEmpty { return@subscribeToGameEvents }
-
                 if (triggeredBy == playerId) {
-                    messagesToClient.lockedValue = messages
                     return@subscribeToGameEvents
                 }
 
-                val otwMessage = ToClient(messages, state)
+                val otwMessage = ToClient(state)
                 val nackReason = answerTracker.waitForAnswer(otwMessage.id) {
                     logger.sending(otwMessage)
                     ws.send(messageLens(otwMessage))
@@ -99,97 +90,27 @@ internal class PerPlayerWsHandler(
             }
         }
 
-        messagesToClient.use {
-            val response = runCatching {
-                game.perform(message.command).getOrThrow {
-                    logger.error("$it")
-                    it.reason.asException()
-                }
-            }.fold(
-                onSuccess = {
-                    logger.processedMessage(message)
-                    message.accept(lockedValue.orEmpty(), state)
-                },
-                onFailure = {
-                    logger.error("processing message failed - $message", it)
-                    when (it) {
-                        is GameErrorCodeException -> message.reject(it.errorCode)
-                        else -> message.reject(it.message ?: it::class.simpleName ?: "unknown error")
-                    }
-                }
-            )
-
-            logger.sending(response)
-            ws.send(messageLens(response))
-            logger.sentMessage(response)
-        }
-    }
-}
-
-fun GameEvent.notifications(game: Game, thisPlayerId: PlayerId): List<Notification> =
-    when (this) {
-        is GameEvent.BidPlaced -> listOf(Notification.BidPlaced(playerId))
-        is GameEvent.BiddingCompleted -> listOf(Notification.BiddingCompleted(bids))
-        is GameEvent.CardPlayed -> {
-            val messages = mutableListOf<Notification>(
-                Notification.CardPlayed(
-                    playerId = playerId,
-                    card = card,
-                    nextPlayer = game.currentPlayersTurn
-                ),
-            )
-
-            if (game.currentPlayersTurn == thisPlayerId) {
-                messages.add(Notification.YourTurn(game.getCardsInHand(thisPlayerId)!!))
+        val response = runCatching {
+            game.perform(message.command).getOrThrow {
+                logger.error("$it")
+                it.reason.asException()
             }
-
-            messages
-        }
-
-        // TODO: do something here
-        is GameEvent.CardsDealt -> listOf()
-        is GameEvent.GameCompleted -> listOf(Notification.GameCompleted)
-        is GameEvent.GameStarted -> listOf(Notification.GameStarted(players))
-        is GameEvent.PlayerJoined -> buildList {
-            val waitingForMorePlayers = game.state == GameState.WaitingForMorePlayers
-            if (playerId == thisPlayerId) add(Notification.YouJoined(playerId, game.players, waitingForMorePlayers))
-            else add(Notification.PlayerJoined(playerId, waitingForMorePlayers))
-        }
-
-        is GameEvent.RoundStarted -> listOf(
-            Notification.RoundStarted(
-                game.getCardsInHand(thisPlayerId)!!,
-                roundNumber
-            )
+        }.fold(
+            onSuccess = {
+                logger.processedMessage(message)
+                message.accept(state)
+            },
+            onFailure = {
+                logger.error("processing message failed - $message", it)
+                when (it) {
+                    is GameErrorCodeException -> message.reject(it.errorCode)
+                    else -> message.reject(it.message ?: it::class.simpleName ?: "unknown error")
+                }
+            }
         )
 
-        is GameEvent.TrickCompleted -> {
-            val messages = mutableListOf<Notification>(
-                Notification.TrickCompleted(winner)
-            )
-
-            if (game.trickNumber.value == game.roundNumber.value) {
-                messages += Notification.RoundCompleted(game.winsOfTheRound)
-            }
-
-            messages
-        }
-
-        is GameEvent.TrickStarted -> {
-            val messages = mutableListOf<Notification>(
-                Notification.TrickStarted(
-                    trickNumber,
-                    game.currentPlayersTurn ?: error("currentPlayer is null")
-                )
-            )
-
-            if (game.currentPlayersTurn == thisPlayerId) {
-                messages.add(Notification.YourTurn(game.getCardsInHand(thisPlayerId)!!))
-            }
-
-            messages
-        }
-
-        // TODO; do something here
-        is GameEvent.SuitEstablished -> emptyList()
+        logger.sending(response)
+        ws.send(messageLens(response))
+        logger.sentMessage(response)
     }
+}

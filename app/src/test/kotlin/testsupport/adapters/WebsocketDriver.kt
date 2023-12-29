@@ -2,20 +2,12 @@ package testsupport.adapters
 
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
-import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.CommandError
-import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameErrorCode
-import com.tamj0rd2.domain.GameState
-import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.PlayerGameState
 import com.tamj0rd2.domain.PlayerId
-import com.tamj0rd2.domain.RoundNumber
-import com.tamj0rd2.domain.RoundPhase
-import com.tamj0rd2.domain.TrickNumber
 import com.tamj0rd2.messaging.Message
-import com.tamj0rd2.messaging.Notification
 import com.tamj0rd2.webapp.AnswerTracker
 import com.tamj0rd2.webapp.awaitingAck
 import com.tamj0rd2.webapp.logger
@@ -116,13 +108,6 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
             else -> error("invalid message from server to client: $message")
         }
     }
-}
-
-private fun <T> MutableList<T>.removeFirstIf(predicate: (T) -> Boolean): Boolean {
-    val firstMatchingIndex = indexOfFirst(predicate)
-    if (firstMatchingIndex < 0) return false
-    removeAt(firstMatchingIndex)
-    return true
 }
 
 class Syncer {

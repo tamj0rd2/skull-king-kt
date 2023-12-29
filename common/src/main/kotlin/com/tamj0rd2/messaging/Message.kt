@@ -39,9 +39,9 @@ sealed class Message {
     data class KeepAlive(@Required override val id: MessageId = MessageId.next()) : Message()
 
     @Serializable
-    data class AcceptanceFromServer(override val id: MessageId, val notifications: List<Notification>, val state: PlayerGameState) : Message() {
+    data class AcceptanceFromServer(override val id: MessageId, val state: PlayerGameState) : Message() {
         override fun toString(): String {
-            return "$id - ${notifications.joinToString(", ")}"
+            return "$id"
         }
     }
 
@@ -53,19 +53,17 @@ sealed class Message {
     }
 
     @Serializable
-    data class Rejection(override val id: MessageId, val reason: String) : Message() {
-        constructor(id: MessageId, errorCode: GameErrorCode) : this(id, errorCode.name)
-    }
+    data class Rejection(override val id: MessageId, val reason: String) : Message()
 
     @Serializable
-    data class ToClient(val notifications: List<Notification>, val state: PlayerGameState) : Message() {
+    data class ToClient(val state: PlayerGameState) : Message() {
         @Required
         override val id: MessageId = MessageId.next()
 
         fun accept() = AcceptanceFromClient(id)
 
         override fun toString(): String {
-            return "$id - ${notifications.joinToString(", ")}"
+            return "$id"
         }
     }
 
@@ -74,7 +72,7 @@ sealed class Message {
         @Required
         override val id: MessageId = MessageId.next()
 
-        fun accept(messages: List<Notification>, state: PlayerGameState) = AcceptanceFromServer(id, messages, state)
+        fun accept(state: PlayerGameState) = AcceptanceFromServer(id, state)
 
         override fun toString(): String {
             return "$id - $command"

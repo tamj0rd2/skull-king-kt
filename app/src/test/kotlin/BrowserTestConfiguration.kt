@@ -1,9 +1,6 @@
-
 import com.tamj0rd2.webapp.Frontend
 import com.tamj0rd2.webapp.Server
 import org.eclipse.jetty.client.HttpClient
-import org.junit.jupiter.api.parallel.Execution
-import org.junit.jupiter.api.parallel.ExecutionMode
 import org.openqa.selenium.JavascriptException
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
@@ -13,7 +10,6 @@ import testsupport.ManageGames
 import testsupport.ParticipateInGames
 import testsupport.adapters.BrowserDriver
 import testsupport.adapters.HTTPDriver
-import testsupport.annotations.SkipUnhappyPathTests
 import testsupport.logger
 import java.net.ServerSocket
 import kotlin.time.Duration
@@ -103,7 +99,3 @@ class BrowserTestConfiguration(frontend: Frontend) : TestConfiguration {
 
     override fun manageGames(): ManageGames = ManageGames(HTTPDriver(baseUrl, httpClient))
 }
-
-@SkipUnhappyPathTests
-@Execution(ExecutionMode.SAME_THREAD)
-class BrowserAppTest : AppTestContract(BrowserTestConfiguration(frontend = Frontend.Vanilla))

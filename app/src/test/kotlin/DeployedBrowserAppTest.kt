@@ -1,8 +1,7 @@
-import com.tamj0rd2.webapp.Frontend
-import com.tamj0rd2.webapp.Server
 import org.eclipse.jetty.client.HttpClient
-import org.http4k.metrics.MetricsDefaults.Companion.server
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import org.openqa.selenium.JavascriptException
@@ -17,7 +16,6 @@ import testsupport.logger
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-@Disabled("Disabled while I'm working on improving the backend")
 @SkipWipTests
 @SkipUnhappyPathTests
 @Execution(ExecutionMode.SAME_THREAD)

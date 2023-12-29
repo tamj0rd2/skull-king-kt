@@ -7,7 +7,6 @@ import com.tamj0rd2.domain.PlayerGameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.messaging.Message
-import com.tamj0rd2.messaging.Notification
 import com.tamj0rd2.webapp.CustomJsonSerializer.asA
 import com.tamj0rd2.webapp.CustomJsonSerializer.asCompactJsonString
 import com.tamj0rd2.webapp.CustomJsonSerializer.asJsonObject
@@ -27,27 +26,6 @@ class JsonSerializationTest {
     @Test
     fun `can serialize Bids`() {
         test(Bid.of(1), "1")
-    }
-
-    @Test
-    fun `can serialize and deserialize Notifications`() {
-        test<Notification>(
-            Notification.BiddingCompleted(
-                mapOf(
-                    PlayerId("somePlayer") to Bid.of(1),
-                    PlayerId("someOtherPlayer") to Bid.of(2)
-                )
-            ),
-            // language=JSON
-            """
-            {
-                "type": "com.tamj0rd2.messaging.Notification.BiddingCompleted",
-                "bids": {
-                    "somePlayer": 1,
-                    "someOtherPlayer": 2
-                }
-            }""".trimIndent()
-        )
     }
 
     @Test

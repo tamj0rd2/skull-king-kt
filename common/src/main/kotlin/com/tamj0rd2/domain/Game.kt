@@ -182,11 +182,6 @@ class Game {
         recordEvent(GameEvent.TrickStarted(trickNumber, roundTurnOrder.take(players.size)))
     }
 
-    fun getCardsInHand(playerId: PlayerId): List<CardWithPlayability>? {
-        val hand = hands[playerId]
-        return hand?.map { card -> CardWithPlayability(card, trick.isCardPlayable(card, hand.excluding(card))) }
-    }
-
     private fun dealCards() {
         val deck = Deck.new()
         hands.replaceAll { playerId, _ ->

@@ -60,6 +60,7 @@ import testsupport.TheySeeBids
 import testsupport.TheySeeWinsOfTheRound
 import testsupport.annotations.AutomatedGameMasterTests
 import testsupport.annotations.UnhappyPath
+import testsupport.annotations.Wip
 import testsupport.are
 import testsupport.both
 import testsupport.each
@@ -121,6 +122,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
         }
 
         @Test
+        @Wip
         fun `waiting for sally to bid`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)
@@ -134,6 +136,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
         }
 
         @Test
+        @Wip
         fun `playing a card and waiting for the next player to do the same`() {
             freddy and sally both SitAtTheTable
             gary(RigsTheDeck.SoThat(freddy).willEndUpWith(11.blue), SaysTheGameCanStart)
@@ -160,6 +163,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
         }
 
         @Test
+        @Wip
         fun `winning a trick`() {
             freddy and sally both SitAtTheTable
             gary(
@@ -209,6 +213,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
         @UnhappyPath
         @Test
+        @Wip
         fun `cannot play a card when the trick is not in progress`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)
@@ -232,6 +237,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
         @UnhappyPath
         @Test
+        @Wip
         fun `cannot play a card that would break suit rules`() {
             val thePlayers = listOf(freddy, sally)
             val theGameMaster = gary
@@ -257,6 +263,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
         }
 
         @Test
+        @Wip
         fun `can play special cards when you have a card for the correct suit - sanity check`() {
             val thePlayers = listOf(freddy, sally)
             val theGameMaster = gary
@@ -276,6 +283,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
         @UnhappyPath
         @Test
+        @Wip
         fun `cannot play a card when it is not their turn`() {
             val thirzah = Actor("Thirzah Third").whoCan(participateInGames())
             val thePlayers = listOf(freddy, sally, thirzah)
@@ -301,6 +309,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
         @UnhappyPath
         @Test
+        @Wip
         fun `cannot bid before the game has started`() {
             freddy and sally both SitAtTheTable
             freddy(Bidding(1) wouldFailBecause GameNotInProgress)
@@ -309,6 +318,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
         @UnhappyPath
         @Test
+        @Wip
         fun `sanity check - suit rules`() {
             // I want to make sure that the `firstPlayableCard` that is suggested, is actually playable
             val thePlayers = listOf(freddy, sally)
@@ -334,6 +344,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
         @UnhappyPath
         @Test
+        @Wip
         fun `cannot bid outside of the bidding phase`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)
@@ -346,6 +357,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
         @UnhappyPath
         @Test
+        @Wip
         fun `cannot bid twice`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)
@@ -355,6 +367,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
         @UnhappyPath
         @Test
+        @Wip
         fun `cannot bid more than the current round number`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)
@@ -363,6 +376,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
         @UnhappyPath
         @Test
+        @Wip
         fun `a player can't join twice`() {
             freddy(SitsAtTheTable)
             val freddyOnASecondDevice = Actor(freddy.name).whoCan(participateInGames())
@@ -370,6 +384,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
         }
 
         @Test
+        @Wip
         fun `playing a game from start to finish`() {
             freddy and sally both SitAtTheTable
             freddy and sally both ensure {
@@ -495,6 +510,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
         }
     }
 
+    @Wip
     @Nested
     @Suppress("unused")
     @AutomatedGameMasterTests

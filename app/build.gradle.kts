@@ -55,9 +55,10 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "21"
 
     val frontendProjects = mapOf(
-        ":frontend-vanilla" to "frontend-vanilla",
+        // TODO: pick a frontend and just stick with it...
+        //":frontend-vanilla" to "frontend-vanilla",
         ":frontend-svelte" to "frontend-svelte",
-        ":frontend-solid" to "frontend-solid",
+        //":frontend-solid" to "frontend-solid",
     )
         .onEach { dependsOn("${it.key}:build") }
         // a map of build directory to the folder name I want to appear in app/src/resources
