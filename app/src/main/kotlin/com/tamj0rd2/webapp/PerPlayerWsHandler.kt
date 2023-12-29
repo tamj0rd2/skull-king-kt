@@ -1,5 +1,6 @@
 package com.tamj0rd2.webapp
 
+import com.github.michaelbull.result.getOrThrow
 import com.tamj0rd2.domain.CardWithPlayability
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameErrorCodeException
@@ -93,7 +94,12 @@ internal class PerPlayerWsHandler(
         }
 
         messagesToClient.use {
-            val response = runCatching { game.perform(message.command) }.fold(
+            val response = runCatching {
+                game.perform(message.command).getOrThrow {
+                    logger.error("$it")
+                    it.reason.asException()
+                }
+            }.fold(
                 onSuccess = {
                     logger.processedMessage(message)
                     message.accept(lockedValue.orEmpty())

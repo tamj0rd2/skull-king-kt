@@ -21,6 +21,7 @@ repositories {
 dependencies {
     implementation("dev.adamko.kxstsgen:kxs-ts-gen-core:0.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
     api(platform("dev.forkhandles:forkhandles-bom:2.10.2.0"))
     api("dev.forkhandles:values4k")
     implementation("io.arrow-kt:arrow-optics:1.1.3-alpha.44")

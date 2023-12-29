@@ -1,9 +1,12 @@
 package testsupport.adapters
 
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.CardName
 import com.tamj0rd2.domain.CardWithPlayability
+import com.tamj0rd2.domain.CommandError
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.GameState
@@ -39,7 +42,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    override fun perform(command: PlayerCommand) {
+    override fun perform(command: PlayerCommand): Result<Unit, CommandError> {
         withClue("another command is still in progress") {
             noCommandsAreInProgress shouldBe true
         }
@@ -55,6 +58,8 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 noCommandsAreInProgress shouldBe true
             }
         }
+
+        return Ok(Unit)
     }
 
     private fun joinGame(playerId: PlayerId) = debugException {

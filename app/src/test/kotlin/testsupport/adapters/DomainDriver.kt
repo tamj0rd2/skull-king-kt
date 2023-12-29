@@ -1,8 +1,12 @@
 package testsupport.adapters
 
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.getOrThrow
+import com.tamj0rd2.domain.CommandError
 import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.Game
+import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
@@ -12,14 +16,15 @@ import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.TrickNumber
 import testsupport.ApplicationDriver
 import testsupport.GameMasterDriver
+import testsupport.logger
 
 class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver {
 
     private var playerId = PlayerId.unidentified
 
-    override fun perform(command: PlayerCommand) {
+    override fun perform(command: PlayerCommand): Result<Unit, CommandError> {
         if (command is PlayerCommand.JoinGame) playerId = command.actor
-        game.perform(command)
+        return game.perform(command)
     }
 
     override fun perform(command: GameMasterCommand) {

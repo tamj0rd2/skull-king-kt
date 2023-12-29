@@ -1,6 +1,8 @@
 package testsupport
 
+import com.github.michaelbull.result.Result
 import com.tamj0rd2.domain.CardWithPlayability
+import com.tamj0rd2.domain.CommandError
 import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.DisplayBid
@@ -14,7 +16,7 @@ import com.tamj0rd2.domain.TrickNumber
 interface Ability
 
 interface ApplicationDriver {
-    fun perform(command: PlayerCommand)
+    fun perform(command: PlayerCommand): Result<Unit, CommandError>
 
     val winsOfTheRound: Map<PlayerId, Int>
     val trickWinner: PlayerId?

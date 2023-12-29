@@ -1,5 +1,6 @@
 package testsupport
 
+import com.github.michaelbull.result.getOrThrow
 import com.tamj0rd2.domain.Bid
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.PlayerCommand
@@ -9,9 +10,16 @@ class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver 
 
 val Play = Plays
 val Playing = Plays
+
+private fun Actor.performPlayerCommand(command: PlayerCommand) =
+    use<ParticipateInGames>().perform(command).getOrThrow {
+        logger.warn("$it")
+        it.reason.asException()
+    }
+
 object Plays {
     operator fun invoke(card: Card) = Activity("play ${card.name}") {actor ->
-        actor.use<ParticipateInGames>().perform(PlayerCommand.PlayCard(actor.playerId, card.name))
+        actor.performPlayerCommand(PlayerCommand.PlayCard(actor.playerId, card.name))
     }
 
     val theirFirstPlayableCard = Activity("play their first playable card") { actor ->
@@ -23,13 +31,13 @@ object Plays {
 }
 
 fun Bids(bid: Int) = Activity("bid $bid") { actor ->
-    actor.use<ParticipateInGames>().perform(PlayerCommand.PlaceBid(actor.playerId, Bid.of(bid)))
+    actor.performPlayerCommand(PlayerCommand.PlaceBid(actor.playerId, Bid.of(bid)))
 }
 fun Bid(bid: Int) = Bids(bid)
 fun Bidding(bid: Int) = Bids(bid)
 
 val SitsAtTheTable = Activity("join the game") { actor ->
-    actor.use<ParticipateInGames>().perform(PlayerCommand.JoinGame(actor.playerId))
+    actor.performPlayerCommand(PlayerCommand.JoinGame(actor.playerId))
 }
 val SitAtTheTable = SitsAtTheTable
 val SittingAtTheTable = SitsAtTheTable

@@ -1,5 +1,9 @@
 package com.tamj0rd2.domain
 
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.andThen
 import com.tamj0rd2.domain.GameErrorCode.*
 import com.tamj0rd2.domain.RoundPhase.*
 import kotlinx.serialization.Serializable
@@ -44,14 +48,14 @@ class Game {
         this.eventListeners += listener
     }
 
-    fun perform(command: GameMasterCommand) = when(command) {
+    fun perform(command: GameMasterCommand) = when (command) {
         is GameMasterCommand.RigDeck -> rigDeck(command.playerId, command.cards)
         is GameMasterCommand.StartGame -> start()
         is GameMasterCommand.StartNextRound -> startNextRound()
         is GameMasterCommand.StartNextTrick -> startNextTrick()
     }
 
-    fun perform(command: PlayerCommand) = when(command) {
+    fun perform(command: PlayerCommand): Result<Unit, CommandError> = when (command) {
         is PlayerCommand.JoinGame -> addPlayer(command.actor)
         is PlayerCommand.PlaceBid -> bid(command.actor, command.bid)
         is PlayerCommand.PlayCard -> playCard(command.actor, command.cardName)
@@ -63,6 +67,8 @@ class Game {
         _players += playerId
         if (!waitingForMorePlayers) state = GameState.WaitingToStart
         recordEvent(GameEvent.PlayerJoined(playerId))
+
+        Ok(Unit)
     }
 
     private fun start() = gameMasterCommand {
@@ -90,6 +96,8 @@ class Game {
             this.phase = BiddingCompleted
             recordEvent(GameEvent.BiddingCompleted(_bids.asCompleted()))
         }
+
+        Ok(Unit)
     }
 
     private fun playCard(playerId: PlayerId, cardName: CardName) = playerCommand(playerId) {
@@ -103,7 +111,15 @@ class Game {
         val card = hand.find { it.name == cardName }
         requireNotNull(card) { "card $cardName not in $playerId's hand" }
 
-        if (!trick.isCardPlayable(card, hand.excluding(card))) PlayingCardWouldBreakSuitRules.throwException()
+        if (!trick.isCardPlayable(card, hand.excluding(card))) {
+            return@playerCommand Err(CommandError.FailedToPlayCard(
+                playerId = playerId,
+                card = card,
+                reason = PlayingCardWouldBreakSuitRules,
+                trick = currentTrick,
+                hand = hand
+            ))
+        }
 
         hand.remove(card)
         trick.add(PlayedCard(playerId, card))
@@ -122,6 +138,8 @@ class Game {
                 recordEvent(GameEvent.GameCompleted)
             }
         }
+
+        Ok(Unit)
     }
 
     private fun rigDeck(playerId: PlayerId, cards: List<Card>) = gameMasterCommand {
@@ -146,7 +164,7 @@ class Game {
         trickNumber += 1
         trick = Trick(players.size)
         phase = TrickTaking
-        recordEvent(GameEvent.TrickStarted(trickNumber, roundTurnOrder.take(players.size) ))
+        recordEvent(GameEvent.TrickStarted(trickNumber, roundTurnOrder.take(players.size)))
     }
 
     fun getCardsInHand(playerId: PlayerId): List<CardWithPlayability>? {
@@ -164,15 +182,19 @@ class Game {
 
     private val eventListeners = mutableListOf<GameEventListener>()
 
-    private fun gameMasterCommand(block: () -> Unit) = command(null, block)
-    private fun playerCommand(playerId: PlayerId, block: () -> Unit) = command(playerId, block)
+    private fun gameMasterCommand(block: () -> Unit) = command(null) { block(); Ok(Unit) }
+    private fun playerCommand(playerId: PlayerId, block: () -> Result<Unit, CommandError>): Result<Unit, CommandError> {
+        return command(playerId, block)
+    }
 
-    private fun command(triggeredBy: PlayerId?, block: () -> Unit) {
-        block()
-        val events = eventsBuffer.toList()
-        eventsBuffer.clear()
-        _allEventsSoFar.addAll(events)
-        eventListeners.forEach { listener -> listener.handle(events, triggeredBy) }
+    private fun command(triggeredBy: PlayerId?, block: () -> Result<Unit, CommandError>): Result<Unit, CommandError> {
+        return block().andThen {
+            val events = eventsBuffer.toList()
+            eventsBuffer.clear()
+            _allEventsSoFar.addAll(events)
+            eventListeners.forEach { listener -> listener.handle(events, triggeredBy) }
+            Ok(Unit)
+        }
     }
 
     private val eventsBuffer = mutableListOf<GameEvent>()

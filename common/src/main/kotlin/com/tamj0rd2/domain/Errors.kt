@@ -1,5 +1,17 @@
 package com.tamj0rd2.domain
 
+sealed class CommandError {
+    abstract val reason: GameErrorCode
+
+    data class FailedToPlayCard(
+        val playerId: PlayerId,
+        val card: Card,
+        override val reason: GameErrorCode,
+        val trick: List<PlayedCard>,
+        val hand: List<Card>,
+    ) : CommandError()
+}
+
 enum class GameErrorCode {
     PlayerWithSameNameAlreadyInGame,
     GameNotInProgress,
@@ -11,11 +23,13 @@ enum class GameErrorCode {
     BidLessThan0OrGreaterThanRoundNumber,
     ;
 
-    fun throwException(): Nothing = throw GameErrorCodeException(this)
+    fun throwException(): Nothing = throw asException()
+    fun asException(): GameErrorCodeException = GameErrorCodeException(this)
 
     companion object {
-        private val mapper = values().associateBy { it.name }
-        fun fromString(name: String): GameErrorCode = mapper[name] ?: throw IllegalArgumentException("No GameErrorCode with name '$name'")
+        private val mapper = entries.associateBy { it.name }
+        fun fromString(name: String): GameErrorCode =
+            mapper[name] ?: throw IllegalArgumentException("No GameErrorCode with name '$name'")
     }
 }
 

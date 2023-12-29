@@ -6,6 +6,7 @@ import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.DisplayBid.*
 import com.tamj0rd2.domain.GameErrorCode
+import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.GameState.InProgress
 import com.tamj0rd2.domain.PlayedCard
@@ -13,8 +14,10 @@ import com.tamj0rd2.domain.RoundNumber
 import com.tamj0rd2.domain.RoundPhase
 import com.tamj0rd2.domain.RoundPhase.*
 import com.tamj0rd2.domain.TrickNumber
+import com.tamj0rd2.domain.black
 import com.tamj0rd2.domain.blue
 import com.tamj0rd2.domain.red
+import io.kotest.assertions.throwables.shouldThrow
 import org.junit.jupiter.api.Nested
 import testsupport.Actor
 import testsupport.Bid
@@ -284,6 +287,35 @@ abstract class AppTestContract(private val c: TestConfiguration) : Ensurer by en
             freddy and sally both SitAtTheTable
             freddy(Bidding(1) wouldFailBecause GameErrorCode.GameNotInProgress)
             freddy and sally both ensure(TheGameState, Is(GameState.WaitingToStart))
+        }
+
+        @Test
+        @Wip
+        fun `sanity check - suit rules`() {
+            // I want to make sure that the `firstPlayableCard` that is suggested, is actually playable
+            val thePlayers = listOf(freddy, sally)
+            playUpTo(
+                endOfRound = RoundNumber.of(1),
+                theGameMaster = gary,
+                thePlayers = thePlayers
+            )
+
+            /*
+             * Cards already played: [Red-10 played by freddy_first]
+             * Card attempting to be played by sally_second: Black-8
+             * hands: {freddy_first=[mermaid], sally_second=[black-8, red-12]}
+             */
+
+            gary(
+                RigsTheDeck.SoThat(freddy).willEndUpWith(10.red, Card.SpecialCard.mermaid),
+                RigsTheDeck.SoThat(sally).willEndUpWith(8.black, 12.red),
+                SaysTheRoundCanStart
+            )
+
+            thePlayers each Bid(2)
+            gary(SaysTheTrickCanStart)
+            freddy(Plays(10.red))
+            sally(Playing(8.black) wouldFailBecause GameErrorCode.PlayingCardWouldBreakSuitRules)
         }
 
         @UnhappyPathTest

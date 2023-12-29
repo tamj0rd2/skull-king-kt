@@ -1,6 +1,9 @@
 package testsupport.adapters
 
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
 import com.tamj0rd2.domain.CardWithPlayability
+import com.tamj0rd2.domain.CommandError
 import com.tamj0rd2.domain.PlayerCommand
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.GameErrorCode
@@ -102,7 +105,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
         syncer.waitUntil(ackTimeoutMs) { connected }
     }
 
-    override fun perform(command: PlayerCommand) {
+    override fun perform(command: PlayerCommand): Result<Unit, CommandError> {
         val message = Message.ToServer(command)
         val nackReason = answerTracker.waitForAnswer(message.id) {
             logger.sending(message)
@@ -112,7 +115,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
 
         if (nackReason == null) {
             logger.info("success: $command")
-            return
+            return Ok(Unit)
         }
 
         GameErrorCode.fromString(nackReason).throwException()

@@ -1,7 +1,11 @@
 
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.getOrThrow
 import com.tamj0rd2.domain.CardWithPlayability
+import com.tamj0rd2.domain.CommandError
 import com.tamj0rd2.domain.DisplayBid
 import com.tamj0rd2.domain.Game
+import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayedCard
 import com.tamj0rd2.domain.PlayerCommand
@@ -19,6 +23,7 @@ import testsupport.adapters.DomainDriver
 import testsupport.annotations.DoesNotSupportAutomatedGameMaster
 import testsupport.annotations.SkipUnhappyPathTests
 import testsupport.annotations.SkipWipTests
+import testsupport.logger
 import kotlin.time.Duration
 
 @SkipWipTests
@@ -44,7 +49,7 @@ class ExperimentalInMemoryTestConfiguration : TestConfiguration {
 private class ExperimentalDriver(private val game: Game) : ApplicationDriver {
     private lateinit var playerGameState: PlayerGameState
 
-    override fun perform(command: PlayerCommand) {
+    override fun perform(command: PlayerCommand): Result<Unit, CommandError> {
         if (command is PlayerCommand.JoinGame && !this::playerGameState.isInitialized) {
             playerGameState = PlayerGameState.ofPlayer(command.actor, game.allEventsSoFar)
             game.subscribeToGameEvents { events, _ -> playerGameState = playerGameState.handle(events) }

@@ -38,7 +38,7 @@ data class PlayerGameState(
 
             val updatedTrick = trick + event.card.playedBy(event.playerId)
             PlayerGameState.trick set updatedTrick
-            PlayerGameState.nullableCurrentPlayer set turnOrder[updatedTrick.size]
+            PlayerGameState.nullableCurrentPlayer set turnOrder.getOrNull(updatedTrick.size)
         }
 
         is GameEvent.CardsDealt -> copy {
