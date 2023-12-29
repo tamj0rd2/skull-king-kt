@@ -122,7 +122,6 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
         }
 
         @Test
-        @Wip
         fun `waiting for sally to bid`() {
             freddy and sally both SitAtTheTable
             gary(SaysTheGameCanStart)

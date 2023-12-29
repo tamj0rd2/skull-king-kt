@@ -223,19 +223,16 @@ private fun <E> List<E>.excluding(element: E): List<E> {
 }
 
 @Serializable
-enum class GameState(val displayValue: String) {
-    WaitingForMorePlayers("Waiting for more players"),
-    WaitingToStart("Waiting to start"),
-    InProgress("In progress"),
-    Complete("Complete"),
+enum class GameState() {
+    WaitingForMorePlayers,
+    WaitingToStart,
+    InProgress,
+    Complete,
     ;
-
-    override fun toString(): String = displayValue
 
     companion object {
         private val mapperByName = entries.associateBy { it.name }
-        private val mapperByDisplayValue = entries.associateBy { it.displayValue }
-        fun from(state: String) = mapperByName[state] ?: mapperByDisplayValue[state] ?: error("unknown state $state")
+        fun from(state: String) = mapperByName[state] ?: error("unknown state $state")
     }
 }
 
@@ -312,4 +309,14 @@ sealed class DisplayBid {
 
     @Serializable
     data class Placed(val bid: Bid) : DisplayBid()
+
+    companion object {
+        fun parse(text: String): DisplayBid {
+            return when (text) {
+                "None" -> None
+                "Hidden" -> Hidden
+                else -> Placed(Bid.parse(text))
+            }
+        }
+    }
 }
