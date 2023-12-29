@@ -5,7 +5,6 @@ import org.junit.jupiter.api.parallel.ExecutionMode
 import testsupport.annotations.SkipUnhappyPathTests
 import testsupport.annotations.SkipWipTests
 
-@Disabled("Disabled while I'm working on the backend")
 @SkipWipTests
 @SkipUnhappyPathTests
 @Execution(ExecutionMode.SAME_THREAD)

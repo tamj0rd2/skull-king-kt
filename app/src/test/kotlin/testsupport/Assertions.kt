@@ -104,7 +104,7 @@ fun ensurer(): Ensurer {
                         // this is some voodoo magic right here
                         // I think the way it works is that `with` makes all the extensions available, therefore we're
                         // now able to apply the assert extension to the answer. madness.
-                        with(assertion) { "All data: $answer".asClue { answer.assert() } }
+                        with(assertion) { "Data: $answer".asClue { answer.assert() } }
                     }
                     break
                 } catch (e: AssertionError) {

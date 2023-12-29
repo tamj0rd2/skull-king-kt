@@ -196,9 +196,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     val gameState: GameState?
         get() = debugException {
-            driver.findElementOrNull(By.id("gameState"))
-                ?.getAttributeOrNull("data-state")
-                ?.let(GameState::from)
+            driver.findElementOrNull(By.id("gameState"))?.text?.let(GameState::from)
         }
 
     val roundPhase: RoundPhase?

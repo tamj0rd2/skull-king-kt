@@ -114,21 +114,21 @@ class Game {
 
         if (card == null) {
             return@playerCommand Err(CommandError.FailedToPlayCard(
-                playerId = playerId,
-                cardName = cardName,
-                reason = CardNotInHand,
-                trick = currentTrick,
-                hand = hand
+                    playerId = playerId,
+                    cardName = cardName,
+                    reason = CardNotInHand,
+                    trick = currentTrick,
+                    hand = hand
             ))
         }
 
         if (!trick.isCardPlayable(card, hand.excluding(card))) {
             return@playerCommand Err(CommandError.FailedToPlayCard(
-                playerId = playerId,
-                cardName = cardName,
-                reason = PlayingCardWouldBreakSuitRules,
-                trick = currentTrick,
-                hand = hand
+                    playerId = playerId,
+                    cardName = cardName,
+                    reason = PlayingCardWouldBreakSuitRules,
+                    trick = currentTrick,
+                    hand = hand
             ))
         }
 
@@ -223,15 +223,19 @@ private fun <E> List<E>.excluding(element: E): List<E> {
 }
 
 @Serializable
-enum class GameState {
-    WaitingForMorePlayers,
-    WaitingToStart,
-    InProgress,
-    Complete;
+enum class GameState(val displayValue: String) {
+    WaitingForMorePlayers("Waiting for more players"),
+    WaitingToStart("Waiting to start"),
+    InProgress("In progress"),
+    Complete("Complete"),
+    ;
+
+    override fun toString(): String = displayValue
 
     companion object {
-        private val mapper = entries.associateBy { it.name }
-        fun from(state: String) = mapper[state] ?: error("unknown state $state")
+        private val mapperByName = entries.associateBy { it.name }
+        private val mapperByDisplayValue = entries.associateBy { it.displayValue }
+        fun from(state: String) = mapperByName[state] ?: mapperByDisplayValue[state] ?: error("unknown state $state")
     }
 }
 

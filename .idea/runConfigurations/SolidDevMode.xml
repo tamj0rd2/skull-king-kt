@@ -1,7 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="SolidDevMode" type="CompoundRunConfigurationType">
-    <toRun name="SolidVite" type="GradleRunConfiguration" />
-    <toRun name="SolidServerDev" type="JetRunConfigurationType" />
-    <method v="2" />
-  </configuration>
-</component>
