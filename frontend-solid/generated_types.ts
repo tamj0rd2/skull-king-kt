@@ -219,6 +219,7 @@ export namespace Message {
     type: Message.Type.AcceptanceFromServer
     id: TamId
     notifications: Notification[]
+    state: PlayerGameState
   }
   
   export interface KeepAlive {
@@ -235,6 +236,7 @@ export namespace Message {
   export interface ToClient {
     type: Message.Type.ToClient
     notifications: Notification[]
+    state: PlayerGameState
     id: TamId
   }
   
@@ -246,3 +248,51 @@ export namespace Message {
 }
 
 export type TamId = string
+
+export interface PlayerGameState {
+  playerId: PlayerId
+  winsOfTheRound?: { [key: PlayerId]: number }
+  trickWinner?: PlayerId | null
+  currentPlayer?: PlayerId | null
+  trickNumber?: TrickNumber
+  roundNumber?: RoundNumber
+  trick?: PlayedCard[]
+  roundPhase?: RoundPhase | null
+  gameState?: GameState | null
+  playersInRoom?: PlayerId[]
+  hand?: CardWithPlayability[]
+  bids?: { [key: PlayerId]: DisplayBid }
+  turnOrder?: PlayerId[]
+  currentSuit?: Suit | null
+}
+
+export interface PlayedCard {
+  playerId: PlayerId
+  card: Card
+}
+
+export type DisplayBid =
+  | DisplayBid.Hidden
+  | DisplayBid.None
+  | DisplayBid.Placed
+
+export namespace DisplayBid {
+  export enum Type {
+    Hidden = "com.tamj0rd2.domain.DisplayBid.Hidden",
+    None = "com.tamj0rd2.domain.DisplayBid.None",
+    Placed = "com.tamj0rd2.domain.DisplayBid.Placed",
+  }
+  
+  export interface Hidden {
+    type: DisplayBid.Type.Hidden
+  }
+  
+  export interface None {
+    type: DisplayBid.Type.None
+  }
+  
+  export interface Placed {
+    type: DisplayBid.Type.Placed
+    bid: Bid
+  }
+}

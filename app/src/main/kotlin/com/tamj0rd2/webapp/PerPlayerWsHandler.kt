@@ -7,9 +7,11 @@ import com.tamj0rd2.domain.GameErrorCodeException
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameState
 import com.tamj0rd2.domain.PlayerCommand
+import com.tamj0rd2.domain.PlayerGameState
 import com.tamj0rd2.domain.PlayerId
 import com.tamj0rd2.messaging.Message.*
 import com.tamj0rd2.messaging.Notification
+import org.http4k.routing.static
 import org.http4k.websocket.Websocket
 import java.util.*
 import kotlin.concurrent.timerTask
@@ -27,6 +29,7 @@ internal class PerPlayerWsHandler(
             field = value
             logger = field.logger(loggingContext)
         }
+    private lateinit var state: PlayerGameState
     private var logger = playerId.logger(loggingContext)
     private var isConnected = true
     private val answerTracker = AnswerTracker(acknowledgementTimeoutMs)
@@ -72,10 +75,13 @@ internal class PerPlayerWsHandler(
     private fun handleMessageToServer(message: ToServer) {
         if (message.command is PlayerCommand.JoinGame) {
             playerId = message.command.actor
+            state = PlayerGameState.ofPlayer(playerId, game.allEventsSoFar)
 
             game.subscribeToGameEvents { events, triggeredBy ->
+                state = state.handle(events)
+
                 val messages = events
-                    .flatMap { it.asNotifications(PlayerGameState(game, playerId)) }
+                    .flatMap { it.notifications(game, playerId) }
                     .ifEmpty { return@subscribeToGameEvents }
 
                 if (triggeredBy == playerId) {
@@ -83,7 +89,7 @@ internal class PerPlayerWsHandler(
                     return@subscribeToGameEvents
                 }
 
-                val otwMessage = ToClient(messages)
+                val otwMessage = ToClient(messages, state)
                 val nackReason = answerTracker.waitForAnswer(otwMessage.id) {
                     logger.sending(otwMessage)
                     ws.send(messageLens(otwMessage))
@@ -102,7 +108,7 @@ internal class PerPlayerWsHandler(
             }.fold(
                 onSuccess = {
                     logger.processedMessage(message)
-                    message.accept(lockedValue.orEmpty())
+                    message.accept(lockedValue.orEmpty(), state)
                 },
                 onFailure = {
                     logger.error("processing message failed - $message", it)
@@ -120,92 +126,70 @@ internal class PerPlayerWsHandler(
     }
 }
 
-// NOTE: this was my attempt to decrease the amount of things that directly depend on the Game class
-private data class PlayerGameState(
-    val myPlayerId: PlayerId,
-    val currentPlayersTurn: PlayerId?,
-    val isMyTurn: Boolean,
-    val amWaitingForMorePlayers: Boolean,
-    val allPlayers: List<PlayerId>,
-    val isLastTrick: Boolean,
-    val winsOfTheRound: Map<PlayerId, Int>,
-    private val cards: List<CardWithPlayability>?,
-) {
-    constructor(game: Game, playerId: PlayerId) : this(
-        myPlayerId = playerId,
-        currentPlayersTurn = game.currentPlayersTurn,
-        isMyTurn = game.currentPlayersTurn == playerId,
-        amWaitingForMorePlayers = game.state == GameState.WaitingForMorePlayers,
-        allPlayers = game.players,
-        isLastTrick = game.trickNumber.value == game.roundNumber.value,
-        winsOfTheRound = game.winsOfTheRound,
-        cards = game.getCardsInHand(playerId),
-    )
-
-    val cardsInMyHand get(): List<CardWithPlayability> {
-        val cards = cards
-        requireNotNull(cards) { "$myPlayerId has no hand at all. Is the game in the correct state?" }
-        return cards
-    }
-}
-
-private fun GameEvent.asNotifications(state: PlayerGameState): List<Notification> =
+fun GameEvent.notifications(game: Game, thisPlayerId: PlayerId): List<Notification> =
     when (this) {
         is GameEvent.BidPlaced -> listOf(Notification.BidPlaced(playerId))
         is GameEvent.BiddingCompleted -> listOf(Notification.BiddingCompleted(bids))
-        is GameEvent.CardPlayed -> buildList {
-            add(
+        is GameEvent.CardPlayed -> {
+            val messages = mutableListOf<Notification>(
                 Notification.CardPlayed(
                     playerId = playerId,
                     card = card,
-                    nextPlayer = state.currentPlayersTurn
-                )
+                    nextPlayer = game.currentPlayersTurn
+                ),
             )
 
-            if (state.isMyTurn) add(Notification.YourTurn(state.cardsInMyHand))
+            if (game.currentPlayersTurn == thisPlayerId) {
+                messages.add(Notification.YourTurn(game.getCardsInHand(thisPlayerId)!!))
+            }
+
+            messages
         }
 
-        is GameEvent.CardsDealt -> {
-            // TODO: use the cards dealt event and then remove the other places where the same information is sent
-            emptyList()
-        }
+        // TODO: do something here
+        is GameEvent.CardsDealt -> listOf()
         is GameEvent.GameCompleted -> listOf(Notification.GameCompleted)
         is GameEvent.GameStarted -> listOf(Notification.GameStarted(players))
         is GameEvent.PlayerJoined -> buildList {
-            if (playerId == state.myPlayerId) add(
-                Notification.YouJoined(
-                    playerId,
-                    state.allPlayers,
-                    state.amWaitingForMorePlayers
-                )
-            )
-            else add(Notification.PlayerJoined(playerId, state.amWaitingForMorePlayers))
+            val waitingForMorePlayers = game.state == GameState.WaitingForMorePlayers
+            if (playerId == thisPlayerId) add(Notification.YouJoined(playerId, game.players, waitingForMorePlayers))
+            else add(Notification.PlayerJoined(playerId, waitingForMorePlayers))
         }
 
         is GameEvent.RoundStarted -> listOf(
-            Notification.RoundStarted(state.cardsInMyHand, roundNumber)
+            Notification.RoundStarted(
+                game.getCardsInHand(thisPlayerId)!!,
+                roundNumber
+            )
         )
 
-        is GameEvent.TrickCompleted -> buildList {
-            add(Notification.TrickCompleted(winner))
+        is GameEvent.TrickCompleted -> {
+            val messages = mutableListOf<Notification>(
+                Notification.TrickCompleted(winner)
+            )
 
-            if (state.isLastTrick) add(Notification.RoundCompleted(state.winsOfTheRound))
+            if (game.trickNumber.value == game.roundNumber.value) {
+                messages += Notification.RoundCompleted(game.winsOfTheRound)
+            }
+
+            messages
         }
 
-        is GameEvent.TrickStarted -> buildList {
-            add(
+        is GameEvent.TrickStarted -> {
+            val messages = mutableListOf<Notification>(
                 Notification.TrickStarted(
-                    trickNumber = trickNumber,
-                    firstPlayer = state.currentPlayersTurn ?: error("currentPlayer is null")
+                    trickNumber,
+                    game.currentPlayersTurn ?: error("currentPlayer is null")
                 )
             )
 
-            if (state.isMyTurn) add(Notification.YourTurn(state.cardsInMyHand))
+            if (game.currentPlayersTurn == thisPlayerId) {
+                messages.add(Notification.YourTurn(game.getCardsInHand(thisPlayerId)!!))
+            }
+
+            messages
         }
 
-        is GameEvent.SuitEstablished -> {
-            // TODO: do something with this in the future
-            emptyList()
-        }
+        // TODO; do something here
+        is GameEvent.SuitEstablished -> emptyList()
     }
-

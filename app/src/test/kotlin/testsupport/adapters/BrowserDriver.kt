@@ -143,7 +143,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     val winsOfTheRound: Map<PlayerId, Int>
         get() = debugException {
-            driver.findElement(By.id("wins"))
+            (driver.findElementOrNull(By.id("wins")) ?: return@debugException emptyMap())
                 .findElements(By.tagName("li"))
                 .associate {
                     val playerId = it.getAttribute("data-playerId").let(::PlayerId)
@@ -154,42 +154,42 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     val trickWinner: PlayerId?
         get() = debugException {
-            driver.findElement(By.id("trickWinner")).getAttributeOrNull("data-playerId")?.let(::PlayerId)
+            driver.findElementOrNull(By.id("trickWinner"))?.getAttributeOrNull("data-playerId")?.let(::PlayerId)
         }
 
     val trickNumber: TrickNumber
         get() = debugException {
-            driver.findElement(By.id("trickNumber"))
-                .getAttributeOrNull("data-trickNumber")
+            driver.findElementOrNull(By.id("trickNumber"))
+                ?.getAttributeOrNull("data-trickNumber")
                 ?.let(TrickNumber::parse)
                 ?: TrickNumber.None
         }
 
     val roundNumber: RoundNumber
         get() = debugException {
-            driver.findElement(By.id("roundNumber"))
-                .getAttributeOrNull("data-roundNumber")
+            driver.findElementOrNull(By.id("roundNumber"))
+                ?.getAttributeOrNull("data-roundNumber")
                 ?.let(RoundNumber::parse)
                 ?: RoundNumber.None
         }
 
     val playersInRoom: List<PlayerId>
         get() = debugException {
-            driver.findElement(By.id("players"))
+            (driver.findElementOrNull(By.id("players")) ?: return@debugException emptyList())
                 .findElements(By.tagName("li"))
                 .mapNotNull { PlayerId(it.text) }
         }
 
     val hand: List<CardWithPlayability>
         get() = debugException {
-            driver.findElement(By.id("hand"))
+            (driver.findElementOrNull(By.id("hand")) ?: return@debugException emptyList())
                 .findElements(By.tagName("li"))
                 .map { it.toCardWithPlayability() }
         }
 
     val trick: List<PlayedCard>
         get() = debugException {
-            driver.findElement(By.id("trick"))
+            (driver.findElementOrNull(By.id("trick")) ?: return@debugException emptyList())
                 .findElements(By.tagName("li"))
                 .map { it.toCard().playedBy(PlayerId(it.getAttribute("player"))) }
         }
@@ -210,10 +210,9 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
 
     val bids: Map<PlayerId, DisplayBid>
         get() = debugException {
-            driver.findElement(By.id("bids"))
+            (driver.findElementOrNull(By.id("bids")) ?: return@debugException emptyMap())
                 .findElements(By.tagName("li"))
                 .associate {
-                    println("bid li: ${it.getAttribute("outerHTML")}")
                     val (name, bid) = it.text.split(":")
                         .apply { if (size < 2) return@associate PlayerId(this[0]) to DisplayBid.None }
                     val playerId = PlayerId(name)
