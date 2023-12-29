@@ -202,5 +202,10 @@ private fun GameEvent.asNotifications(state: PlayerGameState): List<Notification
 
             if (state.isMyTurn) add(Notification.YourTurn(state.cardsInMyHand))
         }
+
+        is GameEvent.SuitEstablished -> {
+            // TODO: do something with this in the future
+            emptyList()
+        }
     }
 

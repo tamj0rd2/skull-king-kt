@@ -72,6 +72,8 @@ data class PlayerGameState(
             PlayerGameState.currentPlayer set event.turnOrder.first()
             PlayerGameState.turnOrder set event.turnOrder
         }
+
+        is GameEvent.SuitEstablished -> TODO()
     }
 
     fun handle(events: List<GameEvent>): PlayerGameState =

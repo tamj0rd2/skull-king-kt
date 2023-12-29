@@ -4,6 +4,7 @@ import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.andThen
+import com.tamj0rd2.domain.Card.NumberedCard
 import com.tamj0rd2.domain.GameErrorCode.*
 import com.tamj0rd2.domain.RoundPhase.*
 import kotlinx.serialization.Serializable
@@ -107,6 +108,7 @@ class Game {
             else -> null
         }?.throwException()
 
+        val suitBeforePlayingCard = trick.suit
         val hand = hands[playerId] ?: error("player $playerId somehow doesn't have a hand")
         val card = hand.find { it.name == cardName }
         requireNotNull(card) { "card $cardName not in $playerId's hand" }
@@ -126,6 +128,10 @@ class Game {
 
         roundTurnOrder.removeFirst()
         recordEvent(GameEvent.CardPlayed(playerId, card))
+
+        if (suitBeforePlayingCard == null && card is NumberedCard) {
+            recordEvent(GameEvent.SuitEstablished(card.suit))
+        }
 
         if (trick.isComplete) {
             phase = TrickCompleted

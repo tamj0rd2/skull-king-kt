@@ -11,7 +11,9 @@ class Trick(private val size: Int) {
 
     private val _playedCards = mutableListOf<PlayedCard>()
 
-    private var suit: Suit? = null
+    var suit: Suit? = null
+        private set
+
     private val specialsPlayed = mutableSetOf<SpecialSuit>()
     private val hasSkullKing get() = specialsPlayed.contains(SkullKing)
     private val hasMermaid get() = specialsPlayed.contains(Mermaid)
