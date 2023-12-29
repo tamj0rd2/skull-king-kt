@@ -23,7 +23,7 @@ data class PlayerGameState(
 ) {
     fun handle(event: GameEvent): PlayerGameState = when (event) {
         is GameEvent.BidPlaced -> copy {
-            PlayerGameState.bids transform { bids -> bids + (event.playerId to DisplayBid.Hidden) }
+            PlayerGameState.bids set bids + (event.playerId to DisplayBid.Hidden)
         }
 
         is GameEvent.BiddingCompleted -> copy {
@@ -32,17 +32,13 @@ data class PlayerGameState(
 
         is GameEvent.CardPlayed -> copy {
             if (event.playerId == playerId) {
-                PlayerGameState.hand transform { cards ->
-                    val cardToRemoveFromHand = cards.first { it.card == event.card }
-                    cards.toMutableList().apply { remove(cardToRemoveFromHand) }
-                }
+                val cardToRemoveFromHand = hand.first { it.card == event.card }
+                PlayerGameState.hand set hand.toMutableList().apply { remove(cardToRemoveFromHand) }
             }
 
-            PlayerGameState.trick transform { it + event.card.playedBy(event.playerId) }
-
-            val newTurnOrder = turnOrder.drop(1)
-            PlayerGameState.turnOrder set newTurnOrder
-            PlayerGameState.nullableCurrentPlayer set newTurnOrder.firstOrNull()
+            val updatedTrick = trick + event.card.playedBy(event.playerId)
+            PlayerGameState.trick set updatedTrick
+            PlayerGameState.nullableCurrentPlayer set turnOrder[updatedTrick.size]
         }
 
         is GameEvent.CardsDealt -> copy {
@@ -61,7 +57,7 @@ data class PlayerGameState(
         }
 
         is GameEvent.RoundStarted -> copy {
-            PlayerGameState.roundNumber transform { it + 1 }
+            PlayerGameState.roundNumber set roundNumber + 1
             PlayerGameState.trickNumber set TrickNumber.None
             PlayerGameState.bids set playersInRoom.associateWith { DisplayBid.None }
             PlayerGameState.roundPhase set RoundPhase.Bidding
@@ -70,7 +66,7 @@ data class PlayerGameState(
 
         is GameEvent.TrickCompleted -> TODO()
         is GameEvent.TrickStarted -> copy {
-            PlayerGameState.trickNumber transform { it + 1 }
+            PlayerGameState.trickNumber set trickNumber + 1
             PlayerGameState.trick set emptyList()
             PlayerGameState.roundPhase set RoundPhase.TrickTaking
             PlayerGameState.currentPlayer set event.turnOrder.first()
