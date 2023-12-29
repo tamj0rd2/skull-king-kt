@@ -45,7 +45,6 @@ val HerHand = TheirHand
 
 val TheirFirstCard = Question.about("the first card in their hand") { actor ->
     val hand = actor.use<ParticipateInGames>().hand
-    logger.warn("$actor's hand $hand")
     hand.first().card
 }
 

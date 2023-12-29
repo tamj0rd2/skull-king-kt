@@ -53,7 +53,9 @@ data class PlayerGameState(
             PlayerGameState.hand set hand.map(Card::playable)
         }
 
-        is GameEvent.GameCompleted -> TODO()
+        is GameEvent.GameCompleted -> copy {
+            PlayerGameState.gameState set GameState.Complete
+        }
         is GameEvent.GameStarted -> copy {
             PlayerGameState.gameState set GameState.InProgress
         }
