@@ -21,7 +21,7 @@ data class ActualGameState(
     val hands: Map<PlayerId, List<Card>>,
     val riggedHands: Map<PlayerId, List<Card>>,
     val bids: Map<PlayerId, Bid>,
-    val trick: Trick,
+    val trick: Trick?,
     val roundTurnOrder: List<PlayerId>,
 )
 
