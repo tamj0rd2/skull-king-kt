@@ -153,7 +153,7 @@ export interface PlayerGameState {
   currentPlayer?: PlayerId | null
   trickNumber?: TrickNumber
   roundNumber?: RoundNumber
-  trick?: PlayedCard[]
+  trick?: PlayedCard[] | null
   roundPhase?: RoundPhase | null
   gameState?: GameState | null
   playersInRoom?: PlayerId[]

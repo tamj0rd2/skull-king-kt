@@ -174,11 +174,11 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                     .map { it.toCardWithPlayability() }
         }
 
-    val trick: List<PlayedCard>
+    val trick: List<PlayedCard>?
         get() = debugException {
-            (driver.findElementOrNull(By.id("trick")) ?: return@debugException emptyList())
-                    .findElements(By.tagName("li"))
-                    .map { it.toCard().playedBy(PlayerId(it.getAttribute("player"))) }
+            driver.findElementOrNull(By.id("trick"))
+                    ?.findElements(By.tagName("li"))
+                    ?.map { it.toCard().playedBy(PlayerId(it.getAttribute("player"))) }
         }
 
     val gameState: GameState?

@@ -155,7 +155,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
             )
 
             freddy and sally both ensure {
-                that(TheCurrentTrick, onlyContains(11.blue.playedBy(freddy)))
+                that(TheCurrentTrick, OnlyContains(11.blue.playedBy(freddy)))
                 that(TheRoundPhase, Is(TrickTaking))
                 that(TheCurrentPlayer, Is(sally.playerId))
             }
@@ -417,7 +417,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
             val freddysCard = freddy.asksAbout(TheirFirstCard).also { freddy(Plays(it)) }
             val sallysCard = sally.asksAbout(TheirFirstCard).also { sally(Plays(it)) }
             freddy and sally both ensure {
-                that(TheCurrentTrick, onlyContains(freddysCard.playedBy(freddy), sallysCard.playedBy(sally)))
+                that(TheCurrentTrick, OnlyContains(freddysCard.playedBy(freddy), sallysCard.playedBy(sally)))
                 that(TheRoundPhase, Is(TrickCompleted))
                 that(TheirHand, isEmpty())
             }
@@ -446,7 +446,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
             }
             freddy and sally both Play.theirFirstPlayableCard
             freddy and sally both ensure {
-                that(TheCurrentTrick, sizeIs(2))
+                that(TheCurrentTrick, SizeIs(2))
                 that(TheRoundPhase, Is(TrickCompleted))
                 that(TheirHand, sizeIs(1))
             }
@@ -460,7 +460,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
             freddy and sally both Play.theirFirstPlayableCard
             freddy and sally both ensure {
-                that(TheCurrentTrick, sizeIs(2))
+                that(TheCurrentTrick, SizeIs(2))
                 that(TheRoundPhase, Is(TrickCompleted))
                 that(TheirHand, isEmpty())
             }
@@ -493,7 +493,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
                     freddy and sally both Play.theirFirstPlayableCard
                     freddy and sally both ensure {
-                        that(TheCurrentTrick, sizeIs(2))
+                        that(TheCurrentTrick, SizeIs(2))
                         that(TheRoundPhase, Is(TrickCompleted))
                         that(TheirHand, sizeIs(roundNumber - trickNumber))
                     }
@@ -732,4 +732,13 @@ val OnlyContainsCardsThatAreNonPlayable = Assertion<List<CardWithPlayability>>("
 val ContainsAtLeastOnePlayableCard = Assertion<List<CardWithPlayability>>("at least one card should be playable") {
     val cards = this.shouldNotBeNull().shouldNotBeEmpty()
     cards.forAtLeastOne { it.isPlayable shouldBe true }
+}
+
+// TODO: these assertions sucks...
+fun SizeIs(expectedSize: Int) = Assertion<List<PlayedCard>?>("size should be $expectedSize") {
+    this.shouldNotBeNull().size shouldBe expectedSize
+}
+
+fun OnlyContains(vararg cards: PlayedCard) = Assertion<List<PlayedCard>?>("should only contain ${cards.toList()}") {
+    this.shouldNotBeNull() shouldBe cards.toList()
 }

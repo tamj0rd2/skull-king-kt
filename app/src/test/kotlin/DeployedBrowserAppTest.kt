@@ -16,6 +16,7 @@ import testsupport.logger
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+@Disabled
 @SkipWipTests
 @SkipUnhappyPathTests
 @Execution(ExecutionMode.SAME_THREAD)

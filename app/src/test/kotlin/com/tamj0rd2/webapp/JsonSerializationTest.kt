@@ -99,7 +99,7 @@ class JsonSerializationTest {
                 "roundPhase": null,
                 "hand": [],
                 "bids": {},
-                "trick": [],
+                "trick": null,
                 "trickWinner": null,
                 "winsOfTheRound": {},
                 "turnOrder": [],

@@ -46,7 +46,7 @@ class Game {
     private val waitingForMorePlayers get() = players.size < roomSizeToStartGame
 
     // TODO: figure out how to get this into the ActualGameState
-    private var trick: Trick = Trick(0)
+    private var trick: Trick? = null
     private var roundTurnOrder = mutableListOf<PlayerId>()
 
     fun subscribeToGameEvents(listener: GameEventListener) {
@@ -112,6 +112,7 @@ class Game {
             else -> null
         }?.throwException()
 
+        val trick = requireNotNull(trick) { "trick is null" }
         val hand = hands[playerId] ?: error("player $playerId somehow doesn't have a hand")
         val card = hand.find { it.name == cardName }
 

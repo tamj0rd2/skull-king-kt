@@ -16,7 +16,7 @@ data class PlayerGameState(
     val currentPlayer: PlayerId? = null,
     val trickNumber: TrickNumber = TrickNumber.None,
     val roundNumber: RoundNumber = RoundNumber.None,
-    val trick: List<PlayedCard> = emptyList(),
+    val trick: List<PlayedCard>? = null,
     val roundPhase: RoundPhase? = null,
     val gameState: GameState? = null,
     val playersInRoom: List<PlayerId> = emptyList(),
@@ -41,7 +41,7 @@ data class PlayerGameState(
         }
 
         is GameEvent.CardPlayed -> copy {
-            val trick = trick + event.card.playedBy(event.playerId)
+            val trick = (trick ?: emptyList()) + event.card.playedBy(event.playerId)
             PlayerGameState.trick set trick
 
             val nextPlayer = turnOrder.getOrNull(trick.size)
