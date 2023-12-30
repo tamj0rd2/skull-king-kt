@@ -13,15 +13,21 @@ fun interface GameEventListener {
     fun handle(events: List<GameEvent>, triggeredBy: PlayerId?)
 }
 
-class Game {
-    val winsOfTheRound: Map<PlayerId, Int> get() = _winsOfTheRound
-    val currentTrick: List<PlayedCard> get() = trick.playedCards
-    val players get() = _players.toList()
-    val currentPlayersTurn get(): PlayerId? = roundTurnOrder.firstOrNull()
-    val bids: Map<PlayerId, DisplayBid> get() = _bids.forDisplay()
+data class ActualGameState(
+    val trickNumber: TrickNumber,
+    val roundNumber: RoundNumber,
+    val state: GameState,
+    val phase: RoundPhase?,
+    val players: List<PlayerId>,
+    val hands: Map<PlayerId, List<Card>>,
+    val riggedHands: Map<PlayerId, List<Card>>,
+    val bids: Map<PlayerId, Bid>,
+    val trick: Trick,
+    val roundTurnOrder: List<PlayerId>,
+)
 
-    var trickWinner: PlayerId? = null
-        private set
+class Game {
+    private val currentPlayersTurn get(): PlayerId? = roundTurnOrder.firstOrNull()
 
     var trickNumber: TrickNumber = TrickNumber.None
         private set
@@ -29,19 +35,18 @@ class Game {
     var roundNumber: RoundNumber = RoundNumber.None
         private set
 
-    var phase: RoundPhase? = null
-        private set
-
     var state: GameState = GameState.WaitingForMorePlayers
         private set
 
-    private val _winsOfTheRound = mutableMapOf<PlayerId, Int>()
-    private val _players = mutableListOf<PlayerId>()
+    private var phase: RoundPhase? = null
+    private val players = mutableListOf<PlayerId>()
     private val hands = mutableMapOf<PlayerId, MutableList<Card>>()
-    private var riggedHands: MutableMap<PlayerId, Hand>? = null
-    private val _bids = Bids()
+    private var riggedHands: MutableMap<PlayerId, List<Card>>? = null
+    private val bids = mutableMapOf<PlayerId, Bid>()
     private val roomSizeToStartGame = 2
     private val waitingForMorePlayers get() = players.size < roomSizeToStartGame
+
+    // TODO: figure out how to get this into the ActualGameState
     private var trick: Trick = Trick(0)
     private var roundTurnOrder = mutableListOf<PlayerId>()
 
@@ -63,9 +68,9 @@ class Game {
     }
 
     private fun addPlayer(playerId: PlayerId) = playerCommand(playerId) {
-        if (_players.contains(playerId)) PlayerWithSameNameAlreadyInGame.throwException()
+        if (players.contains(playerId)) PlayerWithSameNameAlreadyInGame.throwException()
 
-        _players += playerId
+        players += playerId
         if (!waitingForMorePlayers) state = GameState.WaitingToStart
         recordEvent(GameEvent.PlayerJoined(playerId))
 
@@ -86,16 +91,16 @@ class Game {
             phase != Bidding -> BiddingIsNotInProgress
             // TODO: this could do with some love
             bid.value < 0 || bid.value > roundNumber.value -> BidLessThan0OrGreaterThanRoundNumber
-            _bids.hasPlayerAlreadyBid(playerId) -> AlreadyPlacedABid
+            bids.contains(playerId) -> AlreadyPlacedABid
             else -> null
         }?.throwException()
 
-        _bids.place(playerId, bid)
+        bids[playerId] = bid
         recordEvent(GameEvent.BidPlaced(playerId, bid))
 
-        if (_bids.areComplete) {
+        if (bids.size == players.size) {
             this.phase = BiddingCompleted
-            recordEvent(GameEvent.BiddingCompleted(_bids.asCompleted()))
+            recordEvent(GameEvent.BiddingCompleted(bids))
         }
 
         Ok(Unit)
@@ -117,7 +122,7 @@ class Game {
                     playerId = playerId,
                     cardName = cardName,
                     reason = CardNotInHand,
-                    trick = currentTrick,
+                    trick = trick.playedCards,
                     hand = hand
             ))
         }
@@ -127,7 +132,7 @@ class Game {
                     playerId = playerId,
                     cardName = cardName,
                     reason = PlayingCardWouldBreakSuitRules,
-                    trick = currentTrick,
+                    trick = trick.playedCards,
                     hand = hand
             ))
         }
@@ -144,8 +149,6 @@ class Game {
 
         if (trick.isComplete) {
             phase = TrickCompleted
-            trickWinner = trick.winner
-            _winsOfTheRound[trickWinner!!] = _winsOfTheRound[trickWinner!!]!! + 1
             recordEvent(GameEvent.TrickCompleted(trick.winner))
 
             if (isLastRound) {
@@ -166,10 +169,9 @@ class Game {
         roundNumber += 1
         trickNumber = TrickNumber.of(0)
 
-        _bids.initFor(players)
+        bids.clear()
         phase = Bidding
         roundTurnOrder = (1..roundNumber.value).flatMap { players }.toMutableList()
-        players.forEach { _winsOfTheRound[it] = 0 }
 
         dealCards()
         recordEvent(GameEvent.RoundStarted(roundNumber))
@@ -223,7 +225,7 @@ private fun <E> List<E>.excluding(element: E): List<E> {
 }
 
 @Serializable
-enum class GameState() {
+enum class GameState {
     WaitingForMorePlayers,
     WaitingToStart,
     InProgress,
@@ -249,47 +251,10 @@ enum class RoundPhase {
     }
 }
 
-typealias Hand = List<Card>
-
 @Serializable
 data class PlayedCard(val playerId: PlayerId, val card: Card) {
     override fun toString(): String {
         return "${card.name} played by $playerId"
-    }
-}
-
-// TODO: should make this a data class that gets copied...
-private class Bids {
-    private var bids = mutableMapOf<PlayerId, DisplayBid>()
-
-    val areComplete get() = bids.none { it.value is DisplayBid.None }
-
-    fun initFor(players: Collection<PlayerId>) {
-        bids = players.associateWith { DisplayBid.None }.toMutableMap()
-    }
-
-    fun forDisplay(): Map<PlayerId, DisplayBid> = when {
-        areComplete -> bids
-        else -> bids.mapValues { if (it.value is DisplayBid.Placed) DisplayBid.Hidden else it.value }
-    }
-
-    fun place(playerId: PlayerId, bid: Bid) {
-        bids[playerId] = DisplayBid.Placed(bid)
-    }
-
-    fun hasPlayerAlreadyBid(playerId: PlayerId): Boolean {
-        return bids[playerId] !is DisplayBid.None
-    }
-
-    fun asCompleted(): Map<PlayerId, Bid> {
-        return bids.mapValues {
-            require(it.value !is DisplayBid.None)
-            when (val bid = it.value) {
-                is DisplayBid.None -> error("not all players have bid")
-                is DisplayBid.Hidden -> error("this should be impossible. this is just for display")
-                is DisplayBid.Placed -> bid.bid
-            }
-        }
     }
 }
 
