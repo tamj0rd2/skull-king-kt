@@ -4,7 +4,6 @@ import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.andThen
-import com.tamj0rd2.domain.Card.NumberedCard
 import com.tamj0rd2.domain.GameErrorCode.*
 import com.tamj0rd2.domain.RoundPhase.*
 import kotlinx.serialization.Serializable
@@ -117,23 +116,27 @@ class Game {
         val card = hand.find { it.name == cardName }
 
         if (card == null) {
-            return@playerCommand Err(CommandError.FailedToPlayCard(
+            return@playerCommand Err(
+                CommandError.FailedToPlayCard(
                     playerId = playerId,
                     cardName = cardName,
                     reason = CardNotInHand,
                     trick = trick.playedCards,
                     hand = hand
-            ))
+                )
+            )
         }
 
         if (!trick.isCardPlayable(card, hand.excluding(card))) {
-            return@playerCommand Err(CommandError.FailedToPlayCard(
+            return@playerCommand Err(
+                CommandError.FailedToPlayCard(
                     playerId = playerId,
                     cardName = cardName,
                     reason = PlayingCardWouldBreakSuitRules,
                     trick = trick.playedCards,
                     hand = hand
-            ))
+                )
+            )
         }
 
         hand.remove(card)

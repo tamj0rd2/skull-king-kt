@@ -55,6 +55,7 @@ data class PlayerGameState(
                     val cardToRemove = hand.first { it.card == event.card }
                     hand.toMutableList().apply { remove(cardToRemove) }.map { it.card.notPlayable() }
                 }
+
                 nextPlayer -> {
                     val cards = hand.map(CardWithPlayability::card)
                     hand.map {
@@ -62,6 +63,7 @@ data class PlayerGameState(
                         it.card.playable(isPlayable)
                     }
                 }
+
                 else -> hand.map { it.card.notPlayable() }
             }
         }
