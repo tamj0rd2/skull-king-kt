@@ -15,8 +15,6 @@ sealed class GameEvent {
 
     data class TrickStarted(val trickNumber: TrickNumber, val turnOrder: List<PlayerId>) : GameEvent()
 
-    data class SuitEstablished(val suit: Suit) : GameEvent()
-
     // TODO: it might be easier to make the argument for this just be a PlayedCard
     data class CardPlayed(val playerId: PlayerId, val card: Card) : GameEvent()
 

@@ -111,18 +111,6 @@ data class PlayerGameState(
                 PlayerGameState.hand set hand.map { it.card.playable() }
             }
         }
-
-        // TODO: remove SuitEstablished event
-        is GameEvent.SuitEstablished -> copy {
-            PlayerGameState.currentSuit set event.suit
-
-            //val handWithoutPlayability = hand.map(CardWithPlayability::card)
-            //val hand = hand.map {
-            //    val isPlayable = isCardPlayable(it.card, handWithoutPlayability, event.suit)
-            //    it.card.playable(isPlayable)
-            //}
-            //PlayerGameState.hand set hand
-        }
     }
 
     private val Card.suit get() = if (this is Card.NumberedCard) suit else null

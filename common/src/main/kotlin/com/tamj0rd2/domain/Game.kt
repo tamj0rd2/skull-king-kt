@@ -113,7 +113,6 @@ class Game {
             else -> null
         }?.throwException()
 
-        val suitBeforePlayingCard = trick.suit
         val hand = hands[playerId] ?: error("player $playerId somehow doesn't have a hand")
         val card = hand.find { it.name == cardName }
 
@@ -142,10 +141,6 @@ class Game {
 
         roundTurnOrder.removeFirst()
         recordEvent(GameEvent.CardPlayed(playerId, card))
-
-        if (suitBeforePlayingCard == null && card is NumberedCard) {
-            recordEvent(GameEvent.SuitEstablished(card.suit))
-        }
 
         if (trick.isComplete) {
             phase = TrickCompleted
