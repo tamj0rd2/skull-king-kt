@@ -12,7 +12,7 @@ fun interface GameEventListener {
     fun handle(events: List<GameEvent>, triggeredBy: PlayerId?)
 }
 
-data class ActualGameState(
+data class GameState(
     val trickNumber: TrickNumber,
     val roundNumber: RoundNumber,
     val state: GamePhase,
