@@ -81,7 +81,11 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
         @Wip
         fun `playing a card and waiting for the next player to do the same`() {
             freddy and sally both SitAtTheTable
-            gary(RigsTheDeck.SoThat(freddy).willEndUpWith(11.blue), SaysTheGameCanStart)
+            gary(
+                RigsTheDeck.SoThat(freddy).willEndUpWith(11.blue),
+                RigsTheDeck.SoThat(sally).willEndUpWith(11.black),
+                SaysTheGameCanStart
+            )
             freddy and sally both Bid(1)
             freddy and sally both ensureThat(TheRoundPhase) { Is(BiddingCompleted) }
 
@@ -389,7 +393,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
             }
             freddy and sally both Play.theirFirstPlayableCard
             freddy and sally both ensure {
-                that(TheCurrentTrick) { isNotNull().hasSize(2) }
+                that(TheCurrentTrick) { hasCardCount(2) }
                 that(TheRoundPhase) { Is(TrickCompleted) }
                 that(TheirHand) { sizeIs(1) }
             }
@@ -403,7 +407,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
             freddy and sally both Play.theirFirstPlayableCard
             freddy and sally both ensure {
-                that(TheCurrentTrick) { isNotNull().hasSize(2) }
+                that(TheCurrentTrick) { hasCardCount(2) }
                 that(TheRoundPhase) { Is(TrickCompleted) }
                 that(TheirHand) { isEmpty() }
             }
@@ -436,7 +440,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
 
                     freddy and sally both Play.theirFirstPlayableCard
                     freddy and sally both ensure {
-                        that(TheCurrentTrick) { isNotNull().hasSize(2) }
+                        that(TheCurrentTrick) { hasCardCount(2) }
                         that(TheRoundPhase) { Is(TrickCompleted) }
                         that(TheirHand) { sizeIs(roundNumber - trickNumber) }
                     }

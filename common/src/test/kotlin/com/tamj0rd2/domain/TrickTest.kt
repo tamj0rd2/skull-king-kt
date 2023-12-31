@@ -184,9 +184,7 @@ class TrickTest {
             .let { tcs -> if (tcs.any { it.only }) tcs.filter { it.only } else tcs }
             .map { tc ->
                 DynamicTest.dynamicTest(tc.toString()) {
-                    val trick = Trick(tc.playedCards.size)
-                    tc.playedCards.forEach { trick.add(it) }
-
+                    val trick = Trick(tc.playedCards.size, tc.playedCards)
                     expectThat(trick.isComplete).isTrue()
                     expectThat(trick.winner).isEqualTo(tc.expectedWinner)
                 }

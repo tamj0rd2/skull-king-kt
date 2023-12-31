@@ -4,7 +4,6 @@ import arrow.optics.copy
 import arrow.optics.optics
 import com.tamj0rd2.domain.GameState.WaitingForMorePlayers
 import com.tamj0rd2.domain.GameState.WaitingToStart
-import com.tamj0rd2.domain.Trick.Companion.isCardPlayable
 import kotlinx.serialization.Serializable
 
 @optics
@@ -16,7 +15,7 @@ data class PlayerGameState(
     val currentPlayer: PlayerId? = null,
     val trickNumber: TrickNumber = TrickNumber.None,
     val roundNumber: RoundNumber = RoundNumber.None,
-    val trick: List<PlayedCard>? = null,
+    val trick: Trick? = null,
     val roundPhase: RoundPhase? = null,
     val gameState: GameState? = null,
     val playersInRoom: List<PlayerId> = emptyList(),
@@ -41,10 +40,10 @@ data class PlayerGameState(
         }
 
         is GameEvent.CardPlayed -> copy {
-            val trick = (trick ?: emptyList()) + event.card.playedBy(event.playerId)
+            val trick = trick!!.add(event.card.playedBy(event.playerId))
             PlayerGameState.trick set trick
 
-            val nextPlayer = turnOrder.getOrNull(trick.size)
+            val nextPlayer = turnOrder.getOrNull(trick.playedCards.size)
             PlayerGameState.nullableCurrentPlayer set nextPlayer
 
             val currentSuit = currentSuit ?: event.card.suit
@@ -59,7 +58,7 @@ data class PlayerGameState(
                 nextPlayer -> {
                     val cards = hand.map(CardWithPlayability::card)
                     hand.map {
-                        val isPlayable = isCardPlayable(it.card, cards, currentSuit)
+                        val isPlayable = trick.isCardPlayable(it.card, cards)
                         it.card.playable(isPlayable)
                     }
                 }
@@ -104,7 +103,7 @@ data class PlayerGameState(
         is GameEvent.TrickStarted -> copy {
             PlayerGameState.nullableCurrentSuit set null
             PlayerGameState.trickNumber set trickNumber + 1
-            PlayerGameState.trick set emptyList()
+            PlayerGameState.trick set Trick.ofSize(playersInRoom.size)
             PlayerGameState.roundPhase set RoundPhase.TrickTaking
             PlayerGameState.currentPlayer set event.turnOrder.first()
             PlayerGameState.turnOrder set event.turnOrder

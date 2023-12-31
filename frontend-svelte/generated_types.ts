@@ -153,7 +153,7 @@ export interface PlayerGameState {
   currentPlayer?: PlayerId | null
   trickNumber?: TrickNumber
   roundNumber?: RoundNumber
-  trick?: PlayedCard[] | null
+  trick?: Trick | null
   roundPhase?: RoundPhase | null
   gameState?: GameState | null
   playersInRoom?: PlayerId[]
@@ -167,9 +167,13 @@ export type TrickNumber = number
 
 export type RoundNumber = number
 
-export interface PlayedCard {
-  playerId: PlayerId
-  card: Card
+export interface Trick {
+  size: number
+  playedCards: PlayedCard[]
+  suit?: Suit | null
+  hasSkullKing?: boolean
+  hasMermaid?: boolean
+  hasPirate?: boolean
 }
 
 export type DisplayBid =
@@ -196,4 +200,9 @@ export namespace DisplayBid {
     type: DisplayBid.Type.Placed
     bid: Bid
   }
+}
+
+export interface PlayedCard {
+  playerId: PlayerId
+  card: Card
 }

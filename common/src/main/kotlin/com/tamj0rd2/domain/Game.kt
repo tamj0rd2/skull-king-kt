@@ -44,8 +44,6 @@ class Game {
     private val bids = mutableMapOf<PlayerId, Bid>()
     private val roomSizeToStartGame = 2
     private val waitingForMorePlayers get() = players.size < roomSizeToStartGame
-
-    // TODO: figure out how to get this into the ActualGameState
     private var trick: Trick? = null
     private var roundTurnOrder = mutableListOf<PlayerId>()
 
@@ -112,7 +110,7 @@ class Game {
             else -> null
         }?.throwException()
 
-        val trick = requireNotNull(trick) { "trick is null" }
+        var trick = requireNotNull(trick) { "trick is null" }
         val hand = hands[playerId] ?: error("player $playerId somehow doesn't have a hand")
         val card = hand.find { it.name == cardName }
 
@@ -122,7 +120,7 @@ class Game {
                     playerId = playerId,
                     cardName = cardName,
                     reason = CardNotInHand,
-                    trick = trick.playedCards,
+                    trick = requireNotNull(trick) { "trick is null" }.playedCards,
                     hand = hand
                 )
             )
@@ -141,7 +139,8 @@ class Game {
         }
 
         hand.remove(card)
-        trick.add(PlayedCard(playerId, card))
+        trick = trick.add(PlayedCard(playerId, card))
+        this.trick = trick
 
         roundTurnOrder.removeFirst()
         recordEvent(GameEvent.CardPlayed(playerId, card))
@@ -178,7 +177,7 @@ class Game {
 
     private fun startNextTrick() = gameMasterCommand {
         trickNumber += 1
-        trick = Trick(players.size)
+        trick = Trick.ofSize(players.size)
         phase = TrickTaking
         recordEvent(GameEvent.TrickStarted(trickNumber, roundTurnOrder.take(players.size)))
     }

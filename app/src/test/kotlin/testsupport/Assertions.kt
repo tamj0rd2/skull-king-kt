@@ -164,6 +164,11 @@ fun Builder<Map<PlayerId, Int>>.are(first: Pair<PlayerId, Int>, vararg others: P
 
 infix fun <T : Collection<E>, E> Builder<T>.sizeIs(expected: Int): Builder<T> = this.apply { hasSize(expected) }
 
-fun Builder<List<PlayedCard>?>.cardsAre(firstCard: PlayedCard, vararg others: PlayedCard) = this.apply {
-    isNotNull().containsExactly(firstCard, *others)
+fun Builder<Trick?>.cardsAre(firstCard: PlayedCard, vararg others: PlayedCard) = this.apply {
+    isNotNull().get { playedCards }.containsExactly(firstCard, *others)
 }
+
+fun Builder<Trick?>.hasCardCount(count: Int) = this.apply {
+    isNotNull().get { playedCards }.hasSize(count)
+}
+
