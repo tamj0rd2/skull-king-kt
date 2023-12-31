@@ -28,7 +28,7 @@ dependencies {
     ksp("io.arrow-kt:arrow-optics-ksp-plugin:1.1.3-alpha.44")
 
     testImplementation(kotlin("test"))
-    testImplementation("io.kotest:kotest-assertions-core-jvm:5.7.2")
+    testImplementation("io.strikt:strikt-core:0.34.0")
 }
 
 tasks.withType<Test> {

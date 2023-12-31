@@ -1,8 +1,10 @@
 package com.tamj0rd2.domain
 
-import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
+import strikt.api.expectThat
+import strikt.assertions.isEqualTo
+import strikt.assertions.isTrue
 
 class TrickTest {
     private val adam = PlayerId("adam")
@@ -185,8 +187,8 @@ class TrickTest {
                     val trick = Trick(tc.playedCards.size)
                     tc.playedCards.forEach { trick.add(it) }
 
-                    trick.isComplete shouldBe true
-                    trick.winner shouldBe tc.expectedWinner
+                    expectThat(trick.isComplete).isTrue()
+                    expectThat(trick.winner).isEqualTo(tc.expectedWinner)
                 }
             }
     }

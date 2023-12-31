@@ -1,11 +1,15 @@
 package testsupport
 
-open class Question<T>(private val description: String, private val answer: (Actor) -> T) {
+open class Question<T>(val description: String, private val answer: (Actor) -> T) {
     fun answeredBy(actor: Actor): T = answer(actor)
     override fun toString(): String  = "question about $description"
     companion object {
         fun <R> about(description: String, answer: (Actor) -> R) = object : Question<R>(description, answer) {}
     }
+}
+
+val TheGame = Question.about("the game") { actor ->
+    actor.gameState
 }
 
 val ThePlayersAtTheTable = Question.about("the players at the table") { actor ->
@@ -48,11 +52,11 @@ val TheirFirstCard = Question.about("the first card in their hand") { actor ->
     hand.first().card
 }
 
-val TheySeeBids = Question.about("the bids that have been placed") { actor ->
+val TheBidsTheySee = Question.about("the bids that have been placed") { actor ->
     actor.gameState.bids
 }
 
-val TheySeeWinsOfTheRound = Question.about("the actual wins during the round") { actor ->
+val TheWinsOfTheRound = Question.about("the actual wins during the round") { actor ->
     actor.gameState.winsOfTheRound
 }
 

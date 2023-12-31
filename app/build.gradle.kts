@@ -37,9 +37,9 @@ dependencies {
     testImplementation("org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion")
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
     testImplementation("org.http4k:http4k-client-websocket")
-    testImplementation("io.kotest:kotest-assertions-core-jvm:5.7.2")
     testImplementation("io.kotest:kotest-assertions-json:5.7.2")
     testImplementation("org.jsoup:jsoup:1.16.2")
+    testImplementation("io.strikt:strikt-core:0.34.0")
 }
 
 tasks.test {

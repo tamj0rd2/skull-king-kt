@@ -3,18 +3,16 @@ package testsupport.adapters
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import com.tamj0rd2.domain.*
-import io.kotest.assertions.nondeterministic.eventually
-import io.kotest.assertions.nondeterministic.eventuallyConfig
-import io.kotest.assertions.withClue
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.openqa.selenium.By
 import org.openqa.selenium.NoSuchElementException
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
+import strikt.api.expectThat
+import strikt.assertions.isEqualTo
 import testsupport.ApplicationDriver
+import testsupport.keepTrying
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -24,9 +22,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
     private var playerId = PlayerId.unidentified
 
     init {
-        withClue("the game page didn't load successfully") {
-            driver.title shouldBe "Playing Skull King"
-        }
+        expectThat(driver.title).isEqualTo("Playing Skull King")
     }
 
     override val state: PlayerGameState
@@ -49,9 +45,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             )
 
     override fun perform(command: PlayerCommand): Result<Unit, CommandError> {
-        withClue("another command is still in progress") {
-            noCommandsAreInProgress shouldBe true
-        }
+        expectThat(noCommandsAreInProgress).isEqualTo(true)
 
         when (command) {
             is PlayerCommand.JoinGame -> joinGame(command.actor)
@@ -59,12 +53,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             is PlayerCommand.PlayCard -> playCard(command.cardName)
         }
 
-        eventually {
-            withClue("another command is still in progress") {
-                noCommandsAreInProgress shouldBe true
-            }
-        }
-
+        expectThat(noCommandsAreInProgress).isEqualTo(true)
         return Ok(Unit)
     }
 
@@ -82,7 +71,8 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                         ?: error("failed to join the game due to unknown reasons")
             }
 
-            driver.findElement(By.tagName("h1")).text shouldBe "Game Page - $playerId"
+            val title = driver.findElement(By.tagName("h1")).text
+            expectThat(title).isEqualTo("Game Page - $playerId")
         }
     }
 
@@ -237,10 +227,6 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         }
     }
 
-    private fun <T> debugAlways(block: () -> T): T {
-        printContent()
-        return block()
-    }
 
     private fun printContent() {
         val root = driver.findElementOrNull(By.id("root")) ?: driver.findElement(By.tagName("body"))
@@ -262,11 +248,4 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
 }
 
 
-private fun <T> eventually(fn: () -> T) = runBlocking {
-    eventually(eventuallyConfig, fn)
-}
-
-private val eventuallyConfig = eventuallyConfig {
-    duration = 2.seconds
-    initialDelay = 100.milliseconds
-}
+private fun <T> eventually(fn: () -> T) = keepTrying(2.seconds, 100.milliseconds, fn)

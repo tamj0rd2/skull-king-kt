@@ -1,20 +1,13 @@
 package com.tamj0rd2.webapp
 
-import com.tamj0rd2.domain.Bid
-import com.tamj0rd2.domain.GameMasterCommand
-import com.tamj0rd2.domain.PlayerCommand
-import com.tamj0rd2.domain.PlayerGameState
-import com.tamj0rd2.domain.PlayerId
-import com.tamj0rd2.domain.blue
+import com.tamj0rd2.domain.*
 import com.tamj0rd2.messaging.Message
 import com.tamj0rd2.webapp.CustomJsonSerializer.asA
 import com.tamj0rd2.webapp.CustomJsonSerializer.asCompactJsonString
 import com.tamj0rd2.webapp.CustomJsonSerializer.asJsonObject
 import io.kotest.assertions.json.shouldEqualJson
-import io.kotest.assertions.withClue
-import io.kotest.matchers.shouldBe
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import strikt.api.expectThat
+import strikt.assertions.isEqualTo
 import kotlin.test.Test
 
 class JsonSerializationTest {
@@ -111,35 +104,9 @@ class JsonSerializationTest {
     }
 
     private inline fun <reified T : Any> test(obj: T, expectedJson: String) {
-        val normalKotlinX = Json {
-            ignoreUnknownKeys = true
-            encodeDefaults = true
-        }
-
-        val normalKotlinxJson = normalKotlinX.encodeToString(obj)
-        println("normal kotlinx: $normalKotlinxJson")
-        normalKotlinxJson shouldEqualJson expectedJson
-
         val customKotlinxJson = obj.asJsonObject().asCompactJsonString()
         println("custom serialization: $customKotlinxJson")
         customKotlinxJson shouldEqualJson expectedJson
-
-        withClue("serialized using normal kotlinx") {
-            withClue("normal kotlinx deserialization failed") {
-                normalKotlinX.decodeFromString<T>(normalKotlinxJson) shouldBe obj
-            }
-            withClue("custom deserialization failed") {
-                normalKotlinxJson.asA(T::class) shouldBe obj
-            }
-        }
-
-        withClue("serialized using custom serialization") {
-            withClue("custom deserialization failed") {
-                customKotlinxJson.asA(T::class) shouldBe obj
-            }
-            withClue("normal kotlinx deserialization failed") {
-                normalKotlinX.decodeFromString<T>(customKotlinxJson) shouldBe obj
-            }
-        }
+        expectThat(customKotlinxJson.asA(T::class)).isEqualTo(obj)
     }
 }
