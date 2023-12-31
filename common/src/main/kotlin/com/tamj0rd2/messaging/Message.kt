@@ -2,7 +2,7 @@ package com.tamj0rd2.messaging
 
 import com.tamj0rd2.domain.GameErrorCode
 import com.tamj0rd2.domain.PlayerCommand
-import com.tamj0rd2.domain.PlayerGameState
+import com.tamj0rd2.domain.PlayerState
 import kotlinx.serialization.Required
 import kotlinx.serialization.Serializable
 import java.util.*
@@ -39,7 +39,7 @@ sealed class Message {
     data class KeepAlive(@Required override val id: MessageId = MessageId.next()) : Message()
 
     @Serializable
-    data class AcceptanceFromServer(override val id: MessageId, val state: PlayerGameState) : Message() {
+    data class AcceptanceFromServer(override val id: MessageId, val state: PlayerState) : Message() {
         override fun toString(): String {
             return "$id"
         }
@@ -56,7 +56,7 @@ sealed class Message {
     data class Rejection(override val id: MessageId, val reason: String) : Message()
 
     @Serializable
-    data class ToClient(val state: PlayerGameState) : Message() {
+    data class ToClient(val state: PlayerState) : Message() {
         @Required
         override val id: MessageId = MessageId.next()
 
@@ -72,7 +72,7 @@ sealed class Message {
         @Required
         override val id: MessageId = MessageId.next()
 
-        fun accept(state: PlayerGameState) = AcceptanceFromServer(id, state)
+        fun accept(state: PlayerState) = AcceptanceFromServer(id, state)
 
         override fun toString(): String {
             return "$id - $command"

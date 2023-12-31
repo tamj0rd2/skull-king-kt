@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 
 @optics
 @Serializable
-data class PlayerGameState(
+data class PlayerState(
     val playerId: PlayerId,
     val winsOfTheRound: Map<PlayerId, Int> = emptyMap(),
     val trickWinner: PlayerId? = null,
@@ -24,32 +24,32 @@ data class PlayerGameState(
     val turnOrder: List<PlayerId> = emptyList(),
     val currentSuit: Suit? = null,
 ) {
-    fun handle(event: GameEvent): PlayerGameState = when (event) {
+    fun handle(event: GameEvent): PlayerState = when (event) {
         // Note: I do keep thinking that it's pointless to have these copy functions via optics. BUT
         // they are nice for conditionally updating values. Like in the example of CardPlayed. You can
         // do it with a regular copy too, but this just seems a bit nicer to me. Despite having to start
         // with the class name each time...
 
         is GameEvent.BidPlaced -> copy {
-            PlayerGameState.bids set bids + (event.playerId to DisplayBid.Hidden)
+            PlayerState.bids set bids + (event.playerId to DisplayBid.Hidden)
         }
 
         is GameEvent.BiddingCompleted -> copy {
-            PlayerGameState.roundPhase set RoundPhase.BiddingCompleted
-            PlayerGameState.bids set event.bids.mapValues { DisplayBid.Placed(it.value) }
+            PlayerState.roundPhase set RoundPhase.BiddingCompleted
+            PlayerState.bids set event.bids.mapValues { DisplayBid.Placed(it.value) }
         }
 
         is GameEvent.CardPlayed -> copy {
             val trick = trick!!.add(event.card.playedBy(event.playerId))
-            PlayerGameState.trick set trick
+            PlayerState.trick set trick
 
             val nextPlayer = turnOrder.getOrNull(trick.playedCards.size)
-            PlayerGameState.nullableCurrentPlayer set nextPlayer
+            PlayerState.nullableCurrentPlayer set nextPlayer
 
             val currentSuit = currentSuit ?: event.card.suit
-            PlayerGameState.nullableCurrentSuit set currentSuit
+            PlayerState.nullableCurrentSuit set currentSuit
 
-            PlayerGameState.hand set when (playerId) {
+            PlayerState.hand set when (playerId) {
                 event.playerId -> {
                     val cardToRemove = hand.first { it.card == event.card }
                     hand.toMutableList().apply { remove(cardToRemove) }.map { it.card.notPlayable() }
@@ -69,61 +69,61 @@ data class PlayerGameState(
 
         is GameEvent.CardsDealt -> copy {
             val hand = event.cards[playerId] ?: error("$playerId wasn't dealt any cards")
-            PlayerGameState.hand set hand.map(Card::notPlayable)
+            PlayerState.hand set hand.map(Card::notPlayable)
         }
 
         is GameEvent.GameCompleted -> copy {
-            PlayerGameState.gamePhase set GamePhase.Complete
+            PlayerState.gamePhase set GamePhase.Complete
         }
 
         is GameEvent.GameStarted -> copy {
-            PlayerGameState.gamePhase set GamePhase.InProgress
+            PlayerState.gamePhase set GamePhase.InProgress
         }
 
         is GameEvent.PlayerJoined -> copy {
             val playersInRoom = playersInRoom + event.playerId
-            PlayerGameState.playersInRoom set playersInRoom
-            PlayerGameState.gamePhase set (if (playersInRoom.size >= minimumNumOfPlayersToStartGame) WaitingToStart else WaitingForMorePlayers)
+            PlayerState.playersInRoom set playersInRoom
+            PlayerState.gamePhase set (if (playersInRoom.size >= minimumNumOfPlayersToStartGame) WaitingToStart else WaitingForMorePlayers)
         }
 
         is GameEvent.RoundStarted -> copy {
-            PlayerGameState.roundNumber set roundNumber + 1
-            PlayerGameState.trickNumber set TrickNumber.None
-            PlayerGameState.bids set playersInRoom.associateWith { DisplayBid.None }
-            PlayerGameState.roundPhase set RoundPhase.Bidding
-            PlayerGameState.winsOfTheRound set playersInRoom.associateWith { 0 }
+            PlayerState.roundNumber set roundNumber + 1
+            PlayerState.trickNumber set TrickNumber.None
+            PlayerState.bids set playersInRoom.associateWith { DisplayBid.None }
+            PlayerState.roundPhase set RoundPhase.Bidding
+            PlayerState.winsOfTheRound set playersInRoom.associateWith { 0 }
         }
 
         is GameEvent.TrickCompleted -> copy {
-            PlayerGameState.roundPhase set RoundPhase.TrickCompleted
-            PlayerGameState.trickWinner set event.winner
-            PlayerGameState.winsOfTheRound set winsOfTheRound + (event.winner to (winsOfTheRound[event.winner]!! + 1))
+            PlayerState.roundPhase set RoundPhase.TrickCompleted
+            PlayerState.trickWinner set event.winner
+            PlayerState.winsOfTheRound set winsOfTheRound + (event.winner to (winsOfTheRound[event.winner]!! + 1))
         }
 
         is GameEvent.TrickStarted -> copy {
-            PlayerGameState.nullableCurrentSuit set null
-            PlayerGameState.trickNumber set trickNumber + 1
-            PlayerGameState.trick set Trick.ofSize(playersInRoom.size)
-            PlayerGameState.roundPhase set RoundPhase.TrickTaking
-            PlayerGameState.currentPlayer set event.turnOrder.first()
-            PlayerGameState.turnOrder set event.turnOrder
+            PlayerState.nullableCurrentSuit set null
+            PlayerState.trickNumber set trickNumber + 1
+            PlayerState.trick set Trick.ofSize(playersInRoom.size)
+            PlayerState.roundPhase set RoundPhase.TrickTaking
+            PlayerState.currentPlayer set event.turnOrder.first()
+            PlayerState.turnOrder set event.turnOrder
 
             if (playerId == event.turnOrder.first()) {
-                PlayerGameState.hand set hand.map { it.card.playable() }
+                PlayerState.hand set hand.map { it.card.playable() }
             }
         }
     }
 
     private val Card.suit get() = if (this is Card.NumberedCard) suit else null
 
-    fun handle(events: List<GameEvent>): PlayerGameState =
+    fun handle(events: List<GameEvent>): PlayerState =
         events.fold(this) { state, event -> state.handle(event) }
 
     companion object {
         private const val minimumNumOfPlayersToStartGame = 2
 
-        fun ofPlayer(playerId: PlayerId, allEventsSoFar: List<GameEvent>): PlayerGameState {
-            val initial = PlayerGameState(playerId)
+        fun ofPlayer(playerId: PlayerId, allEventsSoFar: List<GameEvent>): PlayerState {
+            val initial = PlayerState(playerId)
             return allEventsSoFar.fold(initial) { state, event -> state.handle(event) }
         }
     }

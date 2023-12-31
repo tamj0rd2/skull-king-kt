@@ -117,7 +117,7 @@ export namespace Message {
   export interface AcceptanceFromServer {
     type: Message.Type.AcceptanceFromServer
     id: TamId
-    state: PlayerGameState
+    state: PlayerState
   }
   
   export interface KeepAlive {
@@ -133,7 +133,7 @@ export namespace Message {
   
   export interface ToClient {
     type: Message.Type.ToClient
-    state: PlayerGameState
+    state: PlayerState
     id: TamId
   }
   
@@ -146,7 +146,7 @@ export namespace Message {
 
 export type TamId = string
 
-export interface PlayerGameState {
+export interface PlayerState {
   playerId: PlayerId
   winsOfTheRound?: { [key: PlayerId]: number }
   trickWinner?: PlayerId | null

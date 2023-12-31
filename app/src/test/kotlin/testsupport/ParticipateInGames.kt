@@ -18,7 +18,7 @@ private fun Actor.performPlayerCommand(command: PlayerCommand) =
 
 val Actor.gameState get() = use<ParticipateInGames>().state
 
-internal fun PlayerGameState.debug() = asJsonObject().asPrettyJsonString()
+internal fun PlayerState.debug() = asJsonObject().asPrettyJsonString()
 
 object Plays {
     operator fun invoke(card: Card) = Activity("play ${card.name}") { actor ->

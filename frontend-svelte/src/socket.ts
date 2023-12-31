@@ -1,5 +1,5 @@
 import {derived, get, readable, readonly, writable} from "svelte/store";
-import {type Bid, Message, PlayerCommand, type PlayerGameState, type PlayerId} from "../generated_types";
+import {type Bid, Message, PlayerCommand, type PlayerState, type PlayerId} from "../generated_types";
 import {v4 as uuidv4} from "uuid";
 
 declare global {
@@ -11,7 +11,7 @@ declare global {
 
 interface WsClient {
     sendCommand: (command: PlayerCommand) => void
-    state: PlayerGameState
+    state: PlayerState
 }
 
 const ws = readable<WebSocket>(
@@ -72,7 +72,7 @@ export const commander = derived<typeof ws, Commander>(ws, (ws, set, update) => 
     })
 })
 
-export const state = derived<typeof ws, PlayerGameState>(ws, (ws, set, update) => {
+export const state = derived<typeof ws, PlayerState>(ws, (ws, set, update) => {
     ws.addEventListener("message", (event) => {
         const message = JSON.parse(event.data) as Message
         switch (message.type) {

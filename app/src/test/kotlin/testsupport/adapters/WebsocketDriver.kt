@@ -23,7 +23,7 @@ class WebsocketDriver(host: String, ackTimeoutMs: Long = 300) :
     private lateinit var logger: Logger
     private var ws: Websocket
 
-    override lateinit var state: PlayerGameState
+    override lateinit var state: PlayerState
 
     init {
         identifyAs(PlayerId.unidentified)

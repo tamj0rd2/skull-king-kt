@@ -20,7 +20,7 @@ internal class PerPlayerWsHandler(
             field = value
             logger = field.logger(loggingContext)
         }
-    private lateinit var state: PlayerGameState
+    private lateinit var state: PlayerState
     private var logger = playerId.logger(loggingContext)
     private var isConnected = true
     private val answerTracker = AnswerTracker(acknowledgementTimeoutMs)
@@ -65,7 +65,7 @@ internal class PerPlayerWsHandler(
     private fun handleMessageToServer(message: ToServer) {
         if (message.command is PlayerCommand.JoinGame) {
             playerId = message.command.actor
-            state = PlayerGameState.ofPlayer(playerId, game.allEventsSoFar)
+            state = PlayerState.ofPlayer(playerId, game.allEventsSoFar)
 
             game.subscribeToGameEvents { events, triggeredBy ->
                 state = state.handle(events)

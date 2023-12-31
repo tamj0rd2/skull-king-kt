@@ -6,11 +6,11 @@ import testsupport.ApplicationDriver
 import testsupport.GameMasterDriver
 
 class DomainDriver(private val game: Game) : ApplicationDriver, GameMasterDriver {
-    override lateinit var state: PlayerGameState
+    override lateinit var state: PlayerState
 
     override fun perform(command: PlayerCommand): Result<Unit, CommandError> {
         if (command is PlayerCommand.JoinGame) {
-            state = PlayerGameState.ofPlayer(command.actor, game.allEventsSoFar)
+            state = PlayerState.ofPlayer(command.actor, game.allEventsSoFar)
             game.subscribeToGameEvents { events, _ -> state = state.handle(events) }
         }
 

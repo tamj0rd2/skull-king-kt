@@ -13,7 +13,7 @@ fun main() {
         RoundPhase.serializer(),
         PlayerId.serializer(),
         Message.serializer(),
-        PlayerGameState.serializer(),
+        PlayerState.serializer(),
     ).replace(";", "")
 
     println(output)

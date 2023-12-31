@@ -25,9 +25,9 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
         expectThat(driver.title).isEqualTo("Playing Skull King")
     }
 
-    override val state: PlayerGameState
+    override val state: PlayerState
         get() =
-            PlayerGameState(
+            PlayerState(
                 playerId = playerId,
                 winsOfTheRound = winsOfTheRound,
                 trickWinner = trickWinner,

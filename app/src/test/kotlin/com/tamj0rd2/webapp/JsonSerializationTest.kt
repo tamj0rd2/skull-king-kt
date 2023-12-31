@@ -78,8 +78,8 @@ class JsonSerializationTest {
 
     @Test
     fun `can serialize and deserialize player state`() {
-        val playerState = PlayerGameState.ofPlayer(PlayerId("somePlayer"), emptyList())
-        test<PlayerGameState>(
+        val playerState = PlayerState.ofPlayer(PlayerId("somePlayer"), emptyList())
+        test<PlayerState>(
             playerState,
             // language=JSON
             """
