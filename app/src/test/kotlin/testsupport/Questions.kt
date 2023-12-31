@@ -2,7 +2,8 @@ package testsupport
 
 open class Question<T>(val description: String, private val answer: (Actor) -> T) {
     fun answeredBy(actor: Actor): T = answer(actor)
-    override fun toString(): String  = "question about $description"
+    override fun toString(): String = "question about $description"
+
     companion object {
         fun <R> about(description: String, answer: (Actor) -> R) = object : Question<R>(description, answer) {}
     }

@@ -1,7 +1,5 @@
 import org.eclipse.jetty.client.HttpClient
 import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import org.openqa.selenium.JavascriptException
@@ -25,6 +23,7 @@ class DeployedBrowserAppTest : AppTestContract(DeployedTestConfiguration())
 class DeployedTestConfiguration : TestConfiguration {
     // TODO: I shouldn't really need this
     override val automaticGameMasterDelay: Duration = 0.seconds
+
     // TODO: make this configurable
     private val baseUrl by lazy { "http://localhost:8080" }
     private val httpClient by lazy { HttpClient() }

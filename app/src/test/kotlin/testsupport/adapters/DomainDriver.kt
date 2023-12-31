@@ -1,11 +1,7 @@
 package testsupport.adapters
 
 import com.github.michaelbull.result.Result
-import com.tamj0rd2.domain.CommandError
-import com.tamj0rd2.domain.PlayerCommand
-import com.tamj0rd2.domain.Game
-import com.tamj0rd2.domain.GameMasterCommand
-import com.tamj0rd2.domain.PlayerGameState
+import com.tamj0rd2.domain.*
 import testsupport.ApplicationDriver
 import testsupport.GameMasterDriver
 

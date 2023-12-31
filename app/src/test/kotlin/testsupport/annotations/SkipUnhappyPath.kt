@@ -1,6 +1,5 @@
 package testsupport.annotations
 
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 
 @Target(AnnotationTarget.CLASS)

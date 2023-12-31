@@ -28,7 +28,11 @@ interface Ensurer {
     fun ensures(timeout: Duration? = null, block: Ensure.() -> Unit): EnsureActivity = ensure(timeout, block)
 
     fun <T> ensureThat(question: Question<T>, timeout: Duration? = null, block: Builder<T>.() -> Unit): EnsureActivity
-    fun <T> ensuresThat(question: Question<T>, timeout: Duration? = null, block: Builder<T>.() -> Unit): EnsureActivity =
+    fun <T> ensuresThat(
+        question: Question<T>,
+        timeout: Duration? = null,
+        block: Builder<T>.() -> Unit
+    ): EnsureActivity =
         ensureThat(question, timeout, block)
 
     operator fun <T> invoke(question: Question<T>, block: Builder<T>.() -> Unit, timeout: Duration? = null) =
@@ -154,7 +158,10 @@ fun <T> Builder<T>.Is(expected: T) = this.apply {
     isEqualTo(expected)
 }
 
-fun Builder<Map<PlayerId, DisplayBid>>.areFor(first: Pair<PlayerId, DisplayBid>, vararg others: Pair<PlayerId, DisplayBid>) = this.apply {
+fun Builder<Map<PlayerId, DisplayBid>>.areFor(
+    first: Pair<PlayerId, DisplayBid>,
+    vararg others: Pair<PlayerId, DisplayBid>
+) = this.apply {
     isEqualTo(mapOf(first, *others))
 }
 

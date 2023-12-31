@@ -5,7 +5,8 @@ import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.ModifierSupport
 import org.junit.platform.commons.util.AnnotationUtils
 
-internal fun <T : Annotation> ExtensionContext.hasTestClassAnnotation(wantedAnnotation: Class<T>) = findTestClassAnnotation(wantedAnnotation) != null
+internal fun <T : Annotation> ExtensionContext.hasTestClassAnnotation(wantedAnnotation: Class<T>) =
+    findTestClassAnnotation(wantedAnnotation) != null
 
 internal fun <T : Annotation> ExtensionContext.findTestClassAnnotation(wantedAnnotation: Class<T>): T? {
     val annotation = AnnotationUtils.findAnnotation(testClass, wantedAnnotation)

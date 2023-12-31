@@ -1,4 +1,3 @@
-
 import com.tamj0rd2.domain.Game
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode

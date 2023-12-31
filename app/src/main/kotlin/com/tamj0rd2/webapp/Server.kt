@@ -1,7 +1,7 @@
 package com.tamj0rd2.webapp
 
 import com.tamj0rd2.domain.Game
-import com.tamj0rd2.webapp.Frontend.*
+import com.tamj0rd2.webapp.Frontend.Svelte
 import org.http4k.server.Http4kServer
 import org.http4k.server.Jetty
 import org.http4k.server.PolyHandler

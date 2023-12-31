@@ -18,12 +18,13 @@ object CustomJsonSerializer : ConfigurableKotlinxSerialization({
     encodeDefaults = true
     asConfigurable().withStandardMappings().done()
 }) {
-    override fun asJsonObject(input: Any): JsonElement = when(input) {
+    override fun asJsonObject(input: Any): JsonElement = when (input) {
         is Map<*, *> -> JsonObject(
             input.mapNotNull {
                 (it.key as? String ?: return@mapNotNull null) to (it.value?.asJsonObject() ?: nullNode())
             }.toMap(),
         )
+
         is Iterable<*> -> JsonArray(input.map { it?.asJsonObject() ?: nullNode() })
         is Array<*> -> JsonArray(input.map { it?.asJsonObject() ?: nullNode() })
         else -> {

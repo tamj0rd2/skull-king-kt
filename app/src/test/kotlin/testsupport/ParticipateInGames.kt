@@ -1,15 +1,11 @@
 package testsupport
 
 import com.github.michaelbull.result.getOrThrow
-import com.tamj0rd2.domain.Bid
-import com.tamj0rd2.domain.Card
-import com.tamj0rd2.domain.PlayerCommand
-import com.tamj0rd2.domain.PlayerGameState
-import com.tamj0rd2.domain.PlayerId
+import com.tamj0rd2.domain.*
 import com.tamj0rd2.webapp.CustomJsonSerializer.asJsonObject
 import com.tamj0rd2.webapp.CustomJsonSerializer.asPrettyJsonString
 
-class ParticipateInGames(driver: ApplicationDriver): Ability, ApplicationDriver by driver
+class ParticipateInGames(driver: ApplicationDriver) : Ability, ApplicationDriver by driver
 
 val Play = Plays
 val Playing = Plays
@@ -25,7 +21,7 @@ val Actor.gameState get() = use<ParticipateInGames>().state
 internal fun PlayerGameState.debug() = asJsonObject().asPrettyJsonString()
 
 object Plays {
-    operator fun invoke(card: Card) = Activity("play ${card.name}") {actor ->
+    operator fun invoke(card: Card) = Activity("play ${card.name}") { actor ->
         actor.performPlayerCommand(PlayerCommand.PlayCard(actor.playerId, card.name))
     }
 
@@ -41,6 +37,7 @@ object Plays {
 fun Bids(bid: Int) = Activity("bid $bid") { actor ->
     actor.performPlayerCommand(PlayerCommand.PlaceBid(actor.playerId, Bid.of(bid)))
 }
+
 fun Bid(bid: Int) = Bids(bid)
 fun Bidding(bid: Int) = Bids(bid)
 

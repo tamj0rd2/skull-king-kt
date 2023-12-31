@@ -3,20 +3,10 @@ package com.tamj0rd2.webapp
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameMasterCommand
 import com.tamj0rd2.webapp.CustomJsonSerializer.auto
-import com.tamj0rd2.webapp.Frontend.*
+import com.tamj0rd2.webapp.Frontend.Svelte
 import org.http4k.client.JettyClient
-import org.http4k.core.Body
-import org.http4k.core.ContentType
-import org.http4k.core.Filter
+import org.http4k.core.*
 import org.http4k.core.HttpHandler
-import org.http4k.core.Method
-import org.http4k.core.NoOp
-import org.http4k.core.Request
-import org.http4k.core.Response
-import org.http4k.core.Status
-import org.http4k.core.Uri
-import org.http4k.core.then
-import org.http4k.core.with
 import org.http4k.format.auto
 import org.http4k.lens.ContentNegotiation
 import org.http4k.lens.Header
@@ -42,9 +32,10 @@ internal class HttpHandler(
     private val automateGameMasterCommands: Boolean,
     ackTimeoutMs: Long,
     frontend: Frontend,
-): HttpHandler {
+) : HttpHandler {
     private val logger = LoggerFactory.getLogger("httpHandler")
-    private val renderer = if (devServer) HandlebarsTemplates().HotReload("./src/main/resources") else HandlebarsTemplates().CachingClasspath()
+    private val renderer =
+        if (devServer) HandlebarsTemplates().HotReload("./src/main/resources") else HandlebarsTemplates().CachingClasspath()
     private val resourceLoader = ResourceLoader.Classpath("public")
 
     private val gameMasterCommandLens = Body.auto<GameMasterCommand>().toLens()
@@ -101,7 +92,7 @@ internal class HttpHandler(
 
 private fun Frontend.viteProxy(): Filter {
     val viteHttpClient = JettyClient()
-    val vitePort = when(this) {
+    val vitePort = when (this) {
         Svelte -> 5174
     }
 

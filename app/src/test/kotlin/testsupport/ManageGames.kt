@@ -3,16 +3,18 @@ package testsupport
 import com.tamj0rd2.domain.Card
 import com.tamj0rd2.domain.GameMasterCommand
 
-class ManageGames(driver: GameMasterDriver): Ability, GameMasterDriver by driver
+class ManageGames(driver: GameMasterDriver) : Ability, GameMasterDriver by driver
 
 val SaysTheGameCanStart = Activity("start the game") { actor ->
     actor.use<ManageGames>().perform(GameMasterCommand.StartGame)
     actor.use<ManageGames>().perform(GameMasterCommand.StartNextRound)
 }
 
-val SaysTheRoundCanStart = Activity("start the round") { actor -> actor.use<ManageGames>().perform(GameMasterCommand.StartNextRound) }
+val SaysTheRoundCanStart =
+    Activity("start the round") { actor -> actor.use<ManageGames>().perform(GameMasterCommand.StartNextRound) }
 
-val SaysTheTrickCanStart = Activity("start the trick") { actor -> actor.use<ManageGames>().perform(GameMasterCommand.StartNextTrick) }
+val SaysTheTrickCanStart =
+    Activity("start the trick") { actor -> actor.use<ManageGames>().perform(GameMasterCommand.StartNextTrick) }
 val SaysTheNextTrickCanStart = SaysTheTrickCanStart
 
 object RigsTheDeck {
