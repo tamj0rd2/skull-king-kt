@@ -93,3 +93,10 @@ enum class SpecialSuit {
         }
     }
 }
+
+@Serializable
+data class PlayedCard(val playerId: PlayerId, val card: Card) {
+    override fun toString(): String {
+        return "${card.name} played by $playerId"
+    }
+}
