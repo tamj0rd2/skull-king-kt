@@ -36,7 +36,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 roundNumber = roundNumber,
                 trick = trick?.let { Trick(playersInRoom.size, it) },
                 roundPhase = roundPhase,
-                gameState = gameState,
+                gamePhase = gamePhase,
                 playersInRoom = playersInRoom,
                 hand = hand,
                 bids = bids,
@@ -92,7 +92,7 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
             }
         } catch (e: NoSuchElementException) {
             when {
-                gameState == GameState.WaitingToStart -> GameErrorCode.GameNotInProgress
+                gamePhase == GamePhase.WaitingToStart -> GameErrorCode.GameNotInProgress
                 roundPhase != RoundPhase.Bidding -> GameErrorCode.BiddingIsNotInProgress
                 bids[playerId] is DisplayBid.Hidden || bids[playerId] is DisplayBid.Placed -> GameErrorCode.AlreadyPlacedABid
                 else -> error("cannot bid - ${e.rawMessage}")
@@ -171,9 +171,9 @@ class BrowserDriver(private val driver: ChromeDriver) : ApplicationDriver {
                 ?.map { it.toCard().playedBy(PlayerId(it.getAttribute("player"))) }
         }
 
-    private val gameState: GameState?
+    private val gamePhase: GamePhase?
         get() = debugException {
-            driver.findElementOrNull(By.id("gameState"))?.text?.let(GameState::from)
+            driver.findElementOrNull(By.id("gamePhase"))?.text?.let(GamePhase::from)
         }
 
     private val roundPhase: RoundPhase?

@@ -2,8 +2,8 @@ package com.tamj0rd2.domain
 
 import arrow.optics.copy
 import arrow.optics.optics
-import com.tamj0rd2.domain.GameState.WaitingForMorePlayers
-import com.tamj0rd2.domain.GameState.WaitingToStart
+import com.tamj0rd2.domain.GamePhase.WaitingForMorePlayers
+import com.tamj0rd2.domain.GamePhase.WaitingToStart
 import kotlinx.serialization.Serializable
 
 @optics
@@ -17,7 +17,7 @@ data class PlayerGameState(
     val roundNumber: RoundNumber = RoundNumber.None,
     val trick: Trick? = null,
     val roundPhase: RoundPhase? = null,
-    val gameState: GameState? = null,
+    val gamePhase: GamePhase? = null,
     val playersInRoom: List<PlayerId> = emptyList(),
     val hand: List<CardWithPlayability> = emptyList(),
     val bids: Map<PlayerId, DisplayBid> = emptyMap(),
@@ -73,17 +73,17 @@ data class PlayerGameState(
         }
 
         is GameEvent.GameCompleted -> copy {
-            PlayerGameState.gameState set GameState.Complete
+            PlayerGameState.gamePhase set GamePhase.Complete
         }
 
         is GameEvent.GameStarted -> copy {
-            PlayerGameState.gameState set GameState.InProgress
+            PlayerGameState.gamePhase set GamePhase.InProgress
         }
 
         is GameEvent.PlayerJoined -> copy {
             val playersInRoom = playersInRoom + event.playerId
             PlayerGameState.playersInRoom set playersInRoom
-            PlayerGameState.gameState set (if (playersInRoom.size >= minimumNumOfPlayersToStartGame) WaitingToStart else WaitingForMorePlayers)
+            PlayerGameState.gamePhase set (if (playersInRoom.size >= minimumNumOfPlayersToStartGame) WaitingToStart else WaitingForMorePlayers)
         }
 
         is GameEvent.RoundStarted -> copy {

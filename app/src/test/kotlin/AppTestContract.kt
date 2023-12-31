@@ -5,7 +5,7 @@ import com.tamj0rd2.domain.*
 import com.tamj0rd2.domain.Card.SpecialCard.Companion.mermaid
 import com.tamj0rd2.domain.DisplayBid.*
 import com.tamj0rd2.domain.GameErrorCode.*
-import com.tamj0rd2.domain.GameState.InProgress
+import com.tamj0rd2.domain.GamePhase.InProgress
 import com.tamj0rd2.domain.RoundPhase.*
 import org.junit.jupiter.api.Nested
 import strikt.assertions.atLeast
@@ -62,7 +62,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
                 SitsAtTheTable,
                 ensures {
                     that(ThePlayersAtTheTable) { are(freddy) }
-                    that(TheGameState) { Is(GameState.WaitingForMorePlayers) }
+                    that(TheGameState) { Is(GamePhase.WaitingForMorePlayers) }
                 },
             )
         }
@@ -262,7 +262,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
         fun `cannot bid before the game has started`() {
             freddy and sally both SitAtTheTable
             freddy(Bidding(1) wouldFailBecause GameNotInProgress)
-            freddy and sally both ensureThat(TheGameState) { Is(GameState.WaitingToStart) }
+            freddy and sally both ensureThat(TheGameState) { Is(GamePhase.WaitingToStart) }
         }
 
         @UnhappyPath
@@ -338,7 +338,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
             freddy and sally both SitAtTheTable
             freddy and sally both ensure {
                 that(ThePlayersAtTheTable) { are(freddy, sally) }
-                that(TheGameState) { Is(GameState.WaitingToStart) }
+                that(TheGameState) { Is(GamePhase.WaitingToStart) }
             }
 
             // round 1
@@ -454,7 +454,7 @@ abstract class AppTestContract(private val testConfiguration: TestConfiguration)
                 that(TheRoundNumber) { Is(RoundNumber.of(10)) }
                 that(TheTrickNumber) { Is(TrickNumber.of(10)) }
                 that(TheirHand) { isEmpty() }
-                that(TheGameState) { Is(GameState.Complete) }
+                that(TheGameState) { Is(GamePhase.Complete) }
             }
         }
     }

@@ -15,7 +15,7 @@ fun interface GameEventListener {
 data class ActualGameState(
     val trickNumber: TrickNumber,
     val roundNumber: RoundNumber,
-    val state: GameState,
+    val state: GamePhase,
     val phase: RoundPhase?,
     val players: List<PlayerId>,
     val hands: Map<PlayerId, List<Card>>,
@@ -34,7 +34,7 @@ class Game {
     var roundNumber: RoundNumber = RoundNumber.None
         private set
 
-    var state: GameState = GameState.WaitingForMorePlayers
+    var state: GamePhase = GamePhase.WaitingForMorePlayers
         private set
 
     private var phase: RoundPhase? = null
@@ -68,7 +68,7 @@ class Game {
         if (players.contains(playerId)) PlayerWithSameNameAlreadyInGame.throwException()
 
         players += playerId
-        if (!waitingForMorePlayers) state = GameState.WaitingToStart
+        if (!waitingForMorePlayers) state = GamePhase.WaitingToStart
         recordEvent(GameEvent.PlayerJoined(playerId))
 
         Ok(Unit)
@@ -77,14 +77,14 @@ class Game {
     private fun start() = gameMasterCommand {
         require(!waitingForMorePlayers) { "not enough players to start the game - ${players.size}/$roomSizeToStartGame" }
 
-        state = GameState.InProgress
+        state = GamePhase.InProgress
         players.forEach { hands[it] = mutableListOf() }
         recordEvent(GameEvent.GameStarted(players))
     }
 
     private fun bid(playerId: PlayerId, bid: Bid) = playerCommand(playerId) {
         when {
-            state != GameState.InProgress -> GameNotInProgress
+            state != GamePhase.InProgress -> GameNotInProgress
             phase != Bidding -> BiddingIsNotInProgress
             // TODO: this could do with some love
             bid.value < 0 || bid.value > roundNumber.value -> BidLessThan0OrGreaterThanRoundNumber
@@ -150,7 +150,7 @@ class Game {
             recordEvent(GameEvent.TrickCompleted(trick.winner))
 
             if (isLastRound) {
-                state = GameState.Complete
+                state = GamePhase.Complete
                 recordEvent(GameEvent.GameCompleted)
             }
         }
@@ -223,7 +223,7 @@ private fun <E> List<E>.excluding(element: E): List<E> {
 }
 
 @Serializable
-enum class GameState {
+enum class GamePhase {
     WaitingForMorePlayers,
     WaitingToStart,
     InProgress,

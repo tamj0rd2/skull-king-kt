@@ -77,7 +77,7 @@ export type PlayerId = string
 
 export type Bid = number
 
-export enum GameState {
+export enum GamePhase {
   WaitingForMorePlayers = "WaitingForMorePlayers",
   WaitingToStart = "WaitingToStart",
   InProgress = "InProgress",
@@ -155,7 +155,7 @@ export interface PlayerGameState {
   roundNumber?: RoundNumber
   trick?: Trick | null
   roundPhase?: RoundPhase | null
-  gameState?: GameState | null
+  gamePhase?: GamePhase | null
   playersInRoom?: PlayerId[]
   hand?: CardWithPlayability[]
   bids?: { [key: PlayerId]: DisplayBid }

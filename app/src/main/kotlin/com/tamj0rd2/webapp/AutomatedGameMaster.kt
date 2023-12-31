@@ -3,7 +3,7 @@ package com.tamj0rd2.webapp
 import com.tamj0rd2.domain.Game
 import com.tamj0rd2.domain.GameEvent
 import com.tamj0rd2.domain.GameMasterCommand
-import com.tamj0rd2.domain.GameState
+import com.tamj0rd2.domain.GamePhase
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
@@ -23,7 +23,7 @@ class AutomatedGameMaster(private val game: Game, private val delayOverride: Dur
 
                 when (event) {
                     is GameEvent.PlayerJoined -> {
-                        if (game.state != GameState.WaitingToStart) return@subscribeToGameEvents
+                        if (game.state != GamePhase.WaitingToStart) return@subscribeToGameEvents
                         timer.schedule(timerTask {
                             if (allGameEvents.last() != event) return@timerTask
 

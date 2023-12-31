@@ -34,8 +34,8 @@
         {/each}
     </ul>
 
-    {#if $state.gameState}
-        <p id="gameState">{$state.gameState}</p>
+    {#if $state.gamePhase}
+        <p id="gamePhase">{$state.gamePhase}</p>
     {/if}
     {#if $state.roundPhase}
         <p id="roundPhase">{$state.roundPhase}</p>

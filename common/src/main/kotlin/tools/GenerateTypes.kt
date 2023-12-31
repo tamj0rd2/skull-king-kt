@@ -9,7 +9,7 @@ fun main() {
         Card.serializer(),
         CardWithPlayability.serializer(),
         PlayerCommand.serializer(),
-        GameState.serializer(),
+        GamePhase.serializer(),
         RoundPhase.serializer(),
         PlayerId.serializer(),
         Message.serializer(),

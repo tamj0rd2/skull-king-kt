@@ -85,7 +85,7 @@ class JsonSerializationTest {
             """
             {
                 "playerId": "somePlayer",
-                "gameState": null,
+                "gamePhase": null,
                 "playersInRoom": [],
                 "roundNumber": 0,
                 "trickNumber": 0,

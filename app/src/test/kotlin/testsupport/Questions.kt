@@ -27,7 +27,7 @@ val TheTrickNumber = Question.about("the trick number") { actor ->
 }
 
 val TheGameState = Question.about("the game state") { actor ->
-    actor.gameState.gameState
+    actor.gameState.gamePhase
 }
 
 val TheRoundPhase = Question.about("the round phase") { actor ->
